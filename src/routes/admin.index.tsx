@@ -463,7 +463,7 @@ function StaffManager() {
               <div className="font-medium">{s.name}</div>
               <div className="text-xs text-muted-foreground">{s.staff_code}</div>
             </div>
-            <select value={s.role} onChange={(e) => changeRole(s.id, e.target.value)} className="bg-input border border-border rounded px-2 text-sm">
+            <select value={s.role} onChange={(e) => changeRole(s.id, e.target.value as "admin" | "manager")} className="bg-input border border-border rounded px-2 text-sm">
               <option value="admin">แอดมิน</option>
               <option value="manager">ผู้จัดการ</option>
             </select>
