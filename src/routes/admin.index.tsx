@@ -425,7 +425,7 @@ function StaffManager() {
     toast.success("เพิ่มพนักงานแล้ว"); load();
   }
 
-  async function changeRole(id: string, role: string) {
+  async function changeRole(id: string, role: "admin" | "manager") {
     await supabase.from("staff").update({ role }).eq("id", id);
     toast.success("อัปเดตสิทธิ์แล้ว"); load();
   }
