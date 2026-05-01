@@ -30,14 +30,12 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
+      { name: "description", content: "ซื้อ Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย" },
+      { property: "og:title", content: "PROKIM Luxe Store" },
+      { property: "og:description", content: "ร้านไอเทมเกมพรีเมียม ธีมแดง-ดำ" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -59,6 +57,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster richColors theme="dark" position="top-center" />
         <Scripts />
       </body>
     </html>
