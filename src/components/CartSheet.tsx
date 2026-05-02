@@ -8,6 +8,7 @@ import {
   updateQty,
   clearCart,
   checkoutCart,
+  ADMIN_CHAT_URL,
   type CartItem,
 } from "@/lib/cart";
 import { getUser } from "@/lib/auth";
@@ -22,7 +23,7 @@ export function CartSheet({
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [showAll, setShowAll] = useState(false);
-  const [receipt, setReceipt] = useState<{ items: CartItem[]; total: number } | null>(null);
+  const [receipt, setReceipt] = useState<{ items: CartItem[]; total: number; code: string } | null>(null);
 
   async function load() {
     const u = getUser();
@@ -44,8 +45,8 @@ export function CartSheet({
     const u = getUser();
     if (!u || items.length === 0) return;
     try {
-      await checkoutCart(u.id, items);
-      setReceipt({ items: [...items], total });
+      const result = await checkoutCart(u.id, items);
+      setReceipt({ items: [...items], total, code: result.receipt_code });
       await clearCart(u.id);
     } catch (e: any) {
       toast.error(e.message ?? "เกิดข้อผิดพลาด");
@@ -53,7 +54,7 @@ export function CartSheet({
   }
 
   function contactAdmin() {
-    toast.success("กำลังเปิดแชทแอดมิน… (แสดงตัวอย่าง)");
+    window.open(ADMIN_CHAT_URL, "_blank", "noopener,noreferrer");
     setReceipt(null);
     onOpenChange(false);
   }
@@ -84,8 +85,11 @@ export function CartSheet({
               <div className="text-center font-display text-xl text-gold mb-1">
                 <Receipt className="inline w-5 h-5 mr-1" /> Prokim
               </div>
-              <div className="text-center text-xs text-muted-foreground mb-4">
+              <div className="text-center text-xs text-muted-foreground">
                 {new Date().toLocaleString("th-TH")}
+              </div>
+              <div className="text-center text-xs font-mono text-gold mb-4 select-all">
+                {receipt.code}
               </div>
               <div className="border-t border-dashed border-border my-2" />
               <div className="space-y-1 text-sm">

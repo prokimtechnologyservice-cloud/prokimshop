@@ -68,7 +68,7 @@ export async function checkoutCart(userId: string, items: CartItem[]) {
   const { data: order, error } = await supabase
     .from("orders")
     .insert({ user_id: userId, total, status: "pending" })
-    .select("id")
+    .select("id, receipt_code")
     .single();
   if (error) throw error;
 
@@ -80,5 +80,7 @@ export async function checkoutCart(userId: string, items: CartItem[]) {
       quantity: i.quantity,
     })),
   );
-  return order.id as string;
+  return { id: order.id as string, receipt_code: (order as any).receipt_code as string };
 }
+
+export const ADMIN_CHAT_URL = "https://m.me/61580581317954";
