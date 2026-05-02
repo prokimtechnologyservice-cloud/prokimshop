@@ -71,8 +71,11 @@ function HistoryPage() {
               <div className="text-center font-display text-lg text-gold mb-1">
                 Prokim
               </div>
-              <div className="text-center text-xs text-muted-foreground mb-3">
-                {new Date(o.created_at).toLocaleString("th-TH")} · #{o.id.slice(0, 8)}
+              <div className="text-center text-xs text-muted-foreground">
+                {new Date(o.created_at).toLocaleString("th-TH")}
+              </div>
+              <div className="text-center text-xs font-mono text-gold mb-3 select-all">
+                {o.receipt_code ?? `#${o.id.slice(0, 8)}`}
               </div>
               <div className="border-t border-dashed border-border my-2" />
               <div className="space-y-1 text-sm">
