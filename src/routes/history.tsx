@@ -93,11 +93,21 @@ function HistoryPage() {
                 <span>ยอดรวมทั้งหมด</span>
                 <span className="text-gold">฿{o.total.toFixed(2)}</span>
               </div>
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(o.receipt_code ?? o.id);
+                    toast.success("คัดลอกรหัสใบเสร็จแล้ว");
+                  }}
+                >
+                  คัดลอกรหัส
+                </Button>
                 <Button
                   size="sm"
                   variant="luxe"
-                  onClick={() => toast.success("กำลังเปิดแชทแอดมิน… (ตัวอย่าง)")}
+                  onClick={() => window.open(ADMIN_CHAT_URL, "_blank", "noopener,noreferrer")}
                 >
                   ทักแชทแอดมิน
                 </Button>
