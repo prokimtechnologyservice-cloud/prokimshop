@@ -23,7 +23,7 @@ export function CartSheet({
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [showAll, setShowAll] = useState(false);
-  const [receipt, setReceipt] = useState<{ items: CartItem[]; total: number } | null>(null);
+  const [receipt, setReceipt] = useState<{ items: CartItem[]; total: number; code: string } | null>(null);
 
   async function load() {
     const u = getUser();
