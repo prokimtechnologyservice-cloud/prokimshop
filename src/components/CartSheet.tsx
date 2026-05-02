@@ -45,8 +45,8 @@ export function CartSheet({
     const u = getUser();
     if (!u || items.length === 0) return;
     try {
-      await checkoutCart(u.id, items);
-      setReceipt({ items: [...items], total });
+      const result = await checkoutCart(u.id, items);
+      setReceipt({ items: [...items], total, code: result.receipt_code });
       await clearCart(u.id);
     } catch (e: any) {
       toast.error(e.message ?? "เกิดข้อผิดพลาด");
@@ -54,7 +54,7 @@ export function CartSheet({
   }
 
   function contactAdmin() {
-    toast.success("กำลังเปิดแชทแอดมิน… (แสดงตัวอย่าง)");
+    window.open(ADMIN_CHAT_URL, "_blank", "noopener,noreferrer");
     setReceipt(null);
     onOpenChange(false);
   }
