@@ -137,6 +137,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          receipt_code: string | null
           status: string
           total: number
           user_id: string
@@ -144,6 +145,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          receipt_code?: string | null
           status?: string
           total?: number
           user_id: string
@@ -151,6 +153,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          receipt_code?: string | null
           status?: string
           total?: number
           user_id?: string
@@ -304,7 +307,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_receipt_code: { Args: never; Returns: string }
     }
     Enums: {
       staff_role: "admin" | "manager"
