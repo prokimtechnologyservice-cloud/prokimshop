@@ -75,7 +75,7 @@ function Index() {
 
   return (
     <div className="min-h-screen">
-      <SiteHeader />
+      <SiteHeader onSelectCategory={(id) => setActive(id)} />
 
       {/* Hero */}
       <section className="relative bg-gradient-hero overflow-hidden">
