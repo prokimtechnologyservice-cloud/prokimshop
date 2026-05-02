@@ -38,7 +38,7 @@ function HistoryPage() {
       if (!u) return;
       const { data } = await supabase
         .from("orders")
-        .select("id, total, status, created_at, order_items(product_name, unit_price, quantity)")
+        .select("id, total, status, created_at, receipt_code, order_items(product_name, unit_price, quantity)")
         .eq("user_id", u.id)
         .order("created_at", { ascending: false });
       setOrders(((data as any[]) ?? []).map((o) => ({ ...o, total: Number(o.total) })));
