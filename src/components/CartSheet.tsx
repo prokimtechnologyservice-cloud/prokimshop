@@ -85,8 +85,11 @@ export function CartSheet({
               <div className="text-center font-display text-xl text-gold mb-1">
                 <Receipt className="inline w-5 h-5 mr-1" /> Prokim
               </div>
-              <div className="text-center text-xs text-muted-foreground mb-4">
+              <div className="text-center text-xs text-muted-foreground">
                 {new Date().toLocaleString("th-TH")}
+              </div>
+              <div className="text-center text-xs font-mono text-gold mb-4 select-all">
+                {receipt.code}
               </div>
               <div className="border-t border-dashed border-border my-2" />
               <div className="space-y-1 text-sm">
