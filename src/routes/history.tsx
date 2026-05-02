@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getUser } from "@/lib/auth";
 import { Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ADMIN_CHAT_URL } from "@/lib/cart";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/history")({
