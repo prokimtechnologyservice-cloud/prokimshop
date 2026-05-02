@@ -23,6 +23,7 @@ type Order = {
   total: number;
   status: string;
   created_at: string;
+  receipt_code: string | null;
   order_items: { product_name: string; unit_price: number; quantity: number }[];
 };
 
