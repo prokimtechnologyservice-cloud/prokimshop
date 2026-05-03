@@ -122,15 +122,16 @@ function Index() {
       </section>
 
       {/* Product grid */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
+      <main ref={productsRef} className="mx-auto max-w-7xl px-4 sm:px-6 py-10 scroll-mt-32">
         <h2 className="font-display text-3xl mb-6">
           {cats.find((c) => c.id === active)?.name ?? ""}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {visible.map((p) => (
-            <div
+            <button
               key={p.id}
-              className="group relative bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-luxe hover:border-primary/50 transition"
+              onClick={() => setDetail(p)}
+              className="group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-luxe hover:border-primary/50 transition"
             >
               <div className="aspect-square bg-onyx relative overflow-hidden">
                 {p.image_url ? (
@@ -143,21 +144,55 @@ function Index() {
                 <div className="absolute inset-0 bg-gradient-to-t from-onyx/90 via-transparent to-transparent" />
               </div>
               <div className="p-3 space-y-2">
-                <div className="font-medium text-sm line-clamp-1">{p.name}</div>
+                <div className="font-medium text-sm line-clamp-2 min-h-[2.5rem]">{p.name}</div>
+                {p.description && (
+                  <div className="text-[11px] text-muted-foreground line-clamp-2 min-h-[2rem]">{p.description}</div>
+                )}
                 <div className="text-gold font-bold">
                   {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
                 </div>
-                <Button onClick={() => handleAdd(p)} size="sm" variant="luxe" className="w-full">
+                <Button
+                  onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
+                  size="sm" variant="luxe" className="w-full"
+                >
                   <ShoppingCart className="w-3.5 h-3.5" /> เพิ่มลงตะกร้า
                 </Button>
               </div>
-            </div>
+            </button>
           ))}
         </div>
         {visible.length === 0 && (
           <div className="text-center text-muted-foreground py-20">ยังไม่มีสินค้าในหมวดนี้</div>
         )}
       </main>
+
+      <Dialog open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
+        <DialogContent className="max-w-2xl bg-gradient-card border-primary/40">
+          {detail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-2xl text-gradient-gold pr-6">{detail.name}</DialogTitle>
+                <DialogDescription className="text-gold font-bold text-lg">
+                  {detail.price > 0 ? `฿${detail.price.toFixed(2)}` : "ติดต่อแอดมิน"}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="aspect-video w-full rounded-lg overflow-hidden bg-onyx">
+                {detail.image_url ? (
+                  <img src={detail.image_url} alt={detail.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center"><Crown className="w-16 h-16 text-primary/30" /></div>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
+                {detail.description || "ไม่มีคำอธิบายเพิ่มเติม"}
+              </div>
+              <Button variant="luxe" onClick={() => { handleAdd(detail); setDetail(null); }}>
+                <ShoppingCart className="w-4 h-4" /> เพิ่มลงตะกร้า
+              </Button>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <footer className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion
