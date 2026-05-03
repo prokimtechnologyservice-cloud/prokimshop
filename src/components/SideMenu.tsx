@@ -7,7 +7,6 @@ import { ADMIN_CHAT_URL } from "@/lib/cart";
 import { useNavigate } from "@tanstack/react-router";
 
 type Announcement = { id: string; title: string; content: string; created_at: string };
-type Category = { id: string; name: string };
 
 export function SideMenu({
   open,
