@@ -31,6 +31,8 @@ function Index() {
   const [active, setActive] = useState<string | null>(null);
   const [siteOpen, setSiteOpen] = useState(true);
   const [closedMsg, setClosedMsg] = useState("");
+  const [detail, setDetail] = useState<Product | null>(null);
+  const productsRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -46,12 +48,16 @@ function Index() {
         setSiteOpen(s.is_open);
         setClosedMsg(s.closed_message ?? "");
       }
-      // log a visit
       const sk = sessionStorage.getItem("vk") || crypto.randomUUID();
       sessionStorage.setItem("vk", sk);
       supabase.from("visits").insert({ session_key: sk });
     })();
   }, []);
+
+  function handleSelectCategory(id: string) {
+    if (id !== "__all__") setActive(id);
+    setTimeout(() => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
 
   async function handleAdd(p: Product) {
     const u = getUser();
