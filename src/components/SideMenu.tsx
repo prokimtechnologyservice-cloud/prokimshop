@@ -21,9 +21,8 @@ export function SideMenu({
   onSelectCategory?: (id: string) => void;
 }) {
   const [user, setUserState] = useState<UserSession | null>(null);
-  const [section, setSection] = useState<"home" | "shop" | "ann">("home");
+  const [section, setSection] = useState<"home" | "ann">("home");
   const [anns, setAnns] = useState<Announcement[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
