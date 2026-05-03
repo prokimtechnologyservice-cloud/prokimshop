@@ -7,7 +7,6 @@ import { ADMIN_CHAT_URL } from "@/lib/cart";
 import { useNavigate } from "@tanstack/react-router";
 
 type Announcement = { id: string; title: string; content: string; created_at: string };
-type Category = { id: string; name: string };
 
 export function SideMenu({
   open,
@@ -21,9 +20,8 @@ export function SideMenu({
   onSelectCategory?: (id: string) => void;
 }) {
   const [user, setUserState] = useState<UserSession | null>(null);
-  const [section, setSection] = useState<"home" | "shop" | "ann">("home");
+  const [section, setSection] = useState<"home" | "ann">("home");
   const [anns, setAnns] = useState<Announcement[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,12 +34,8 @@ export function SideMenu({
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const [{ data: a }, { data: c }] = await Promise.all([
-        supabase.from("announcements").select("*").order("created_at", { ascending: false }).limit(20),
-        supabase.from("categories").select("id, name").order("sort_order"),
-      ]);
+      const { data: a } = await supabase.from("announcements").select("*").order("created_at", { ascending: false }).limit(20);
       setAnns((a as Announcement[]) ?? []);
-      setCats((c as Category[]) ?? []);
     })();
   }, [open]);
 
@@ -74,7 +68,7 @@ export function SideMenu({
           {section === "home" && (
             <div className="p-3 space-y-1">
               <MenuRow icon={<Megaphone className="w-5 h-5 text-gold" />} label="หน้าร้าน / ประกาศ" onClick={() => setSection("ann")} />
-              <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => setSection("shop")} />
+              <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => { close(); onSelectCategory?.("__all__"); }} />
               <MenuRow
                 icon={<MessageCircle className="w-5 h-5 text-gold" />}
                 label="ติดต่อแอดมิน"
@@ -92,23 +86,6 @@ export function SideMenu({
                 label={user ? `ออกจากระบบ (${user.username})` : "สมัคร / เข้าสู่ระบบ"}
                 onClick={handleAuthBtn}
               />
-            </div>
-          )}
-
-          {section === "shop" && (
-            <div className="p-3 space-y-1">
-              <BackRow onClick={() => setSection("home")} />
-              {cats.map((c) => (
-                <MenuRow
-                  key={c.id}
-                  icon={<Package className="w-5 h-5 text-gold" />}
-                  label={c.name}
-                  onClick={() => {
-                    onSelectCategory?.(c.id);
-                    close();
-                  }}
-                />
-              ))}
             </div>
           )}
 
