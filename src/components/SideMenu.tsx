@@ -35,12 +35,8 @@ export function SideMenu({
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const [{ data: a }, { data: c }] = await Promise.all([
-        supabase.from("announcements").select("*").order("created_at", { ascending: false }).limit(20),
-        supabase.from("categories").select("id, name").order("sort_order"),
-      ]);
+      const { data: a } = await supabase.from("announcements").select("*").order("created_at", { ascending: false }).limit(20);
       setAnns((a as Announcement[]) ?? []);
-      setCats((c as Category[]) ?? []);
     })();
   }, [open]);
 
@@ -73,7 +69,7 @@ export function SideMenu({
           {section === "home" && (
             <div className="p-3 space-y-1">
               <MenuRow icon={<Megaphone className="w-5 h-5 text-gold" />} label="หน้าร้าน / ประกาศ" onClick={() => setSection("ann")} />
-              <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => setSection("shop")} />
+              <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => { close(); onSelectCategory?.("__all__"); }} />
               <MenuRow
                 icon={<MessageCircle className="w-5 h-5 text-gold" />}
                 label="ติดต่อแอดมิน"
@@ -91,23 +87,6 @@ export function SideMenu({
                 label={user ? `ออกจากระบบ (${user.username})` : "สมัคร / เข้าสู่ระบบ"}
                 onClick={handleAuthBtn}
               />
-            </div>
-          )}
-
-          {section === "shop" && (
-            <div className="p-3 space-y-1">
-              <BackRow onClick={() => setSection("home")} />
-              {cats.map((c) => (
-                <MenuRow
-                  key={c.id}
-                  icon={<Package className="w-5 h-5 text-gold" />}
-                  label={c.name}
-                  onClick={() => {
-                    onSelectCategory?.(c.id);
-                    close();
-                  }}
-                />
-              ))}
             </div>
           )}
 
