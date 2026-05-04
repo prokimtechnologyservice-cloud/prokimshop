@@ -60,7 +60,8 @@ function AdminDashboard() {
             <TabsTrigger value="catalog">หมวด/สินค้า</TabsTrigger>
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
-            {isManager && <TabsTrigger value="editor">แก้ไขหน้าเว็บ</TabsTrigger>}
+            {isManager && <TabsTrigger value="editor">แก้ไขข้อความ/รูป</TabsTrigger>}
+            {isManager && <TabsTrigger value="overlay">วางวัตถุ (ลาก/หมุน)</TabsTrigger>}
             {isManager && <TabsTrigger value="staff">สิทธิ์พนักงาน</TabsTrigger>}
             {isManager && <TabsTrigger value="site">เปิด/ปิดเว็บ</TabsTrigger>}
             {isManager && <TabsTrigger value="stats">สถิติ</TabsTrigger>}
@@ -70,6 +71,7 @@ function AdminDashboard() {
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
           <TabsContent value="users"><UsersManager /></TabsContent>
           {isManager && <TabsContent value="editor"><SiteEditor /></TabsContent>}
+          {isManager && <TabsContent value="overlay"><OverlayManager /></TabsContent>}
           {isManager && <TabsContent value="staff"><StaffManager /></TabsContent>}
           {isManager && <TabsContent value="site"><SiteToggle /></TabsContent>}
           {isManager && <TabsContent value="stats"><StatsPanel /></TabsContent>}
