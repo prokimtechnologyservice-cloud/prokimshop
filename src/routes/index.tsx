@@ -34,6 +34,7 @@ function Index() {
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
+  const { content } = useSiteContent();
 
   useEffect(() => {
     (async () => {
