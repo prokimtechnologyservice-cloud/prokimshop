@@ -201,8 +201,8 @@ function Index() {
         </DialogContent>
       </Dialog>
 
-      <footer className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion
+      <footer className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap">
+        {sc(content, "footer_text", `© ${new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion`)}
       </footer>
     </div>
   );
