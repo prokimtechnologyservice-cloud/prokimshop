@@ -12,6 +12,7 @@ import {
 import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power } from "lucide-react";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
+import { OverlayManager } from "@/components/admin/OverlayManager";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
