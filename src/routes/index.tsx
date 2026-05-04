@@ -87,22 +87,27 @@ function Index() {
       <SiteHeader onSelectCategory={handleSelectCategory} />
 
       {/* Hero */}
+      {scBool(content, "show_hero", true) && (
       <section className="relative bg-gradient-hero overflow-hidden">
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: "radial-gradient(circle at 20% 50%, oklch(0.55 0.20 18 / 0.6), transparent 40%), radial-gradient(circle at 80% 30%, oklch(0.78 0.13 85 / 0.3), transparent 40%)",
         }} />
+        {sc(content, "banner_url") && (
+          <img src={sc(content, "banner_url")} alt="banner" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+        )}
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-24 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-6">
             <Sparkles className="w-3.5 h-3.5" /> LUXURY GAMING STORE
           </div>
           <h1 className="font-display text-5xl sm:text-7xl font-bold mb-4">
-            <span className="text-gradient-gold">PROKIM</span>
+            <span className="text-gradient-gold">{sc(content, "hero_title", "PROKIM")}</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto whitespace-pre-wrap">
+            {sc(content, "hero_subtitle", "ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย")}
           </p>
         </div>
       </section>
+      )}
 
       {/* Category tabs */}
       <section className="sticky top-16 z-30 glass border-b border-border/60">
