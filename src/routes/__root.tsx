@@ -66,5 +66,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <div className="relative min-h-screen">
+      <Outlet />
+      <OverlayLayer />
+    </div>
+  );
 }
