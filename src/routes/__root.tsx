@@ -33,10 +33,14 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
       { name: "description", content: "ซื้อ Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย" },
-      { property: "og:title", content: "PROKIM Luxe Store" },
-      { property: "og:description", content: "ร้านไอเทมเกมพรีเมียม ธีมแดง-ดำ" },
+      { property: "og:title", content: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
+      { property: "og:description", content: "ซื้อ Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
+      { name: "twitter:description", content: "ซื้อ Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c2c5e1da-4531-4566-ac40-766119c09b38/id-preview-e1033925--aa69e5ed-f862-4388-ac00-21d650b4c7fd.lovable.app-1777872215475.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c2c5e1da-4531-4566-ac40-766119c09b38/id-preview-e1033925--aa69e5ed-f862-4388-ac00-21d650b4c7fd.lovable.app-1777872215475.png" },
     ],
     links: [
       {
