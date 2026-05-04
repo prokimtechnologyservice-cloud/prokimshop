@@ -263,6 +263,72 @@ export type Database = {
         }
         Relationships: []
       }
+      site_overlays: {
+        Row: {
+          bg: string | null
+          color: string | null
+          content: string | null
+          created_at: string
+          font_size: number
+          h: number
+          href: string | null
+          id: string
+          image_url: string | null
+          kind: string
+          label: string | null
+          page: string
+          rotate: number
+          updated_at: string
+          visible: boolean
+          w: number
+          x: number
+          y: number
+          z_index: number
+        }
+        Insert: {
+          bg?: string | null
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          font_size?: number
+          h?: number
+          href?: string | null
+          id?: string
+          image_url?: string | null
+          kind?: string
+          label?: string | null
+          page?: string
+          rotate?: number
+          updated_at?: string
+          visible?: boolean
+          w?: number
+          x?: number
+          y?: number
+          z_index?: number
+        }
+        Update: {
+          bg?: string | null
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          font_size?: number
+          h?: number
+          href?: string | null
+          id?: string
+          image_url?: string | null
+          kind?: string
+          label?: string | null
+          page?: string
+          rotate?: number
+          updated_at?: string
+          visible?: boolean
+          w?: number
+          x?: number
+          y?: number
+          z_index?: number
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           closed_message: string | null
