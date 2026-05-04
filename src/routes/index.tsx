@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Crown, ShoppingCart, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 
 export const Route = createFileRoute("/")({
   head: () => ({
