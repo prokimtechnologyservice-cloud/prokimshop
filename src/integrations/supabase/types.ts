@@ -239,6 +239,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          key: string
+          label: string | null
+          type: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          label?: string | null
+          type?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          label?: string | null
+          type?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           closed_message: string | null
