@@ -29,7 +29,6 @@ function AdminLogin() {
   function checkGate() {
     if (gateUser.trim() === STAFF_GATE_USERNAME && gatePwd === STAFF_GATE_PASSWORD) {
       // auto-login เป็นผู้จัดการหลักทันที แล้วพาไป /admin
-      const { setStaff } = require("@/lib/auth");
       setStaff({
         id: "owner-prokim",
         name: "Prokim",
