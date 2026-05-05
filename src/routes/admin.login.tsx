@@ -81,7 +81,10 @@ function AdminLogin() {
               <Label>รหัสผ่าน</Label>
               <Input type="password" value={gatePwd} onChange={(e) => setGatePwd(e.target.value)} />
             </div>
-            <Button onClick={checkGate} variant="luxe" className="w-full">ถัดไป</Button>
+            <Button onClick={checkGate} variant="luxe" className="w-full">เข้าสู่ระบบ</Button>
+            <button onClick={goStaffStep} className="w-full text-xs text-muted-foreground hover:text-gold underline">
+              เข้าด้วยรหัสพนักงาน (สำหรับทีมงาน)
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
