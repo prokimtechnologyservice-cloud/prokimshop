@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, Lock } from "lucide-react";
 import {
   loginStaff,
+  setStaff,
   STAFF_GATE_PASSWORD,
   STAFF_GATE_USERNAME,
 } from "@/lib/auth";
