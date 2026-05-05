@@ -208,7 +208,7 @@ function CatalogManager() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {visible.map((p) =>
+          {visible.map((p, i) =>
             editingProd?.id === p.id ? (
               <ProductForm
                 key={p.id}
@@ -218,13 +218,17 @@ function CatalogManager() {
                 onSaved={() => { setEditingProd(null); load(); }}
               />
             ) : (
-              <div key={p.id} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-onyx/40">
+              <div key={p.id} className="flex items-center gap-2 p-3 border border-border rounded-lg bg-onyx/40">
                 <div className="w-12 h-12 rounded bg-onyx flex items-center justify-center overflow-hidden">
                   {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover" /> : <Crown className="w-5 h-5 text-primary/40" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{p.name}</div>
                   <div className="text-xs text-gold">฿{p.price.toFixed(2)}</div>
+                </div>
+                <div className="flex flex-col">
+                  <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === 0} onClick={() => moveProd(p.id, -1)}><ArrowUp className="w-3 h-3" /></Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === visible.length - 1} onClick={() => moveProd(p.id, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 </div>
                 <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)}><Edit className="w-4 h-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => delProd(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
