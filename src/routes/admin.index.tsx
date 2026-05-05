@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power } from "lucide-react";
+import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 type Cat = { id: string; name: string; sort_order: number };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
@@ -128,6 +128,36 @@ function CatalogManager() {
     toast.success("ลบแล้ว"); load();
   }
 
+  async function swapOrder(table: "categories" | "products", a: { id: string; sort_order: number }, b: { id: string; sort_order: number }) {
+    await supabase.from(table).update({ sort_order: b.sort_order }).eq("id", a.id);
+    await supabase.from(table).update({ sort_order: a.sort_order }).eq("id", b.id);
+    load();
+  }
+
+  function moveCat(idx: number, dir: -1 | 1) {
+    const j = idx + dir;
+    if (j < 0 || j >= cats.length) return;
+    swapOrder("categories", cats[idx], cats[j]);
+  }
+
+  function moveProd(prodId: string, dir: -1 | 1) {
+    const list = visible;
+    const idx = list.findIndex((p) => p.id === prodId);
+    const j = idx + dir;
+    if (idx < 0 || j < 0 || j >= list.length) return;
+    const a = prods.find((p) => p.id === list[idx].id)!;
+    const b = prods.find((p) => p.id === list[j].id)!;
+    // ถ้า sort_order เท่ากัน ให้กำหนดใหม่ตามลำดับปัจจุบัน
+    if ((a as any).sort_order === undefined || (b as any).sort_order === undefined || (a as any).sort_order === (b as any).sort_order) {
+      // reseed ทั้งหมวด
+      Promise.all(list.map((p, i) =>
+        supabase.from("products").update({ sort_order: (i + 1) * 10 }).eq("id", p.id),
+      )).then(() => load());
+      return;
+    }
+    swapOrder("products", a as any, b as any);
+  }
+
   const visible = prods.filter((p) => p.category_id === active);
 
   return (
@@ -139,7 +169,7 @@ function CatalogManager() {
           <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
         </div>
         <div className="space-y-1 mt-2">
-          {cats.map((c) => (
+          {cats.map((c, i) => (
             <div key={c.id} className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}>
               {editingCat?.id === c.id ? (
                 <>
@@ -150,6 +180,8 @@ function CatalogManager() {
               ) : (
                 <>
                   <button className="flex-1 text-left" onClick={() => setActive(c.id)}>{c.name}</button>
+                  <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
+                  <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => setEditingCat({ id: c.id, name: c.name })}><Edit className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
                 </>
@@ -176,7 +208,7 @@ function CatalogManager() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {visible.map((p) =>
+          {visible.map((p, i) =>
             editingProd?.id === p.id ? (
               <ProductForm
                 key={p.id}
@@ -186,13 +218,17 @@ function CatalogManager() {
                 onSaved={() => { setEditingProd(null); load(); }}
               />
             ) : (
-              <div key={p.id} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-onyx/40">
+              <div key={p.id} className="flex items-center gap-2 p-3 border border-border rounded-lg bg-onyx/40">
                 <div className="w-12 h-12 rounded bg-onyx flex items-center justify-center overflow-hidden">
                   {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover" /> : <Crown className="w-5 h-5 text-primary/40" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{p.name}</div>
                   <div className="text-xs text-gold">฿{p.price.toFixed(2)}</div>
+                </div>
+                <div className="flex flex-col">
+                  <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === 0} onClick={() => moveProd(p.id, -1)}><ArrowUp className="w-3 h-3" /></Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === visible.length - 1} onClick={() => moveProd(p.id, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 </div>
                 <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)}><Edit className="w-4 h-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => delProd(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>

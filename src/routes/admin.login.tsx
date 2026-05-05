@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, Lock } from "lucide-react";
 import {
   loginStaff,
+  setStaff,
   STAFF_GATE_PASSWORD,
   STAFF_GATE_USERNAME,
 } from "@/lib/auth";
@@ -27,10 +28,22 @@ function AdminLogin() {
 
   function checkGate() {
     if (gateUser.trim() === STAFF_GATE_USERNAME && gatePwd === STAFF_GATE_PASSWORD) {
-      setStep("staff");
+      // auto-login เป็นผู้จัดการหลักทันที แล้วพาไป /admin
+      setStaff({
+        id: "owner-prokim",
+        name: "Prokim",
+        staff_code: "OWNER",
+        role: "manager",
+      });
+      toast.success("เข้าสู่ระบบหลังบ้านสำเร็จ");
+      nav({ to: "/admin" });
     } else {
       toast.error("ข้อมูลไม่ถูกต้อง");
     }
+  }
+
+  function goStaffStep() {
+    setStep("staff");
   }
 
   async function doLogin() {
@@ -68,7 +81,10 @@ function AdminLogin() {
               <Label>รหัสผ่าน</Label>
               <Input type="password" value={gatePwd} onChange={(e) => setGatePwd(e.target.value)} />
             </div>
-            <Button onClick={checkGate} variant="luxe" className="w-full">ถัดไป</Button>
+            <Button onClick={checkGate} variant="luxe" className="w-full">เข้าสู่ระบบ</Button>
+            <button onClick={goStaffStep} className="w-full text-xs text-muted-foreground hover:text-gold underline">
+              เข้าด้วยรหัสพนักงาน (สำหรับทีมงาน)
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
