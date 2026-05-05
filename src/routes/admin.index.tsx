@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 type Cat = { id: string; name: string; sort_order: number };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
