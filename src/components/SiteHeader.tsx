@@ -20,7 +20,19 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
     setUserState(getUser());
     const onAuth = () => setUserState(getUser());
     window.addEventListener("auth-change", onAuth);
-    return () => window.removeEventListener("auth-change", onAuth);
+
+    // ดึงยอดเงินล่าสุดจากฐานข้อมูลทุก 15 วินาที + ตอนกลับมาที่แท็บ
+    const tick = () => { refreshUser(); };
+    tick();
+    const id = setInterval(tick, 15000);
+    const onFocus = () => tick();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("auth-change", onAuth);
+      window.removeEventListener("focus", onFocus);
+      clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
