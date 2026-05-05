@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown } from "lucide-react";
+import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
@@ -147,9 +147,7 @@ function CatalogManager() {
     if (idx < 0 || j < 0 || j >= list.length) return;
     const a = prods.find((p) => p.id === list[idx].id)!;
     const b = prods.find((p) => p.id === list[j].id)!;
-    // ถ้า sort_order เท่ากัน ให้กำหนดใหม่ตามลำดับปัจจุบัน
     if ((a as any).sort_order === undefined || (b as any).sort_order === undefined || (a as any).sort_order === (b as any).sort_order) {
-      // reseed ทั้งหมวด
       Promise.all(list.map((p, i) =>
         supabase.from("products").update({ sort_order: (i + 1) * 10 }).eq("id", p.id),
       )).then(() => load());
@@ -157,6 +155,31 @@ function CatalogManager() {
     }
     swapOrder("products", a as any, b as any);
   }
+
+  // ===== Drag & drop reorder =====
+  async function reorderCats(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const next = [...cats];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setCats(next);
+    await Promise.all(next.map((c, i) =>
+      supabase.from("categories").update({ sort_order: (i + 1) * 10 }).eq("id", c.id),
+    ));
+    load();
+  }
+
+  async function reorderProds(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const list = [...visible];
+    const [moved] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, moved);
+    await Promise.all(list.map((p, i) =>
+      supabase.from("products").update({ sort_order: (i + 1) * 10 }).eq("id", p.id),
+    ));
+    load();
+  }
+
 
   const visible = prods.filter((p) => p.category_id === active);
 
@@ -168,9 +191,21 @@ function CatalogManager() {
           <Input placeholder="ชื่อหมวดใหม่" value={newCat} onChange={(e) => setNewCat(e.target.value)} />
           <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
         </div>
+        <p className="text-[10px] text-muted-foreground">ลากที่ ⋮⋮ เพื่อจัดลำดับ</p>
         <div className="space-y-1 mt-2">
           {cats.map((c, i) => (
-            <div key={c.id} className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}>
+            <div
+              key={c.id}
+              draggable
+              onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const from = Number(e.dataTransfer.getData("text/plain"));
+                if (!isNaN(from)) reorderCats(from, i);
+              }}
+              className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}
+            >
               {editingCat?.id === c.id ? (
                 <>
                   <Input value={editingCat.name} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })} className="h-7" />
@@ -179,6 +214,7 @@ function CatalogManager() {
                 </>
               ) : (
                 <>
+                  <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />
                   <button className="flex-1 text-left" onClick={() => setActive(c.id)}>{c.name}</button>
                   <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
@@ -218,7 +254,19 @@ function CatalogManager() {
                 onSaved={() => { setEditingProd(null); load(); }}
               />
             ) : (
-              <div key={p.id} className="flex items-center gap-2 p-3 border border-border rounded-lg bg-onyx/40">
+              <div
+                key={p.id}
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = Number(e.dataTransfer.getData("text/plain"));
+                  if (!isNaN(from)) reorderProds(from, i);
+                }}
+                className="flex items-center gap-2 p-3 border border-border rounded-lg bg-onyx/40"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
                 <div className="w-12 h-12 rounded bg-onyx flex items-center justify-center overflow-hidden">
                   {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover" /> : <Crown className="w-5 h-5 text-primary/40" />}
                 </div>

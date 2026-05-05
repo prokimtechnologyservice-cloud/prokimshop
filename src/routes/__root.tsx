@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { OverlayLayer } from "@/components/OverlayLayer";
+import { LiveOverlayEditor } from "@/components/LiveOverlayEditor";
 
 import appCss from "../styles.css?url";
 
@@ -74,6 +75,7 @@ function RootComponent() {
     <div className="relative min-h-screen">
       <Outlet />
       <OverlayLayer />
+      <LiveOverlayEditor />
     </div>
   );
 }
