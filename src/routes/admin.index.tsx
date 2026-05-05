@@ -147,9 +147,7 @@ function CatalogManager() {
     if (idx < 0 || j < 0 || j >= list.length) return;
     const a = prods.find((p) => p.id === list[idx].id)!;
     const b = prods.find((p) => p.id === list[j].id)!;
-    // ถ้า sort_order เท่ากัน ให้กำหนดใหม่ตามลำดับปัจจุบัน
     if ((a as any).sort_order === undefined || (b as any).sort_order === undefined || (a as any).sort_order === (b as any).sort_order) {
-      // reseed ทั้งหมวด
       Promise.all(list.map((p, i) =>
         supabase.from("products").update({ sort_order: (i + 1) * 10 }).eq("id", p.id),
       )).then(() => load());
@@ -157,6 +155,31 @@ function CatalogManager() {
     }
     swapOrder("products", a as any, b as any);
   }
+
+  // ===== Drag & drop reorder =====
+  async function reorderCats(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const next = [...cats];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setCats(next);
+    await Promise.all(next.map((c, i) =>
+      supabase.from("categories").update({ sort_order: (i + 1) * 10 }).eq("id", c.id),
+    ));
+    load();
+  }
+
+  async function reorderProds(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const list = [...visible];
+    const [moved] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, moved);
+    await Promise.all(list.map((p, i) =>
+      supabase.from("products").update({ sort_order: (i + 1) * 10 }).eq("id", p.id),
+    ));
+    load();
+  }
+
 
   const visible = prods.filter((p) => p.category_id === active);
 
