@@ -191,9 +191,21 @@ function CatalogManager() {
           <Input placeholder="ชื่อหมวดใหม่" value={newCat} onChange={(e) => setNewCat(e.target.value)} />
           <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
         </div>
+        <p className="text-[10px] text-muted-foreground">ลากที่ ⋮⋮ เพื่อจัดลำดับ</p>
         <div className="space-y-1 mt-2">
           {cats.map((c, i) => (
-            <div key={c.id} className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}>
+            <div
+              key={c.id}
+              draggable
+              onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const from = Number(e.dataTransfer.getData("text/plain"));
+                if (!isNaN(from)) reorderCats(from, i);
+              }}
+              className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}
+            >
               {editingCat?.id === c.id ? (
                 <>
                   <Input value={editingCat.name} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })} className="h-7" />
@@ -202,6 +214,7 @@ function CatalogManager() {
                 </>
               ) : (
                 <>
+                  <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />
                   <button className="flex-1 text-left" onClick={() => setActive(c.id)}>{c.name}</button>
                   <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
