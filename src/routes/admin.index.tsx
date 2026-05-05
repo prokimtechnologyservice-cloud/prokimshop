@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown } from "lucide-react";
+import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
