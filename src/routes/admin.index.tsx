@@ -169,7 +169,7 @@ function CatalogManager() {
           <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
         </div>
         <div className="space-y-1 mt-2">
-          {cats.map((c) => (
+          {cats.map((c, i) => (
             <div key={c.id} className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}>
               {editingCat?.id === c.id ? (
                 <>
@@ -180,6 +180,8 @@ function CatalogManager() {
               ) : (
                 <>
                   <button className="flex-1 text-left" onClick={() => setActive(c.id)}>{c.name}</button>
+                  <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
+                  <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => setEditingCat({ id: c.id, name: c.name })}><Edit className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
                 </>
