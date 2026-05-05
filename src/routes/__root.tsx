@@ -75,6 +75,7 @@ function RootComponent() {
     <div className="relative min-h-screen">
       <Outlet />
       <OverlayLayer />
+      <LiveOverlayEditor />
     </div>
   );
 }
