@@ -128,6 +128,36 @@ function CatalogManager() {
     toast.success("ลบแล้ว"); load();
   }
 
+  async function swapOrder(table: "categories" | "products", a: { id: string; sort_order: number }, b: { id: string; sort_order: number }) {
+    await supabase.from(table).update({ sort_order: b.sort_order }).eq("id", a.id);
+    await supabase.from(table).update({ sort_order: a.sort_order }).eq("id", b.id);
+    load();
+  }
+
+  function moveCat(idx: number, dir: -1 | 1) {
+    const j = idx + dir;
+    if (j < 0 || j >= cats.length) return;
+    swapOrder("categories", cats[idx], cats[j]);
+  }
+
+  function moveProd(prodId: string, dir: -1 | 1) {
+    const list = visible;
+    const idx = list.findIndex((p) => p.id === prodId);
+    const j = idx + dir;
+    if (idx < 0 || j < 0 || j >= list.length) return;
+    const a = prods.find((p) => p.id === list[idx].id)!;
+    const b = prods.find((p) => p.id === list[j].id)!;
+    // ถ้า sort_order เท่ากัน ให้กำหนดใหม่ตามลำดับปัจจุบัน
+    if ((a as any).sort_order === undefined || (b as any).sort_order === undefined || (a as any).sort_order === (b as any).sort_order) {
+      // reseed ทั้งหมวด
+      Promise.all(list.map((p, i) =>
+        supabase.from("products").update({ sort_order: (i + 1) * 10 }).eq("id", p.id),
+      )).then(() => load());
+      return;
+    }
+    swapOrder("products", a as any, b as any);
+  }
+
   const visible = prods.filter((p) => p.category_id === active);
 
   return (
