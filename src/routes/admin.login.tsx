@@ -27,10 +27,23 @@ function AdminLogin() {
 
   function checkGate() {
     if (gateUser.trim() === STAFF_GATE_USERNAME && gatePwd === STAFF_GATE_PASSWORD) {
-      setStep("staff");
+      // auto-login เป็นผู้จัดการหลักทันที แล้วพาไป /admin
+      const { setStaff } = require("@/lib/auth");
+      setStaff({
+        id: "owner-prokim",
+        name: "Prokim",
+        staff_code: "OWNER",
+        role: "manager",
+      });
+      toast.success("เข้าสู่ระบบหลังบ้านสำเร็จ");
+      nav({ to: "/admin" });
     } else {
       toast.error("ข้อมูลไม่ถูกต้อง");
     }
+  }
+
+  function goStaffStep() {
+    setStep("staff");
   }
 
   async function doLogin() {
