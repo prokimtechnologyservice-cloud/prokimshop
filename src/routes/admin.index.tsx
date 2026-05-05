@@ -254,7 +254,19 @@ function CatalogManager() {
                 onSaved={() => { setEditingProd(null); load(); }}
               />
             ) : (
-              <div key={p.id} className="flex items-center gap-2 p-3 border border-border rounded-lg bg-onyx/40">
+              <div
+                key={p.id}
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = Number(e.dataTransfer.getData("text/plain"));
+                  if (!isNaN(from)) reorderProds(from, i);
+                }}
+                className="flex items-center gap-2 p-3 border border-border rounded-lg bg-onyx/40"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
                 <div className="w-12 h-12 rounded bg-onyx flex items-center justify-center overflow-hidden">
                   {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover" /> : <Crown className="w-5 h-5 text-primary/40" />}
                 </div>
