@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Crown, Lock } from "lucide-react";
 import {
   loginStaff,
@@ -25,8 +26,17 @@ function AdminLogin() {
   const [code, setCode] = useState("");
   const [pwd, setPwd] = useState("");
 
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("prokim_gate_passed") === "1") {
+        setStep("staff");
+      }
+    } catch {}
+  }, []);
+
   function checkGate() {
     if (gateUser.trim() === STAFF_GATE_USERNAME && gatePwd === STAFF_GATE_PASSWORD) {
+      try { sessionStorage.setItem("prokim_gate_passed", "1"); } catch {}
       toast.success("ผ่านด่านแรก กรุณายืนยันข้อมูลพนักงาน");
       setStep("staff");
     } else {
@@ -37,6 +47,7 @@ function AdminLogin() {
   async function doLogin() {
     try {
       await loginStaff(name.trim(), code.trim(), pwd);
+      try { sessionStorage.removeItem("prokim_gate_passed"); } catch {}
       toast.success("เข้าสู่ระบบหลังบ้านสำเร็จ");
       nav({ to: "/admin" });
     } catch (e: any) {
@@ -67,7 +78,7 @@ function AdminLogin() {
             </div>
             <div>
               <Label>รหัสผ่าน</Label>
-              <Input type="password" value={gatePwd} onChange={(e) => setGatePwd(e.target.value)} />
+              <PasswordInput value={gatePwd} onChange={(e) => setGatePwd(e.target.value)} />
             </div>
             <Button onClick={checkGate} variant="luxe" className="w-full">ถัดไป</Button>
           </div>
@@ -83,7 +94,7 @@ function AdminLogin() {
             </div>
             <div>
               <Label>รหัสผ่าน</Label>
-              <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} />
+              <PasswordInput value={pwd} onChange={(e) => setPwd(e.target.value)} />
             </div>
             <Button onClick={doLogin} variant="luxe" className="w-full">เข้าสู่ระบบ</Button>
           </div>
