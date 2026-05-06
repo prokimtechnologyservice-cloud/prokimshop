@@ -34,6 +34,10 @@ export function LiveOverlayEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showInspector, setShowInspector] = useState(true);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<"content" | "overlays">("content");
+  const [siteRows, setSiteRows] = useState<SiteContentRow[]>([]);
+  const [siteEdits, setSiteEdits] = useState<Record<string, string>>({});
+  const [siteDirty, setSiteDirty] = useState<Set<string>>(new Set());
 
   // detect manager
   useEffect(() => {
