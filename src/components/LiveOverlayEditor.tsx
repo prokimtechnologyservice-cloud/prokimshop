@@ -50,24 +50,54 @@ export function LiveOverlayEditor() {
     return () => window.removeEventListener("staff-change", check);
   }, []);
 
-  // Load overlays for current page when edit mode enabled or page changes
+  // Load overlays + site_content for current page when edit mode enabled
   useEffect(() => {
     if (!editMode) return;
     (async () => {
-      const { data } = await supabase
-        .from("site_overlays")
-        .select("*")
-        .eq("page", page)
-        .order("z_index");
-      setItems((data as Overlay[]) ?? []);
+      const [{ data: ov }, { data: sc }] = await Promise.all([
+        supabase.from("site_overlays").select("*").eq("page", page).order("z_index"),
+        supabase.from("site_content").select("*").order("key"),
+      ]);
+      setItems((ov as Overlay[]) ?? []);
       setSelectedId(null);
       setDirty(new Set());
+      const rows = (sc as SiteContentRow[]) ?? [];
+      setSiteRows(rows);
+      const m: Record<string, string> = {};
+      rows.forEach((r) => { m[r.key] = r.value ?? ""; });
+      setSiteEdits(m);
+      setSiteDirty(new Set());
     })();
   }, [editMode, page]);
 
   if (isAdminRoute || !staffOk) return null;
 
   const selected = items.find((i) => i.id === selectedId) || null;
+
+  function patchSite(key: string, val: string) {
+    setSiteEdits((m) => ({ ...m, [key]: val }));
+    setSiteDirty((d) => new Set(d).add(key));
+  }
+
+  async function saveSite() {
+    if (siteDirty.size === 0) { toast.info("ไม่มีการเปลี่ยนแปลง"); return; }
+    const updates = Array.from(siteDirty).map((k) => {
+      const r = siteRows.find((x) => x.key === k);
+      return { key: k, value: siteEdits[k] ?? "", type: r?.type ?? "text", label: r?.label ?? k, updated_at: new Date().toISOString() };
+    });
+    const { error } = await supabase.from("site_content").upsert(updates, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    setSiteDirty(new Set());
+    toast.success(`บันทึก ${updates.length} ช่อง — refresh เพื่อดู`);
+  }
+
+  async function uploadSiteImage(key: string, file: File) {
+    const path = `site/${key}-${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file);
+    if (error) return toast.error(error.message);
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    patchSite(key, data.publicUrl);
+  }
 
   function patchLocal(id: string, patch: Partial<Overlay>) {
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
