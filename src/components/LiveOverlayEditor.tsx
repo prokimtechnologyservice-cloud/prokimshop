@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Pencil, Save, Plus, Trash2, Type, Image as ImageIcon,
-  MousePointerClick, Eye, EyeOff, X, Settings,
+  MousePointerClick, Eye, EyeOff, X, Settings, FileText, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type SiteContentRow = { key: string; value: string | null; type: string; label: string | null };
 
 /**
  * LiveOverlayEditor:
@@ -32,6 +34,10 @@ export function LiveOverlayEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showInspector, setShowInspector] = useState(true);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<"content" | "overlays">("content");
+  const [siteRows, setSiteRows] = useState<SiteContentRow[]>([]);
+  const [siteEdits, setSiteEdits] = useState<Record<string, string>>({});
+  const [siteDirty, setSiteDirty] = useState<Set<string>>(new Set());
 
   // detect manager
   useEffect(() => {
@@ -44,24 +50,54 @@ export function LiveOverlayEditor() {
     return () => window.removeEventListener("staff-change", check);
   }, []);
 
-  // Load overlays for current page when edit mode enabled or page changes
+  // Load overlays + site_content for current page when edit mode enabled
   useEffect(() => {
     if (!editMode) return;
     (async () => {
-      const { data } = await supabase
-        .from("site_overlays")
-        .select("*")
-        .eq("page", page)
-        .order("z_index");
-      setItems((data as Overlay[]) ?? []);
+      const [{ data: ov }, { data: sc }] = await Promise.all([
+        supabase.from("site_overlays").select("*").eq("page", page).order("z_index"),
+        supabase.from("site_content").select("*").order("key"),
+      ]);
+      setItems((ov as Overlay[]) ?? []);
       setSelectedId(null);
       setDirty(new Set());
+      const rows = (sc as SiteContentRow[]) ?? [];
+      setSiteRows(rows);
+      const m: Record<string, string> = {};
+      rows.forEach((r) => { m[r.key] = r.value ?? ""; });
+      setSiteEdits(m);
+      setSiteDirty(new Set());
     })();
   }, [editMode, page]);
 
   if (isAdminRoute || !staffOk) return null;
 
   const selected = items.find((i) => i.id === selectedId) || null;
+
+  function patchSite(key: string, val: string) {
+    setSiteEdits((m) => ({ ...m, [key]: val }));
+    setSiteDirty((d) => new Set(d).add(key));
+  }
+
+  async function saveSite() {
+    if (siteDirty.size === 0) { toast.info("ไม่มีการเปลี่ยนแปลง"); return; }
+    const updates = Array.from(siteDirty).map((k) => {
+      const r = siteRows.find((x) => x.key === k);
+      return { key: k, value: siteEdits[k] ?? "", type: r?.type ?? "text", label: r?.label ?? k, updated_at: new Date().toISOString() };
+    });
+    const { error } = await supabase.from("site_content").upsert(updates, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    setSiteDirty(new Set());
+    toast.success(`บันทึก ${updates.length} ช่อง — refresh เพื่อดู`);
+  }
+
+  async function uploadSiteImage(key: string, file: File) {
+    const path = `site/${key}-${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file);
+    if (error) return toast.error(error.message);
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    patchSite(key, data.publicUrl);
+  }
 
   function patchLocal(id: string, patch: Partial<Overlay>) {
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
@@ -248,23 +284,75 @@ export function LiveOverlayEditor() {
 
       {/* Inspector */}
       {showInspector && (
-        <div className="fixed bottom-4 right-4 z-[9999] w-72 max-h-[70vh] overflow-auto bg-onyx/95 backdrop-blur border border-gold/40 rounded-lg shadow-luxe p-3 space-y-2 text-foreground">
-          {!selected ? (
+        <div className="fixed bottom-4 right-4 z-[9999] w-80 max-h-[75vh] overflow-auto bg-onyx/95 backdrop-blur border border-gold/40 rounded-lg shadow-luxe p-3 space-y-2 text-foreground">
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-border pb-2">
+            <button
+              onClick={() => setTab("content")}
+              className={`flex-1 text-xs px-2 py-1 rounded ${tab === "content" ? "bg-gradient-crimson text-gold" : "hover:bg-primary/10"}`}
+            >
+              <FileText className="w-3 h-3 inline mr-1" /> เนื้อหาเดิม ({siteRows.length})
+            </button>
+            <button
+              onClick={() => setTab("overlays")}
+              className={`flex-1 text-xs px-2 py-1 rounded ${tab === "overlays" ? "bg-gradient-crimson text-gold" : "hover:bg-primary/10"}`}
+            >
+              <Plus className="w-3 h-3 inline mr-1" /> วางใหม่ ({items.length})
+            </button>
+          </div>
+
+          {tab === "content" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">แก้ของเดิมในหน้านี้ — ข้อความ/รูป/ปุ่มเปิด-ปิด</p>
+                <Button size="sm" variant="luxe" onClick={saveSite} disabled={siteDirty.size === 0}>
+                  <Save className="w-3 h-3" /> บันทึก{siteDirty.size > 0 ? ` (${siteDirty.size})` : ""}
+                </Button>
+              </div>
+              {siteRows.length === 0 && (
+                <div className="text-xs text-muted-foreground py-4 text-center">ยังไม่มีช่องที่แก้ได้ — เปิดในแท็บ "วางใหม่" เพื่อเพิ่มของลอย</div>
+              )}
+              {siteRows.map((r) => (
+                <div key={r.key} className={`p-2 rounded border ${siteDirty.has(r.key) ? "border-gold/60 bg-gold/5" : "border-border bg-onyx/40"}`}>
+                  <div className="text-[11px] font-medium mb-1">{r.label || r.key} <span className="text-[9px] text-muted-foreground font-mono">· {r.type}</span></div>
+                  {r.type === "boolean" ? (
+                    <select className="w-full bg-input border border-border rounded px-2 py-1 text-xs" value={siteEdits[r.key] ?? "true"} onChange={(e) => patchSite(r.key, e.target.value)}>
+                      <option value="true">เปิด</option><option value="false">ปิด</option>
+                    </select>
+                  ) : r.type === "textarea" ? (
+                    <Textarea rows={2} className="text-xs" value={siteEdits[r.key] ?? ""} onChange={(e) => patchSite(r.key, e.target.value)} />
+                  ) : r.type === "image" ? (
+                    <div className="space-y-1">
+                      <Input className="h-7 text-xs" placeholder="URL รูป" value={siteEdits[r.key] ?? ""} onChange={(e) => patchSite(r.key, e.target.value)} />
+                      <label className="text-[10px] text-gold cursor-pointer hover:underline inline-flex items-center gap-1">
+                        <Upload className="w-3 h-3" /> อัปโหลด
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSiteImage(r.key, f); }} />
+                      </label>
+                      {siteEdits[r.key] && <img src={siteEdits[r.key]} alt="" className="max-h-16 rounded border border-border" />}
+                    </div>
+                  ) : (
+                    <Input className="h-7 text-xs" value={siteEdits[r.key] ?? ""} onChange={(e) => patchSite(r.key, e.target.value)} />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "overlays" && !selected && (
             <div className="text-xs text-muted-foreground">
-              คลิก object เพื่อแก้ไข หรือกดปุ่ม + ด้านบนเพื่อเพิ่ม
-              <div className="mt-2 max-h-40 overflow-auto space-y-1">
+              คลิก object ที่วางไว้ หรือกด + ด้านบนเพื่อเพิ่ม
+              <div className="mt-2 max-h-60 overflow-auto space-y-1">
                 {items.map((o) => (
-                  <button
-                    key={o.id}
-                    onClick={() => setSelectedId(o.id)}
-                    className="w-full text-left text-xs px-2 py-1 rounded hover:bg-primary/10"
-                  >
+                  <button key={o.id} onClick={() => setSelectedId(o.id)} className="w-full text-left text-xs px-2 py-1 rounded hover:bg-primary/10">
                     {o.visible ? "👁" : "🚫"} [{o.kind}] {o.label || o.content?.slice(0, 20) || "(ไม่มีชื่อ)"}
                   </button>
                 ))}
+                {items.length === 0 && <div className="py-4 text-center">ยังไม่มี — กด T / 🖼 / 🖱 ด้านบน</div>}
               </div>
             </div>
-          ) : (
+          )}
+
+          {tab === "overlays" && selected && (
             <>
               <div className="flex items-center justify-between">
                 <div className="text-xs font-mono text-muted-foreground">{selected.kind}</div>
@@ -281,32 +369,18 @@ export function LiveOverlayEditor() {
                 </div>
               </div>
               {selected.kind !== "image" && (
-                <Textarea
-                  rows={2} placeholder="ข้อความ"
-                  value={selected.content || ""}
-                  onChange={(e) => patchLocal(selected.id, { content: e.target.value })}
-                />
+                <Textarea rows={2} placeholder="ข้อความ" value={selected.content || ""} onChange={(e) => patchLocal(selected.id, { content: e.target.value })} />
               )}
               {selected.kind === "image" && (
                 <div className="space-y-1">
-                  <Input
-                    placeholder="URL รูป"
-                    value={selected.image_url || ""}
-                    onChange={(e) => patchLocal(selected.id, { image_url: e.target.value })}
-                  />
+                  <Input placeholder="URL รูป" value={selected.image_url || ""} onChange={(e) => patchLocal(selected.id, { image_url: e.target.value })} />
                   <label className="text-xs text-gold cursor-pointer hover:underline inline-flex items-center gap-1">
                     <ImageIcon className="w-3 h-3" /> อัปโหลด
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                      const f = e.target.files?.[0]; if (f) uploadImage(selected.id, f);
-                    }} />
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(selected.id, f); }} />
                   </label>
                 </div>
               )}
-              <Input
-                placeholder="ลิงก์ (กดแล้วไป)"
-                value={selected.href || ""}
-                onChange={(e) => patchLocal(selected.id, { href: e.target.value })}
-              />
+              <Input placeholder="ลิงก์ (กดแล้วไป)" value={selected.href || ""} onChange={(e) => patchLocal(selected.id, { href: e.target.value })} />
               <div className="grid grid-cols-2 gap-1.5 text-xs">
                 <label>X<Input className="h-7" type="number" value={selected.x} onChange={(e) => patchLocal(selected.id, { x: Number(e.target.value) })} /></label>
                 <label>Y<Input className="h-7" type="number" value={selected.y} onChange={(e) => patchLocal(selected.id, { y: Number(e.target.value) })} /></label>
