@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Pencil, Save, Plus, Trash2, Type, Image as ImageIcon,
-  MousePointerClick, Eye, EyeOff, X, Settings,
+  MousePointerClick, Eye, EyeOff, X, Settings, FileText, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type SiteContentRow = { key: string; value: string | null; type: string; label: string | null };
 
 /**
  * LiveOverlayEditor:
