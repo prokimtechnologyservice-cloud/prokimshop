@@ -492,7 +492,13 @@ export function LiveOverlayEditor() {
               )}
               {siteRows.map((r) => (
                 <div key={r.key} className={`p-2 rounded border ${siteDirty.has(r.key) ? "border-gold/60 bg-gold/5" : "border-border bg-onyx/40"}`}>
-                  <div className="text-[11px] font-medium mb-1">{r.label || r.key} <span className="text-[9px] text-muted-foreground font-mono">· {r.type}</span></div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSiteKey(r.key)}
+                    className={`w-full text-left text-[11px] font-medium mb-1 rounded px-1 ${selectedSiteKey === r.key ? "text-gold bg-gold/10" : ""}`}
+                  >
+                    {r.label || r.key} <span className="text-[9px] text-muted-foreground font-mono">· {r.type}</span>
+                  </button>
                   {r.type === "boolean" ? (
                     <select className="w-full bg-input border border-border rounded px-2 py-1 text-xs" value={siteEdits[r.key] ?? "true"} onChange={(e) => patchSite(r.key, e.target.value)}>
                       <option value="true">เปิด</option><option value="false">ปิด</option>
