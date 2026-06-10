@@ -287,7 +287,8 @@ export function LiveOverlayEditor() {
     pushHistory();
     const def: Overlay = {
       id: crypto.randomUUID(),
-      page, kind,
+      page,
+      kind,
       label: kind === "text" ? "ข้อความใหม่" : kind === "image" ? "รูปใหม่" : "ปุ่มใหม่",
       content: kind === "text" ? "ข้อความใหม่" : kind === "button" ? "คลิกที่นี่" : null,
       image_url: null,
@@ -330,7 +331,10 @@ export function LiveOverlayEditor() {
       return;
     }
     if (deletedIds.size > 0) {
-      const { error } = await supabase.from("site_overlays").delete().in("id", Array.from(deletedIds));
+      const { error } = await supabase
+        .from("site_overlays")
+        .delete()
+        .in("id", Array.from(deletedIds));
       if (error) return toast.error(error.message);
     }
     const ids = Array.from(dirty).filter((id) => !deletedIds.has(id));
@@ -341,9 +345,21 @@ export function LiveOverlayEditor() {
       updates.push({
         id: it.id,
         page: it.page,
-        label: it.label, kind: it.kind, content: it.content, image_url: it.image_url, href: it.href,
-        x: it.x, y: it.y, w: it.w, h: it.h, rotate: it.rotate, font_size: it.font_size,
-        color: it.color, bg: it.bg, z_index: it.z_index, visible: it.visible,
+        label: it.label,
+        kind: it.kind,
+        content: it.content,
+        image_url: it.image_url,
+        href: it.href,
+        x: it.x,
+        y: it.y,
+        w: it.w,
+        h: it.h,
+        rotate: it.rotate,
+        font_size: it.font_size,
+        color: it.color,
+        bg: it.bg,
+        z_index: it.z_index,
+        visible: it.visible,
         updated_at: new Date().toISOString(),
       });
     }
