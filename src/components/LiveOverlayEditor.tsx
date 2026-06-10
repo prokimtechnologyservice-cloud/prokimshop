@@ -197,6 +197,7 @@ export function LiveOverlayEditor() {
   }
 
   async function addItem(kind: "text" | "image" | "button") {
+    pushHistory();
     const def: any = {
       page, kind,
       label: kind === "text" ? "ข้อความใหม่" : kind === "image" ? "รูปใหม่" : "ปุ่มใหม่",
@@ -216,8 +217,9 @@ export function LiveOverlayEditor() {
   }
 
   async function removeItem(id: string) {
-    if (!confirm("ลบ object นี้?")) return;
-    await supabase.from("site_overlays").delete().eq("id", id);
+    if (!confirm("ลบ object นี้? กดบันทึกเพื่อยืนยัน หรืดย้อนกลับเพื่อยกเลิก")) return;
+    pushHistory();
+    setDeletedIds((d) => new Set(d).add(id));
     setItems((arr) => arr.filter((i) => i.id !== id));
     if (selectedId === id) setSelectedId(null);
   }
@@ -231,9 +233,13 @@ export function LiveOverlayEditor() {
   }
 
   async function saveAll() {
-    if (dirty.size === 0) {
+    if (dirty.size === 0 && deletedIds.size === 0) {
       toast.info("ไม่มีการเปลี่ยนแปลง");
       return;
+    }
+    if (deletedIds.size > 0) {
+      const { error } = await supabase.from("site_overlays").delete().in("id", Array.from(deletedIds));
+      if (error) return toast.error(error.message);
     }
     const ids = Array.from(dirty);
     for (const id of ids) {
@@ -247,7 +253,9 @@ export function LiveOverlayEditor() {
       }).eq("id", id);
     }
     setDirty(new Set());
-    toast.success(`บันทึก ${ids.length} รายการ — ผู้ใช้ refresh จะเห็น`);
+    setDeletedIds(new Set());
+    setLoadedSnapshot(snapshot());
+    toast.success(`บันทึก ${ids.length + deletedIds.size} รายการแล้ว`);
   }
 
   // Drag/Resize/Rotate using viewport coordinates
