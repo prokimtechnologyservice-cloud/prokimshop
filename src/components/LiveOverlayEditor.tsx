@@ -97,6 +97,54 @@ export function LiveOverlayEditor() {
 
   const selected = items.find((i) => i.id === selectedId) || null;
 
+  function snapshot(): EditorSnapshot {
+    return {
+      items: items.map((i) => ({ ...i })),
+      siteEdits: { ...siteEdits },
+      dirty: Array.from(dirty),
+      siteDirty: Array.from(siteDirty),
+      deletedIds: Array.from(deletedIds),
+    };
+  }
+
+  function restoreSnapshot(s: EditorSnapshot) {
+    setItems(s.items.map((i) => ({ ...i })));
+    setSiteEdits({ ...s.siteEdits });
+    setDirty(new Set(s.dirty));
+    setSiteDirty(new Set(s.siteDirty));
+    setDeletedIds(new Set(s.deletedIds));
+    setSelectedId(null);
+  }
+
+  function pushHistory() {
+    setUndoStack((stack) => [...stack.slice(-24), snapshot()]);
+    setRedoStack([]);
+  }
+
+  function undo() {
+    const prev = undoStack.at(-1);
+    if (!prev) return toast.info("ยังไม่มีย้อนกลับ");
+    setRedoStack((stack) => [...stack.slice(-24), snapshot()]);
+    setUndoStack((stack) => stack.slice(0, -1));
+    restoreSnapshot(prev);
+  }
+
+  function redo() {
+    const next = redoStack.at(-1);
+    if (!next) return toast.info("ยังไม่มีทำซ้ำ");
+    setUndoStack((stack) => [...stack.slice(-24), snapshot()]);
+    setRedoStack((stack) => stack.slice(0, -1));
+    restoreSnapshot(next);
+  }
+
+  function discardChanges() {
+    if ((dirty.size > 0 || siteDirty.size > 0 || deletedIds.size > 0) && !confirm("ยกเลิกการแก้ไขที่ยังไม่ได้บันทึก?")) return;
+    if (loadedSnapshot) restoreSnapshot(loadedSnapshot);
+    setUndoStack([]);
+    setRedoStack([]);
+    setEditMode(false);
+  }
+
   function patchSite(key: string, val: string) {
     setSiteEdits((m) => ({ ...m, [key]: val }));
     setSiteDirty((d) => new Set(d).add(key));
