@@ -21,6 +21,7 @@ type EditorSnapshot = {
   siteDirty: string[];
   deletedIds: string[];
 };
+type ContentTarget = { key: string; label: string; x: number; y: number; w: number; h: number };
 
 const DEFAULT_SITE_ROWS: SiteContentRow[] = [
   { key: "site_brand", value: "PROKIM", type: "text", label: "ชื่อโลโก้ด้านบน" },
@@ -61,6 +62,8 @@ export function LiveOverlayEditor() {
   const [undoStack, setUndoStack] = useState<EditorSnapshot[]>([]);
   const [redoStack, setRedoStack] = useState<EditorSnapshot[]>([]);
   const [loadedSnapshot, setLoadedSnapshot] = useState<EditorSnapshot | null>(null);
+  const [selectedSiteKey, setSelectedSiteKey] = useState<string | null>(null);
+  const [contentTargets, setContentTargets] = useState<ContentTarget[]>([]);
 
   // detect manager
   useEffect(() => {
