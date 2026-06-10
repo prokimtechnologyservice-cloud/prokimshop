@@ -44,7 +44,10 @@ export async function signupUser(username: string, password: string, roblox_name
   setStaff(null);
   const password_hash = await hashPwd(password);
   const { data: existing } = await supabase
-    .from("profiles").select("id").eq("username", username).maybeSingle();
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
   if (existing) throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว");
 
   const { data, error } = await supabase
