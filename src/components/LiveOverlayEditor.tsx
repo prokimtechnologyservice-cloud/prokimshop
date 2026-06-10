@@ -274,6 +274,7 @@ export function LiveOverlayEditor() {
     e.preventDefault();
     const it = items.find((i) => i.id === id);
     if (!it) return;
+    pushHistory();
     setSelectedId(id);
     const startX = e.clientX, startY = e.clientY;
     const startVals = { x: it.x, y: it.y, w: it.w, h: it.h, rotate: it.rotate };
@@ -283,16 +284,16 @@ export function LiveOverlayEditor() {
     function onMove(ev: PointerEvent) {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
       if (mode === "move") {
-        patchLocal(id, { x: Math.max(0, startVals.x + dx), y: Math.max(0, startVals.y + dy) });
+        patchLocal(id, { x: Math.max(0, startVals.x + dx), y: Math.max(0, startVals.y + dy) }, false);
       } else if (mode === "resize") {
         patchLocal(id, {
           w: Math.max(20, startVals.w + dx),
           h: Math.max(20, startVals.h + dy),
-        });
+        }, false);
       } else {
         const a = Math.atan2(ev.clientY - cy, ev.clientX - cx);
         const deg = ((a - startAngle) * 180) / Math.PI;
-        patchLocal(id, { rotate: Math.round(startVals.rotate + deg) });
+        patchLocal(id, { rotate: Math.round(startVals.rotate + deg) }, false);
       }
     }
     function onUp() {
