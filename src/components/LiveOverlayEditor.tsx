@@ -370,7 +370,7 @@ export function LiveOverlayEditor() {
       </div>
 
       {/* Toolbar */}
-      <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-1 px-2 py-1.5 rounded-full bg-onyx/95 backdrop-blur border border-gold/40 shadow-luxe">
+      <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[9999] flex max-w-[calc(100vw-1rem)] items-center gap-1 overflow-x-auto px-2 py-1.5 rounded-xl bg-onyx/95 backdrop-blur border border-gold/40 shadow-luxe">
         <span className="px-2 text-xs text-gold font-medium hidden sm:inline">EDIT · {page}</span>
         <Button size="sm" variant="ghost" onClick={() => addItem("text")} title="เพิ่มข้อความ">
           <Type className="w-4 h-4" />
@@ -382,16 +382,36 @@ export function LiveOverlayEditor() {
           <MousePointerClick className="w-4 h-4" />
         </Button>
         <div className="w-px h-5 bg-border mx-1" />
+        <Button size="sm" variant="ghost" onClick={undo} disabled={undoStack.length === 0} title="ย้อนกลับ">
+          <Undo2 className="w-4 h-4" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={redo} disabled={redoStack.length === 0} title="ยกเลิกย้อนกลับ">
+          <Redo2 className="w-4 h-4" />
+        </Button>
+        {selected && (
+          <Button size="sm" variant="ghost" onClick={() => removeItem(selected.id)} title="ลบวัตถุที่เลือก">
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </Button>
+        )}
+        <div className="w-px h-5 bg-border mx-1" />
         <Button size="sm" variant="ghost" onClick={() => setShowInspector((v) => !v)} title="แผง edit">
           <Settings className="w-4 h-4" />
         </Button>
         <Button size="sm" variant="luxe" onClick={saveAll} title="บันทึก">
-          <Save className="w-4 h-4" /> {dirty.size > 0 && <span className="text-xs">({dirty.size})</span>}
+          <Save className="w-4 h-4" /> {(dirty.size + deletedIds.size) > 0 && <span className="text-xs">({dirty.size + deletedIds.size})</span>}
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setEditMode(false)} title="ปิด">
-          <X className="w-4 h-4" />
+        <Button size="sm" variant="ghost" onClick={discardChanges} title="ยกเลิกและปิด">
+          <RotateCcw className="w-4 h-4" />
         </Button>
       </div>
+
+      <button
+        onClick={discardChanges}
+        className="fixed bottom-4 left-4 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full bg-onyx/95 text-gold border border-gold/40 shadow-luxe text-sm font-medium"
+        title="ปิดโหมดแก้ไข"
+      >
+        <X className="w-4 h-4" /> ปิด Edit Mode
+      </button>
 
       {/* Inspector */}
       {showInspector && (
