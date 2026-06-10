@@ -136,7 +136,7 @@ export function LiveOverlayEditor() {
   }
 
   function undo() {
-    const prev = undoStack.at(-1);
+    const prev = undoStack[undoStack.length - 1];
     if (!prev) return toast.info("ยังไม่มีย้อนกลับ");
     setRedoStack((stack) => [...stack.slice(-24), snapshot()]);
     setUndoStack((stack) => stack.slice(0, -1));
@@ -144,7 +144,7 @@ export function LiveOverlayEditor() {
   }
 
   function redo() {
-    const next = redoStack.at(-1);
+    const next = redoStack[redoStack.length - 1];
     if (!next) return toast.info("ยังไม่มีทำซ้ำ");
     setUndoStack((stack) => [...stack.slice(-24), snapshot()]);
     setRedoStack((stack) => stack.slice(0, -1));
