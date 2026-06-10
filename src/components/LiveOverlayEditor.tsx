@@ -130,7 +130,9 @@ export function LiveOverlayEditor() {
       const rows = Array.from(rowsByKey.values());
       setSiteRows(rows);
       const m: Record<string, string> = {};
-      rows.forEach((r) => { m[r.key] = r.value ?? ""; });
+      rows.forEach((r) => {
+        m[r.key] = r.value ?? "";
+      });
       setSiteEdits(m);
       setSiteDirty(new Set());
       setUndoStack([]);
@@ -188,7 +190,12 @@ export function LiveOverlayEditor() {
   }
 
   function discardChanges() {
-    if ((dirty.size > 0 || siteDirty.size > 0 || deletedIds.size > 0) && !confirm("ยกเลิกการแก้ไขที่ยังไม่ได้บันทึก?")) return;
+    if (
+      (dirty.size > 0 || siteDirty.size > 0 || deletedIds.size > 0) &&
+      !confirm("ยกเลิกการแก้ไขที่ยังไม่ได้บันทึก?")
+    ) {
+      return;
+    }
     if (loadedSnapshot) restoreSnapshot(loadedSnapshot);
     setUndoStack([]);
     setRedoStack([]);
@@ -212,12 +219,21 @@ export function LiveOverlayEditor() {
       return;
     }
     function collectTargets() {
-      const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-site-key]")).map((el) => {
-        const key = el.dataset.siteKey || "";
-        const rect = el.getBoundingClientRect();
-        const row = siteRows.find((r) => r.key === key);
-        return { key, label: row?.label || key, x: rect.left, y: rect.top, w: rect.width, h: rect.height };
-      }).filter((t) => t.key && t.w > 0 && t.h > 0);
+      const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-site-key]"))
+        .map((el) => {
+          const key = el.dataset.siteKey || "";
+          const rect = el.getBoundingClientRect();
+          const row = siteRows.find((r) => r.key === key);
+          return {
+            key,
+            label: row?.label || key,
+            x: rect.left,
+            y: rect.top,
+            w: rect.width,
+            h: rect.height,
+          };
+        })
+        .filter((t) => t.key && t.w > 0 && t.h > 0);
       setContentTargets(rows);
     }
     collectTargets();
