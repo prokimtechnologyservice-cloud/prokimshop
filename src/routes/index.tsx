@@ -38,6 +38,7 @@ type Product = {
   description: string | null;
   image_url: string | null;
 };
+type ProductRow = Product & { price: number | string };
 
 function Index() {
   const [cats, setCats] = useState<Category[]>([]);
@@ -57,7 +58,7 @@ function Index() {
         supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
       ]);
       setCats((c as Category[]) ?? []);
-      setProducts(((p as any[]) ?? []).map((x) => ({ ...x, price: Number(x.price) })));
+      setProducts(((p as ProductRow[]) ?? []).map((x) => ({ ...x, price: Number(x.price) })));
       if (c && c.length > 0) setActive(c[0].id);
       if (s) {
         setSiteOpen(s.is_open);
