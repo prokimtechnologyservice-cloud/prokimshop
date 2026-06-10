@@ -106,8 +106,6 @@ export function LiveOverlayEditor() {
     })();
   }, [editMode, page]);
 
-  if (isAdminRoute || !staffOk) return null;
-
   const selected = items.find((i) => i.id === selectedId) || null;
 
   function snapshot(): EditorSnapshot {
@@ -168,6 +166,8 @@ export function LiveOverlayEditor() {
     if (!editMode) return;
     window.dispatchEvent(new CustomEvent("site-content-preview", { detail: siteEdits }));
   }, [editMode, siteEdits]);
+
+  if (isAdminRoute || !staffOk) return null;
 
   async function saveSite() {
     if (siteDirty.size === 0) { toast.info("ไม่มีการเปลี่ยนแปลง"); return; }
