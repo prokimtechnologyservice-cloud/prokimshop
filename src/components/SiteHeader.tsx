@@ -73,8 +73,8 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
               <Crown className="w-5 h-5 text-gold" />
             </div>
             <div className="leading-none">
-              <div className="font-display text-xl font-bold text-gradient-gold">{sc(content, "site_brand", "PROKIM")}</div>
-              <div className="text-[10px] tracking-[0.3em] text-muted-foreground">{sc(content, "site_tagline", "LUXE STORE")}</div>
+              <div data-site-key="site_brand" className="font-display text-xl font-bold text-gradient-gold">{sc(content, "site_brand", "PROKIM")}</div>
+              <div data-site-key="site_tagline" className="text-[10px] tracking-[0.3em] text-muted-foreground">{sc(content, "site_tagline", "LUXE STORE")}</div>
             </div>
           </Link>
         </div>

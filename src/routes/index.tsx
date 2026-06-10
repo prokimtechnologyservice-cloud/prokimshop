@@ -93,16 +93,16 @@ function Index() {
           backgroundImage: "radial-gradient(circle at 20% 50%, oklch(0.55 0.20 18 / 0.6), transparent 40%), radial-gradient(circle at 80% 30%, oklch(0.78 0.13 85 / 0.3), transparent 40%)",
         }} />
         {sc(content, "banner_url") && (
-          <img src={sc(content, "banner_url")} alt="banner" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+          <img data-site-key="banner_url" src={sc(content, "banner_url")} alt="banner" className="absolute inset-0 w-full h-full object-cover opacity-30" />
         )}
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-24 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-6">
+          <div data-site-key="hero_badge" className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-6">
             <Sparkles className="w-3.5 h-3.5" /> {sc(content, "hero_badge", "LUXURY GAMING STORE")}
           </div>
-          <h1 className="font-display text-5xl sm:text-7xl font-bold mb-4">
+          <h1 data-site-key="hero_title" className="font-display text-5xl sm:text-7xl font-bold mb-4">
             <span className="text-gradient-gold">{sc(content, "hero_title", "PROKIM")}</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto whitespace-pre-wrap">
+          <p data-site-key="hero_subtitle" className="text-lg text-muted-foreground max-w-xl mx-auto whitespace-pre-wrap">
             {sc(content, "hero_subtitle", "ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย")}
           </p>
         </div>
@@ -201,7 +201,7 @@ function Index() {
         </DialogContent>
       </Dialog>
 
-      <footer className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap">
+      <footer data-site-key="footer_text" className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap">
         {sc(content, "footer_text", `© ${new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion`)}
       </footer>
     </div>
