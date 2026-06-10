@@ -198,10 +198,13 @@ export function LiveOverlayEditor() {
 
   async function addItem(kind: "text" | "image" | "button") {
     pushHistory();
-    const def: any = {
+    const def: Overlay = {
+      id: crypto.randomUUID(),
       page, kind,
       label: kind === "text" ? "ข้อความใหม่" : kind === "image" ? "รูปใหม่" : "ปุ่มใหม่",
       content: kind === "text" ? "ข้อความใหม่" : kind === "button" ? "คลิกที่นี่" : null,
+      image_url: null,
+      href: null,
       x: 40, y: 80,
       w: kind === "image" ? 200 : 200,
       h: kind === "image" ? 150 : 50,
@@ -209,10 +212,10 @@ export function LiveOverlayEditor() {
       bg: kind === "button" ? "#dc2626" : null,
       color: kind === "button" ? "#ffffff" : null,
     };
-    const { data, error } = await supabase.from("site_overlays").insert(def).select().single();
-    if (error) return toast.error(error.message);
-    setItems((arr) => [...arr, data as Overlay]);
-    setSelectedId((data as Overlay).id);
+    setItems((arr) => [...arr, def]);
+    setDirty((d) => new Set(d).add(def.id));
+    setSelectedId(def.id);
+    setTab("overlays");
     toast.success("เพิ่มแล้ว — ลากย้ายได้เลย");
   }
 
