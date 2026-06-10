@@ -244,16 +244,23 @@ export function LiveOverlayEditor() {
       const { error } = await supabase.from("site_overlays").delete().in("id", Array.from(deletedIds));
       if (error) return toast.error(error.message);
     }
-    const ids = Array.from(dirty);
+    const ids = Array.from(dirty).filter((id) => !deletedIds.has(id));
+    const updates = [];
     for (const id of ids) {
       const it = items.find((i) => i.id === id);
       if (!it) continue;
-      await supabase.from("site_overlays").update({
+      updates.push({
+        id: it.id,
+        page: it.page,
         label: it.label, kind: it.kind, content: it.content, image_url: it.image_url, href: it.href,
         x: it.x, y: it.y, w: it.w, h: it.h, rotate: it.rotate, font_size: it.font_size,
         color: it.color, bg: it.bg, z_index: it.z_index, visible: it.visible,
         updated_at: new Date().toISOString(),
-      }).eq("id", id);
+      });
+    }
+    if (updates.length > 0) {
+      const { error } = await supabase.from("site_overlays").upsert(updates, { onConflict: "id" });
+      if (error) return toast.error(error.message);
     }
     setDirty(new Set());
     setDeletedIds(new Set());
