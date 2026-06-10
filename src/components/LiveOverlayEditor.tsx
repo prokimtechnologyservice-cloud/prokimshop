@@ -170,6 +170,29 @@ export function LiveOverlayEditor() {
     window.dispatchEvent(new CustomEvent("site-content-preview", { detail: siteEdits }));
   }, [editMode, siteEdits]);
 
+  useEffect(() => {
+    if (!editMode) {
+      setContentTargets([]);
+      return;
+    }
+    function collectTargets() {
+      const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-site-key]")).map((el) => {
+        const key = el.dataset.siteKey || "";
+        const rect = el.getBoundingClientRect();
+        const row = siteRows.find((r) => r.key === key);
+        return { key, label: row?.label || key, x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+      }).filter((t) => t.key && t.w > 0 && t.h > 0);
+      setContentTargets(rows);
+    }
+    collectTargets();
+    window.addEventListener("resize", collectTargets);
+    window.addEventListener("scroll", collectTargets, true);
+    return () => {
+      window.removeEventListener("resize", collectTargets);
+      window.removeEventListener("scroll", collectTargets, true);
+    };
+  }, [editMode, siteRows, siteEdits]);
+
   if (isAdminRoute || !staffOk) return null;
 
   async function saveSite() {
