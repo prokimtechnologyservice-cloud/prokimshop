@@ -7,13 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Pencil, Save, Plus, Trash2, Type, Image as ImageIcon,
-  MousePointerClick, Eye, EyeOff, X, Settings, FileText, Upload,
-  Undo2, Redo2, RotateCcw,
+  Pencil,
+  Save,
+  Plus,
+  Trash2,
+  Type,
+  Image as ImageIcon,
+  MousePointerClick,
+  Eye,
+  EyeOff,
+  X,
+  Settings,
+  FileText,
+  Upload,
+  Undo2,
+  Redo2,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type SiteContentRow = { key: string; value: string | null; type: string; label: string | null };
+type SiteContentRow = {
+  key: string;
+  value: string | null;
+  type: string;
+  label: string | null;
+};
 type EditorSnapshot = {
   items: Overlay[];
   siteEdits: Record<string, string>;
@@ -21,7 +39,14 @@ type EditorSnapshot = {
   siteDirty: string[];
   deletedIds: string[];
 };
-type ContentTarget = { key: string; label: string; x: number; y: number; w: number; h: number };
+type ContentTarget = {
+  key: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
 
 const DEFAULT_SITE_ROWS: SiteContentRow[] = [
   { key: "site_brand", value: "PROKIM", type: "text", label: "ชื่อโลโก้ด้านบน" },
@@ -29,9 +54,20 @@ const DEFAULT_SITE_ROWS: SiteContentRow[] = [
   { key: "show_hero", value: "true", type: "boolean", label: "แสดงส่วนหัวหน้าแรก" },
   { key: "hero_badge", value: "LUXURY GAMING STORE", type: "text", label: "ป้ายเล็กเหนือหัวข้อ" },
   { key: "hero_title", value: "PROKIM", type: "text", label: "หัวข้อใหญ่หน้าแรก" },
-  { key: "hero_subtitle", value: "ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย", type: "textarea", label: "คำอธิบายหน้าแรก" },
+  {
+    key: "hero_subtitle",
+    value:
+      "ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย",
+    type: "textarea",
+    label: "คำอธิบายหน้าแรก",
+  },
   { key: "banner_url", value: "", type: "image", label: "รูปพื้นหลังหน้าแรก" },
-  { key: "footer_text", value: "© 2026 PROKIM Luxe Store · Crafted with passion", type: "textarea", label: "ข้อความท้ายเว็บ" },
+  {
+    key: "footer_text",
+    value: "© 2026 PROKIM Luxe Store · Crafted with passion",
+    type: "textarea",
+    label: "ข้อความท้ายเว็บ",
+  },
 ];
 
 /**
