@@ -97,7 +97,7 @@ function Index() {
         )}
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-24 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-6">
-            <Sparkles className="w-3.5 h-3.5" /> LUXURY GAMING STORE
+            <Sparkles className="w-3.5 h-3.5" /> {sc(content, "hero_badge", "LUXURY GAMING STORE")}
           </div>
           <h1 className="font-display text-5xl sm:text-7xl font-bold mb-4">
             <span className="text-gradient-gold">{sc(content, "hero_title", "PROKIM")}</span>

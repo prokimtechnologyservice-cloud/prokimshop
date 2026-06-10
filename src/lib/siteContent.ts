@@ -22,6 +22,14 @@ export function useSiteContent() {
       setMap(m);
       setLoaded(true);
     })();
+
+    function onPreview(e: Event) {
+      const next = (e as CustomEvent<Record<string, string>>).detail;
+      if (next) setMap((current) => ({ ...current, ...next }));
+    }
+
+    window.addEventListener("site-content-preview", onPreview);
+    return () => window.removeEventListener("site-content-preview", onPreview);
   }, []);
 
   return { content: map, loaded };
