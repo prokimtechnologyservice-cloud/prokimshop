@@ -248,15 +248,24 @@ export function LiveOverlayEditor() {
   if (isAdminRoute || !staffOk) return null;
 
   async function saveSite() {
-    if (siteDirty.size === 0) { toast.info("ไม่มีการเปลี่ยนแปลง"); return; }
+    if (siteDirty.size === 0) {
+      toast.info("ไม่มีการเปลี่ยนแปลง");
+      return;
+    }
     const updates = Array.from(siteDirty).map((k) => {
       const r = siteRows.find((x) => x.key === k);
-      return { key: k, value: siteEdits[k] ?? "", type: r?.type ?? "text", label: r?.label ?? k, updated_at: new Date().toISOString() };
+      return {
+        key: k,
+        value: siteEdits[k] ?? "",
+        type: r?.type ?? "text",
+        label: r?.label ?? k,
+        updated_at: new Date().toISOString(),
+      };
     });
     const { error } = await supabase.from("site_content").upsert(updates, { onConflict: "key" });
     if (error) return toast.error(error.message);
     setSiteDirty(new Set());
-    setLoadedSnapshot((s) => s ? { ...s, siteEdits: { ...siteEdits }, siteDirty: [] } : s);
+    setLoadedSnapshot((s) => (s ? { ...s, siteEdits: { ...siteEdits }, siteDirty: [] } : s));
     toast.success(`บันทึก ${updates.length} ช่องแล้ว`);
   }
 
@@ -298,7 +307,9 @@ export function LiveOverlayEditor() {
   }
 
   async function removeItem(id: string) {
-    if (!confirm("ลบ object นี้? กดบันทึกเพื่อยืนยัน หรือย้อนกลับเพื่อยกเลิก")) return;
+    if (!confirm("ลบ object นี้? กดบันทึกเพื่อยืนยัน หรือย้อนกลับเพื่อยกเลิก")) {
+      return;
+    }
     pushHistory();
     setDeletedIds((d) => new Set(d).add(id));
     setItems((arr) => arr.filter((i) => i.id !== id));
