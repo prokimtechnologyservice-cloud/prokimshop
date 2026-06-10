@@ -220,7 +220,7 @@ export function LiveOverlayEditor() {
   }
 
   async function removeItem(id: string) {
-    if (!confirm("ลบ object นี้? กดบันทึกเพื่อยืนยัน หรืดย้อนกลับเพื่อยกเลิก")) return;
+    if (!confirm("ลบ object นี้? กดบันทึกเพื่อยืนยัน หรือย้อนกลับเพื่อยกเลิก")) return;
     pushHistory();
     setDeletedIds((d) => new Set(d).add(id));
     setItems((arr) => arr.filter((i) => i.id !== id));
@@ -264,7 +264,13 @@ export function LiveOverlayEditor() {
     }
     setDirty(new Set());
     setDeletedIds(new Set());
-    setLoadedSnapshot(snapshot());
+    setLoadedSnapshot({
+      items: items.map((i) => ({ ...i })),
+      siteEdits: { ...siteEdits },
+      dirty: [],
+      siteDirty: Array.from(siteDirty),
+      deletedIds: [],
+    });
     toast.success(`บันทึก ${ids.length + deletedIds.size} รายการแล้ว`);
   }
 
