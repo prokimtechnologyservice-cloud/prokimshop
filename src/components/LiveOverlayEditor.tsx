@@ -353,6 +353,21 @@ export function LiveOverlayEditor() {
     <>
       {/* Edit overlay layer — covers viewport, captures pointer events */}
       <div className="fixed inset-0 z-[9998] pointer-events-none">
+        {contentTargets.map((target) => (
+          <button
+            key={target.key}
+            onClick={() => { setSelectedSiteKey(target.key); setTab("content"); setShowInspector(true); }}
+            className={`absolute pointer-events-auto outline outline-1 outline-dashed transition ${
+              selectedSiteKey === target.key ? "outline-gold bg-gold/10" : "outline-primary/70 hover:bg-primary/10"
+            }`}
+            style={{ left: target.x, top: target.y, width: target.w, height: target.h }}
+            title={`แก้ ${target.label}`}
+          >
+            <span className="absolute -top-5 left-0 rounded bg-onyx/95 px-1.5 py-0.5 text-[10px] text-gold border border-gold/30">
+              {target.label}
+            </span>
+          </button>
+        ))}
         {items.map((o) => {
           const sel = o.id === selectedId;
           return (
