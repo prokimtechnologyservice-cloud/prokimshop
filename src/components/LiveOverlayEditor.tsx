@@ -159,9 +159,15 @@ export function LiveOverlayEditor() {
   }
 
   function patchSite(key: string, val: string) {
+    pushHistory();
     setSiteEdits((m) => ({ ...m, [key]: val }));
     setSiteDirty((d) => new Set(d).add(key));
   }
+
+  useEffect(() => {
+    if (!editMode) return;
+    window.dispatchEvent(new CustomEvent("site-content-preview", { detail: siteEdits }));
+  }, [editMode, siteEdits]);
 
   async function saveSite() {
     if (siteDirty.size === 0) { toast.info("ไม่มีการเปลี่ยนแปลง"); return; }
@@ -172,7 +178,8 @@ export function LiveOverlayEditor() {
     const { error } = await supabase.from("site_content").upsert(updates, { onConflict: "key" });
     if (error) return toast.error(error.message);
     setSiteDirty(new Set());
-    toast.success(`บันทึก ${updates.length} ช่อง — refresh เพื่อดู`);
+    setLoadedSnapshot((s) => s ? { ...s, siteEdits: { ...siteEdits }, siteDirty: [] } : s);
+    toast.success(`บันทึก ${updates.length} ช่องแล้ว`);
   }
 
   async function uploadSiteImage(key: string, file: File) {
@@ -183,7 +190,8 @@ export function LiveOverlayEditor() {
     patchSite(key, data.publicUrl);
   }
 
-  function patchLocal(id: string, patch: Partial<Overlay>) {
+  function patchLocal(id: string, patch: Partial<Overlay>, recordHistory = true) {
+    if (recordHistory) pushHistory();
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
     setDirty((d) => new Set(d).add(id));
   }
