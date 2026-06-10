@@ -5,7 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
 import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Crown, ShoppingCart, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
@@ -14,7 +20,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
-      { name: "description", content: "ซื้อ Robux, Blox Fruits, Brookhaven และไอเทม 99 คืนในป่า ในที่เดียว" },
+      {
+        name: "description",
+        content: "ซื้อ Robux, Blox Fruits, Brookhaven และไอเทม 99 คืนในป่า ในที่เดียว",
+      },
     ],
   }),
   component: Index,
@@ -22,9 +31,14 @@ export const Route = createFileRoute("/")({
 
 type Category = { id: string; name: string; sort_order: number };
 type Product = {
-  id: string; category_id: string; name: string; price: number;
-  description: string | null; image_url: string | null;
+  id: string;
+  category_id: string;
+  name: string;
+  price: number;
+  description: string | null;
+  image_url: string | null;
 };
+type ProductRow = Product & { price: number | string };
 
 function Index() {
   const [cats, setCats] = useState<Category[]>([]);
@@ -44,7 +58,7 @@ function Index() {
         supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
       ]);
       setCats((c as Category[]) ?? []);
-      setProducts(((p as any[]) ?? []).map((x) => ({ ...x, price: Number(x.price) })));
+      setProducts(((p as ProductRow[]) ?? []).map((x) => ({ ...x, price: Number(x.price) })));
       if (c && c.length > 0) setActive(c[0].id);
       if (s) {
         setSiteOpen(s.is_open);
@@ -58,7 +72,10 @@ function Index() {
 
   function handleSelectCategory(id: string) {
     if (id !== "__all__") setActive(id);
-    setTimeout(() => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    setTimeout(
+      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
   }
 
   async function handleAdd(p: Product) {
@@ -88,25 +105,48 @@ function Index() {
 
       {/* Hero */}
       {scBool(content, "show_hero", true) && (
-      <section className="relative bg-gradient-hero overflow-hidden">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: "radial-gradient(circle at 20% 50%, oklch(0.55 0.20 18 / 0.6), transparent 40%), radial-gradient(circle at 80% 30%, oklch(0.78 0.13 85 / 0.3), transparent 40%)",
-        }} />
-        {sc(content, "banner_url") && (
-          <img src={sc(content, "banner_url")} alt="banner" className="absolute inset-0 w-full h-full object-cover opacity-30" />
-        )}
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-24 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-6">
-            <Sparkles className="w-3.5 h-3.5" /> LUXURY GAMING STORE
+        <section className="relative bg-gradient-hero overflow-hidden">
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 50%, oklch(0.55 0.20 18 / 0.6), transparent 40%), radial-gradient(circle at 80% 30%, oklch(0.78 0.13 85 / 0.3), transparent 40%)",
+            }}
+          />
+          {sc(content, "banner_url") && (
+            <img
+              data-site-key="banner_url"
+              src={sc(content, "banner_url")}
+              alt="banner"
+              className="absolute inset-0 w-full h-full object-cover opacity-30"
+            />
+          )}
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-24 text-center">
+            <div
+              data-site-key="hero_badge"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-6"
+            >
+              <Sparkles className="w-3.5 h-3.5" />{" "}
+              {sc(content, "hero_badge", "LUXURY GAMING STORE")}
+            </div>
+            <h1
+              data-site-key="hero_title"
+              className="font-display text-5xl sm:text-7xl font-bold mb-4"
+            >
+              <span className="text-gradient-gold">{sc(content, "hero_title", "PROKIM")}</span>
+            </h1>
+            <p
+              data-site-key="hero_subtitle"
+              className="text-lg text-muted-foreground max-w-xl mx-auto whitespace-pre-wrap"
+            >
+              {sc(
+                content,
+                "hero_subtitle",
+                "ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย",
+              )}
+            </p>
           </div>
-          <h1 className="font-display text-5xl sm:text-7xl font-bold mb-4">
-            <span className="text-gradient-gold">{sc(content, "hero_title", "PROKIM")}</span>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto whitespace-pre-wrap">
-            {sc(content, "hero_subtitle", "ร้านไอเทมเกมพรีเมียม — Robux, Blox Fruits, Brookhaven, 99 คืนในป่า ราคาดี ส่งไว ปลอดภัย")}
-          </p>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* Category tabs */}
@@ -153,14 +193,21 @@ function Index() {
               <div className="p-3 space-y-2">
                 <div className="font-medium text-sm line-clamp-2 min-h-[2.5rem]">{p.name}</div>
                 {p.description && (
-                  <div className="text-[11px] text-muted-foreground line-clamp-2 min-h-[2rem]">{p.description}</div>
+                  <div className="text-[11px] text-muted-foreground line-clamp-2 min-h-[2rem]">
+                    {p.description}
+                  </div>
                 )}
                 <div className="text-gold font-bold">
                   {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
                 </div>
                 <Button
-                  onClick={(e) => { e.stopPropagation(); handleAdd(p); }}
-                  size="sm" variant="luxe" className="w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAdd(p);
+                  }}
+                  size="sm"
+                  variant="luxe"
+                  className="w-full"
                 >
                   <ShoppingCart className="w-3.5 h-3.5" /> เพิ่มลงตะกร้า
                 </Button>
@@ -178,22 +225,36 @@ function Index() {
           {detail && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display text-2xl text-gradient-gold pr-6">{detail.name}</DialogTitle>
+                <DialogTitle className="font-display text-2xl text-gradient-gold pr-6">
+                  {detail.name}
+                </DialogTitle>
                 <DialogDescription className="text-gold font-bold text-lg">
                   {detail.price > 0 ? `฿${detail.price.toFixed(2)}` : "ติดต่อแอดมิน"}
                 </DialogDescription>
               </DialogHeader>
               <div className="aspect-video w-full rounded-lg overflow-hidden bg-onyx">
                 {detail.image_url ? (
-                  <img src={detail.image_url} alt={detail.name} className="w-full h-full object-cover" />
+                  <img
+                    src={detail.image_url}
+                    alt={detail.name}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center"><Crown className="w-16 h-16 text-primary/30" /></div>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Crown className="w-16 h-16 text-primary/30" />
+                  </div>
                 )}
               </div>
               <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
                 {detail.description || "ไม่มีคำอธิบายเพิ่มเติม"}
               </div>
-              <Button variant="luxe" onClick={() => { handleAdd(detail); setDetail(null); }}>
+              <Button
+                variant="luxe"
+                onClick={() => {
+                  handleAdd(detail);
+                  setDetail(null);
+                }}
+              >
                 <ShoppingCart className="w-4 h-4" /> เพิ่มลงตะกร้า
               </Button>
             </>
@@ -201,8 +262,15 @@ function Index() {
         </DialogContent>
       </Dialog>
 
-      <footer className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap">
-        {sc(content, "footer_text", `© ${new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion`)}
+      <footer
+        data-site-key="footer_text"
+        className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap"
+      >
+        {sc(
+          content,
+          "footer_text",
+          `© ${new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion`,
+        )}
       </footer>
     </div>
   );

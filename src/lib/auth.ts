@@ -17,6 +17,7 @@ export type StaffSession = {
 
 const USER_KEY = "prokim_user";
 const STAFF_KEY = "prokim_staff";
+const STAFF_VERIFIED_KEY = "prokim_staff_verified";
 
 // --- simple hash (not for real security; per spec) ---
 async function hashPwd(pwd: string): Promise<string> {
@@ -40,9 +41,13 @@ export function setUser(u: UserSession | null) {
 }
 
 export async function signupUser(username: string, password: string, roblox_name: string) {
+  setStaff(null);
   const password_hash = await hashPwd(password);
   const { data: existing } = await supabase
-    .from("profiles").select("id").eq("username", username).maybeSingle();
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
   if (existing) throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว");
 
   const { data, error } = await supabase
@@ -61,6 +66,7 @@ export async function signupUser(username: string, password: string, roblox_name
 }
 
 export async function loginUser(username: string, password: string) {
+  setStaff(null);
   const password_hash = await hashPwd(password);
   const { data, error } = await supabase
     .from("profiles")
@@ -91,12 +97,20 @@ export async function refreshUser() {
 // ===== STAFF =====
 export function getStaff(): StaffSession | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(STAFF_KEY);
+  localStorage.removeItem(STAFF_KEY);
+  if (sessionStorage.getItem(STAFF_VERIFIED_KEY) !== "1") return null;
+  const raw = sessionStorage.getItem(STAFF_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 export function setStaff(s: StaffSession | null) {
-  if (!s) localStorage.removeItem(STAFF_KEY);
-  else localStorage.setItem(STAFF_KEY, JSON.stringify(s));
+  localStorage.removeItem(STAFF_KEY);
+  if (!s) {
+    sessionStorage.removeItem(STAFF_KEY);
+    sessionStorage.removeItem(STAFF_VERIFIED_KEY);
+  } else {
+    sessionStorage.setItem(STAFF_KEY, JSON.stringify(s));
+    sessionStorage.setItem(STAFF_VERIFIED_KEY, "1");
+  }
   window.dispatchEvent(new Event("staff-change"));
 }
 

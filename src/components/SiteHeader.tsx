@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AuthDialog } from "./AuthDialog";
 import { CartSheet } from "./CartSheet";
 import { SideMenu } from "./SideMenu";
+import { useSiteContent, sc } from "@/lib/siteContent";
 
 export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: string) => void }) {
   const [user, setUserState] = useState<UserSession | null>(null);
@@ -15,6 +16,7 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
+  const { content } = useSiteContent();
 
   useEffect(() => {
     setUserState(getUser());
@@ -22,7 +24,9 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
     window.addEventListener("auth-change", onAuth);
 
     // ดึงยอดเงินล่าสุดจากฐานข้อมูลทุก 15 วินาที + ตอนกลับมาที่แท็บ
-    const tick = () => { refreshUser(); };
+    const tick = () => {
+      refreshUser();
+    };
     tick();
     const id = setInterval(tick, 15000);
     const onFocus = () => tick();
@@ -71,8 +75,18 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
               <Crown className="w-5 h-5 text-gold" />
             </div>
             <div className="leading-none">
-              <div className="font-display text-xl font-bold text-gradient-gold">PROKIM</div>
-              <div className="text-[10px] tracking-[0.3em] text-muted-foreground">LUXE STORE</div>
+              <div
+                data-site-key="site_brand"
+                className="font-display text-xl font-bold text-gradient-gold"
+              >
+                {sc(content, "site_brand", "PROKIM")}
+              </div>
+              <div
+                data-site-key="site_tagline"
+                className="text-[10px] tracking-[0.3em] text-muted-foreground"
+              >
+                {sc(content, "site_tagline", "LUXE STORE")}
+              </div>
             </div>
           </Link>
         </div>
