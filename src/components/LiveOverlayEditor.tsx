@@ -84,12 +84,25 @@ export function LiveOverlayEditor() {
       setItems((ov as Overlay[]) ?? []);
       setSelectedId(null);
       setDirty(new Set());
-      const rows = (sc as SiteContentRow[]) ?? [];
+      setDeletedIds(new Set());
+      const rowsByKey = new Map<string, SiteContentRow>();
+      DEFAULT_SITE_ROWS.forEach((r) => rowsByKey.set(r.key, r));
+      ((sc as SiteContentRow[]) ?? []).forEach((r) => rowsByKey.set(r.key, r));
+      const rows = Array.from(rowsByKey.values());
       setSiteRows(rows);
       const m: Record<string, string> = {};
       rows.forEach((r) => { m[r.key] = r.value ?? ""; });
       setSiteEdits(m);
       setSiteDirty(new Set());
+      setUndoStack([]);
+      setRedoStack([]);
+      setLoadedSnapshot({
+        items: ((ov as Overlay[]) ?? []).map((i) => ({ ...i })),
+        siteEdits: m,
+        dirty: [],
+        siteDirty: [],
+        deletedIds: [],
+      });
     })();
   }, [editMode, page]);
 
