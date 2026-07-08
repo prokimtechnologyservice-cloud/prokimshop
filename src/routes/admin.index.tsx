@@ -18,8 +18,8 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-type Cat = { id: string; name: string; sort_order: number };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number };
+type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[] };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[] };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
@@ -87,7 +87,8 @@ function CatalogManager() {
   const [prods, setProds] = useState<Prod[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [newCat, setNewCat] = useState("");
-  const [editingCat, setEditingCat] = useState<{ id: string; name: string } | null>(null);
+  const [newCatParent, setNewCatParent] = useState<string>("");
+  const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [editingProd, setEditingProd] = useState<Prod | null>(null);
   const [showNewProd, setShowNewProd] = useState(false);
 
@@ -96,16 +97,30 @@ function CatalogManager() {
       supabase.from("categories").select("*").order("sort_order"),
       supabase.from("products").select("*").order("sort_order"),
     ]);
-    setCats((c as Cat[]) ?? []);
-    setProds(((p as any[]) ?? []).map((x) => ({ ...x, price: Number(x.price) })));
-    if (!active && c && c[0]) setActive(c[0].id);
+    const catList = ((c as any[]) ?? []).map((x) => ({
+      ...x,
+      parent_id: x.parent_id ?? null,
+      search_keywords: x.search_keywords ?? [],
+    })) as Cat[];
+    setCats(catList);
+    setProds(((p as any[]) ?? []).map((x) => ({
+      ...x,
+      price: Number(x.price),
+      stock: x.stock ?? null,
+      search_keywords: x.search_keywords ?? [],
+    })));
+    if (!active && catList[0]) setActive(catList[0].id);
   }
   useEffect(() => { load(); }, []);
 
   async function addCat() {
     if (!newCat.trim()) return;
-    await supabase.from("categories").insert({ name: newCat.trim(), sort_order: cats.length + 1 });
-    setNewCat("");
+    await supabase.from("categories").insert({
+      name: newCat.trim(),
+      sort_order: cats.length + 1,
+      parent_id: newCatParent || null,
+    });
+    setNewCat(""); setNewCatParent("");
     toast.success("เพิ่มหมวดหมู่แล้ว");
     load();
   }
@@ -118,7 +133,11 @@ function CatalogManager() {
 
   async function saveEditCat() {
     if (!editingCat) return;
-    await supabase.from("categories").update({ name: editingCat.name }).eq("id", editingCat.id);
+    await supabase.from("categories").update({
+      name: editingCat.name,
+      parent_id: editingCat.parent_id || null,
+      search_keywords: editingCat.search_keywords,
+    }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
   }
 
@@ -187,40 +206,82 @@ function CatalogManager() {
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 mt-4">
       <aside className="bg-card border border-border rounded-lg p-3 space-y-2">
         <h3 className="font-display text-lg mb-2">หมวดหมู่</h3>
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <Input placeholder="ชื่อหมวดใหม่" value={newCat} onChange={(e) => setNewCat(e.target.value)} />
-          <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
+          <div className="flex gap-2">
+            <select
+              value={newCatParent}
+              onChange={(e) => setNewCatParent(e.target.value)}
+              className="flex-1 bg-input border border-border rounded px-2 text-xs h-9"
+            >
+              <option value="">— หมวดหลัก —</option>
+              {cats.filter((c) => !c.parent_id).map((c) => (
+                <option key={c.id} value={c.id}>ย่อยของ: {c.name}</option>
+              ))}
+            </select>
+            <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
+          </div>
         </div>
-        <p className="text-[10px] text-muted-foreground">ลากที่ ⋮⋮ เพื่อจัดลำดับ</p>
+        <p className="text-[10px] text-muted-foreground">ลากที่ ⋮⋮ เพื่อจัดลำดับ · หมวดย่อยจะเยื้องเข้ามา</p>
         <div className="space-y-1 mt-2">
           {cats.map((c, i) => (
-            <div
-              key={c.id}
-              draggable
-              onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const from = Number(e.dataTransfer.getData("text/plain"));
-                if (!isNaN(from)) reorderCats(from, i);
-              }}
-              className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}
-            >
-              {editingCat?.id === c.id ? (
-                <>
-                  <Input value={editingCat.name} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })} className="h-7" />
-                  <Button size="icon" variant="ghost" onClick={saveEditCat}><Save className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => setEditingCat(null)}><X className="w-3 h-3" /></Button>
-                </>
-              ) : (
-                <>
-                  <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />
-                  <button className="flex-1 text-left" onClick={() => setActive(c.id)}>{c.name}</button>
-                  <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => setEditingCat({ id: c.id, name: c.name })}><Edit className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
-                </>
+            <div key={c.id} className={c.parent_id ? "ml-4" : ""}>
+              <div
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = Number(e.dataTransfer.getData("text/plain"));
+                  if (!isNaN(from)) reorderCats(from, i);
+                }}
+                className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}
+              >
+                <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab shrink-0" />
+                <button className="flex-1 text-left truncate" onClick={() => setActive(c.id)}>
+                  {c.parent_id ? "↳ " : ""}{c.name}
+                </button>
+                <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)}><Edit className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+              </div>
+              {editingCat?.id === c.id && (
+                <div className="p-2 border border-primary/40 rounded my-1 bg-gradient-card space-y-2">
+                  <div>
+                    <Label className="text-xs">ชื่อ</Label>
+                    <Input className="h-8" value={editingCat.name} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">หมวดพ่อ</Label>
+                    <select
+                      value={editingCat.parent_id ?? ""}
+                      onChange={(e) => setEditingCat({ ...editingCat, parent_id: e.target.value || null })}
+                      className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+                    >
+                      <option value="">— ไม่มี (หมวดหลัก) —</option>
+                      {cats.filter((x) => !x.parent_id && x.id !== c.id).map((x) => (
+                        <option key={x.id} value={x.id}>{x.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">คำค้นหา alias (คั่นด้วย ,)</Label>
+                    <Input
+                      className="h-8"
+                      placeholder="เช่น GAG2, ผลไม้, blox"
+                      value={(editingCat.search_keywords ?? []).join(", ")}
+                      onChange={(e) => setEditingCat({
+                        ...editingCat,
+                        search_keywords: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                      })}
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="ghost" onClick={() => setEditingCat(null)}><X className="w-3 h-3" /> ยกเลิก</Button>
+                    <Button size="sm" variant="luxe" onClick={saveEditCat}><Save className="w-3 h-3" /> บันทึก</Button>
+                  </div>
+                </div>
               )}
             </div>
           ))}
@@ -302,8 +363,15 @@ function ProductForm({
   const [desc, setDesc] = useState(product?.description ?? "");
   const [imgUrl, setImgUrl] = useState(product?.image_url ?? "");
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [stockMode, setStockMode] = useState<"none" | "in" | "out">(
+    product?.stock == null ? "none" : product.stock === 0 ? "out" : "in",
+  );
+  const [stockQty, setStockQty] = useState(String(product?.stock ?? ""));
+  const [keywords, setKeywords] = useState((product?.search_keywords ?? []).join(", "));
 
   async function uploadFile(file: File) {
+    if (!file.type.startsWith("image/")) return toast.error("ต้องเป็นไฟล์รูปภาพ");
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
@@ -321,12 +389,16 @@ function ProductForm({
   }
 
   async function save() {
+    const stockVal =
+      stockMode === "none" ? null : stockMode === "out" ? 0 : Math.max(0, Number(stockQty) || 0);
     const payload = {
       name: name.trim(),
       price: Number(price) || 0,
       description: desc || null,
       image_url: imgUrl || null,
       category_id: categoryId,
+      stock: stockVal,
+      search_keywords: keywords.split(",").map((s) => s.trim()).filter(Boolean),
     };
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
@@ -345,7 +417,7 @@ function ProductForm({
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <Label>ราคา (บาท)</Label>
+          <Label>ราคา (บาท) — ใส่ 0 = "ติดต่อแอดมิน"</Label>
           <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
         </div>
       </div>
@@ -353,18 +425,66 @@ function ProductForm({
         <Label>รายละเอียด</Label>
         <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label>สต็อกสินค้า</Label>
+          <select
+            className="w-full bg-input border border-border rounded px-2 h-9 text-sm"
+            value={stockMode}
+            onChange={(e) => setStockMode(e.target.value as any)}
+          >
+            <option value="none">ไม่แสดงสต็อก</option>
+            <option value="in">มีสินค้า (ระบุจำนวน)</option>
+            <option value="out">สินค้าหมด</option>
+          </select>
+        </div>
+        {stockMode === "in" && (
+          <div>
+            <Label>จำนวนคงเหลือ</Label>
+            <Input type="number" min={1} value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
+          </div>
+        )}
+      </div>
+      <div>
+        <Label>คำค้นหา alias (คั่นด้วย ,)</Label>
+        <Input
+          placeholder="เช่น GAG2, ขายผลไม้, blox fruit"
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
+        />
+      </div>
       <div>
         <Label>รูปภาพสินค้า</Label>
-        <div className="flex items-center gap-3 mt-1">
-          {imgUrl && <img src={imgUrl} className="w-16 h-16 rounded object-cover border border-border" />}
-          <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-secondary cursor-pointer hover:bg-accent text-sm">
-            <Upload className="w-4 h-4" />
-            {uploading ? "กำลังอัปโหลด..." : "อัปโหลดไฟล์"}
-            <input
-              type="file" accept="image/*" className="hidden"
-              onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
-            />
-          </label>
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) uploadFile(file);
+          }}
+          onPaste={(e) => {
+            const item = Array.from(e.clipboardData?.items ?? []).find((it) => it.type.startsWith("image/"));
+            const file = item?.getAsFile();
+            if (file) uploadFile(file);
+          }}
+          className={`mt-1 flex items-center gap-3 p-3 rounded-md border-2 border-dashed transition ${
+            dragOver ? "border-primary bg-primary/10" : "border-border bg-onyx/30"
+          }`}
+        >
+          {imgUrl && <img src={imgUrl} className="w-16 h-16 rounded object-cover border border-border shrink-0" />}
+          <div className="flex-1 text-xs text-muted-foreground">
+            ลากรูปมาวางที่นี่ หรือวาง (Ctrl+V) หรือ
+            <label className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded border border-border bg-secondary cursor-pointer hover:bg-accent">
+              <Upload className="w-3 h-3" />
+              {uploading ? "กำลังอัปโหลด..." : "เลือกไฟล์"}
+              <input
+                type="file" accept="image/*" className="hidden"
+                onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
+              />
+            </label>
+          </div>
         </div>
       </div>
       <div className="flex gap-2 justify-end">

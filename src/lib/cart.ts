@@ -75,6 +75,7 @@ export async function checkoutCart(userId: string, items: CartItem[]) {
   await supabase.from("order_items").insert(
     items.map((i) => ({
       order_id: order.id,
+      product_id: i.product_id,
       product_name: i.product_name,
       unit_price: i.unit_price,
       quantity: i.quantity,

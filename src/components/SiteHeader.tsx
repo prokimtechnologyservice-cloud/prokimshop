@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ShoppingBag, Wallet, Crown, Menu } from "lucide-react";
+import { ShoppingBag, Wallet, Crown, Menu, Search } from "lucide-react";
 import { getUser, refreshUser, setUser, type UserSession } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,13 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/search"
+            className="p-2 rounded-md hover:bg-secondary border border-border/60"
+            aria-label="ค้นหา"
+          >
+            <Search className="w-5 h-5" />
+          </Link>
           {user && (
             <>
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
