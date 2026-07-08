@@ -206,40 +206,82 @@ function CatalogManager() {
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 mt-4">
       <aside className="bg-card border border-border rounded-lg p-3 space-y-2">
         <h3 className="font-display text-lg mb-2">หมวดหมู่</h3>
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <Input placeholder="ชื่อหมวดใหม่" value={newCat} onChange={(e) => setNewCat(e.target.value)} />
-          <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
+          <div className="flex gap-2">
+            <select
+              value={newCatParent}
+              onChange={(e) => setNewCatParent(e.target.value)}
+              className="flex-1 bg-input border border-border rounded px-2 text-xs h-9"
+            >
+              <option value="">— หมวดหลัก —</option>
+              {cats.filter((c) => !c.parent_id).map((c) => (
+                <option key={c.id} value={c.id}>ย่อยของ: {c.name}</option>
+              ))}
+            </select>
+            <Button size="icon" variant="luxe" onClick={addCat}><Plus className="w-4 h-4" /></Button>
+          </div>
         </div>
-        <p className="text-[10px] text-muted-foreground">ลากที่ ⋮⋮ เพื่อจัดลำดับ</p>
+        <p className="text-[10px] text-muted-foreground">ลากที่ ⋮⋮ เพื่อจัดลำดับ · หมวดย่อยจะเยื้องเข้ามา</p>
         <div className="space-y-1 mt-2">
           {cats.map((c, i) => (
-            <div
-              key={c.id}
-              draggable
-              onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const from = Number(e.dataTransfer.getData("text/plain"));
-                if (!isNaN(from)) reorderCats(from, i);
-              }}
-              className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}
-            >
-              {editingCat?.id === c.id ? (
-                <>
-                  <Input value={editingCat.name} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })} className="h-7" />
-                  <Button size="icon" variant="ghost" onClick={saveEditCat}><Save className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => setEditingCat(null)}><X className="w-3 h-3" /></Button>
-                </>
-              ) : (
-                <>
-                  <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />
-                  <button className="flex-1 text-left" onClick={() => setActive(c.id)}>{c.name}</button>
-                  <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => setEditingCat({ id: c.id, name: c.name })}><Edit className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
-                </>
+            <div key={c.id} className={c.parent_id ? "ml-4" : ""}>
+              <div
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", String(i))}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = Number(e.dataTransfer.getData("text/plain"));
+                  if (!isNaN(from)) reorderCats(from, i);
+                }}
+                className={`flex items-center gap-1 p-2 rounded text-sm ${active === c.id ? "bg-secondary" : ""}`}
+              >
+                <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab shrink-0" />
+                <button className="flex-1 text-left truncate" onClick={() => setActive(c.id)}>
+                  {c.parent_id ? "↳ " : ""}{c.name}
+                </button>
+                <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)}><Edit className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+              </div>
+              {editingCat?.id === c.id && (
+                <div className="p-2 border border-primary/40 rounded my-1 bg-gradient-card space-y-2">
+                  <div>
+                    <Label className="text-xs">ชื่อ</Label>
+                    <Input className="h-8" value={editingCat.name} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">หมวดพ่อ</Label>
+                    <select
+                      value={editingCat.parent_id ?? ""}
+                      onChange={(e) => setEditingCat({ ...editingCat, parent_id: e.target.value || null })}
+                      className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+                    >
+                      <option value="">— ไม่มี (หมวดหลัก) —</option>
+                      {cats.filter((x) => !x.parent_id && x.id !== c.id).map((x) => (
+                        <option key={x.id} value={x.id}>{x.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">คำค้นหา alias (คั่นด้วย ,)</Label>
+                    <Input
+                      className="h-8"
+                      placeholder="เช่น GAG2, ผลไม้, blox"
+                      value={(editingCat.search_keywords ?? []).join(", ")}
+                      onChange={(e) => setEditingCat({
+                        ...editingCat,
+                        search_keywords: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                      })}
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="ghost" onClick={() => setEditingCat(null)}><X className="w-3 h-3" /> ยกเลิก</Button>
+                    <Button size="sm" variant="luxe" onClick={saveEditCat}><Save className="w-3 h-3" /> บันทึก</Button>
+                  </div>
+                </div>
               )}
             </div>
           ))}
