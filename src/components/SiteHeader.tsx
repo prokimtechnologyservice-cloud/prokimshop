@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ShoppingBag, Wallet, Crown, Menu } from "lucide-react";
+import { ShoppingBag, Wallet, Crown, Menu, Search } from "lucide-react";
 import { getUser, refreshUser, setUser, type UserSession } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
