@@ -87,7 +87,8 @@ function CatalogManager() {
   const [prods, setProds] = useState<Prod[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [newCat, setNewCat] = useState("");
-  const [editingCat, setEditingCat] = useState<{ id: string; name: string } | null>(null);
+  const [newCatParent, setNewCatParent] = useState<string>("");
+  const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [editingProd, setEditingProd] = useState<Prod | null>(null);
   const [showNewProd, setShowNewProd] = useState(false);
 
@@ -96,16 +97,30 @@ function CatalogManager() {
       supabase.from("categories").select("*").order("sort_order"),
       supabase.from("products").select("*").order("sort_order"),
     ]);
-    setCats((c as Cat[]) ?? []);
-    setProds(((p as any[]) ?? []).map((x) => ({ ...x, price: Number(x.price) })));
-    if (!active && c && c[0]) setActive(c[0].id);
+    const catList = ((c as any[]) ?? []).map((x) => ({
+      ...x,
+      parent_id: x.parent_id ?? null,
+      search_keywords: x.search_keywords ?? [],
+    })) as Cat[];
+    setCats(catList);
+    setProds(((p as any[]) ?? []).map((x) => ({
+      ...x,
+      price: Number(x.price),
+      stock: x.stock ?? null,
+      search_keywords: x.search_keywords ?? [],
+    })));
+    if (!active && catList[0]) setActive(catList[0].id);
   }
   useEffect(() => { load(); }, []);
 
   async function addCat() {
     if (!newCat.trim()) return;
-    await supabase.from("categories").insert({ name: newCat.trim(), sort_order: cats.length + 1 });
-    setNewCat("");
+    await supabase.from("categories").insert({
+      name: newCat.trim(),
+      sort_order: cats.length + 1,
+      parent_id: newCatParent || null,
+    });
+    setNewCat(""); setNewCatParent("");
     toast.success("เพิ่มหมวดหมู่แล้ว");
     load();
   }
@@ -118,7 +133,11 @@ function CatalogManager() {
 
   async function saveEditCat() {
     if (!editingCat) return;
-    await supabase.from("categories").update({ name: editingCat.name }).eq("id", editingCat.id);
+    await supabase.from("categories").update({
+      name: editingCat.name,
+      parent_id: editingCat.parent_id || null,
+      search_keywords: editingCat.search_keywords,
+    }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
   }
 
