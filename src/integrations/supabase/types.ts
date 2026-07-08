@@ -85,26 +85,70 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          parent_id: string | null
+          search_keywords: string[]
           sort_order: number
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          parent_id?: string | null
+          search_keywords?: string[]
           sort_order?: number
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          parent_id?: string | null
+          search_keywords?: string[]
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_views: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          session_key: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          session_key?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          session_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_views_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
           id: string
           order_id: string
+          product_id: string | null
           product_name: string
           quantity: number
           unit_price: number
@@ -112,6 +156,7 @@ export type Database = {
         Insert: {
           id?: string
           order_id: string
+          product_id?: string | null
           product_name: string
           quantity?: number
           unit_price: number
@@ -119,6 +164,7 @@ export type Database = {
         Update: {
           id?: string
           order_id?: string
+          product_id?: string | null
           product_name?: string
           quantity?: number
           unit_price?: number
@@ -129,6 +175,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -177,7 +230,10 @@ export type Database = {
           image_url: string | null
           name: string
           price: number
+          search_keywords: string[]
           sort_order: number
+          stock: number | null
+          view_count: number
         }
         Insert: {
           category_id?: string | null
@@ -187,7 +243,10 @@ export type Database = {
           image_url?: string | null
           name: string
           price?: number
+          search_keywords?: string[]
           sort_order?: number
+          stock?: number | null
+          view_count?: number
         }
         Update: {
           category_id?: string | null
@@ -197,7 +256,10 @@ export type Database = {
           image_url?: string | null
           name?: string
           price?: number
+          search_keywords?: string[]
           sort_order?: number
+          stock?: number | null
+          view_count?: number
         }
         Relationships: [
           {
