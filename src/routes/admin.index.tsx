@@ -363,8 +363,15 @@ function ProductForm({
   const [desc, setDesc] = useState(product?.description ?? "");
   const [imgUrl, setImgUrl] = useState(product?.image_url ?? "");
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [stockMode, setStockMode] = useState<"none" | "in" | "out">(
+    product?.stock == null ? "none" : product.stock === 0 ? "out" : "in",
+  );
+  const [stockQty, setStockQty] = useState(String(product?.stock ?? ""));
+  const [keywords, setKeywords] = useState((product?.search_keywords ?? []).join(", "));
 
   async function uploadFile(file: File) {
+    if (!file.type.startsWith("image/")) return toast.error("ต้องเป็นไฟล์รูปภาพ");
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
@@ -382,12 +389,16 @@ function ProductForm({
   }
 
   async function save() {
+    const stockVal =
+      stockMode === "none" ? null : stockMode === "out" ? 0 : Math.max(0, Number(stockQty) || 0);
     const payload = {
       name: name.trim(),
       price: Number(price) || 0,
       description: desc || null,
       image_url: imgUrl || null,
       category_id: categoryId,
+      stock: stockVal,
+      search_keywords: keywords.split(",").map((s) => s.trim()).filter(Boolean),
     };
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
@@ -406,7 +417,7 @@ function ProductForm({
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <Label>ราคา (บาท)</Label>
+          <Label>ราคา (บาท) — ใส่ 0 = "ติดต่อแอดมิน"</Label>
           <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
         </div>
       </div>
@@ -414,18 +425,66 @@ function ProductForm({
         <Label>รายละเอียด</Label>
         <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label>สต็อกสินค้า</Label>
+          <select
+            className="w-full bg-input border border-border rounded px-2 h-9 text-sm"
+            value={stockMode}
+            onChange={(e) => setStockMode(e.target.value as any)}
+          >
+            <option value="none">ไม่แสดงสต็อก</option>
+            <option value="in">มีสินค้า (ระบุจำนวน)</option>
+            <option value="out">สินค้าหมด</option>
+          </select>
+        </div>
+        {stockMode === "in" && (
+          <div>
+            <Label>จำนวนคงเหลือ</Label>
+            <Input type="number" min={1} value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
+          </div>
+        )}
+      </div>
+      <div>
+        <Label>คำค้นหา alias (คั่นด้วย ,)</Label>
+        <Input
+          placeholder="เช่น GAG2, ขายผลไม้, blox fruit"
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
+        />
+      </div>
       <div>
         <Label>รูปภาพสินค้า</Label>
-        <div className="flex items-center gap-3 mt-1">
-          {imgUrl && <img src={imgUrl} className="w-16 h-16 rounded object-cover border border-border" />}
-          <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-secondary cursor-pointer hover:bg-accent text-sm">
-            <Upload className="w-4 h-4" />
-            {uploading ? "กำลังอัปโหลด..." : "อัปโหลดไฟล์"}
-            <input
-              type="file" accept="image/*" className="hidden"
-              onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
-            />
-          </label>
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) uploadFile(file);
+          }}
+          onPaste={(e) => {
+            const item = Array.from(e.clipboardData?.items ?? []).find((it) => it.type.startsWith("image/"));
+            const file = item?.getAsFile();
+            if (file) uploadFile(file);
+          }}
+          className={`mt-1 flex items-center gap-3 p-3 rounded-md border-2 border-dashed transition ${
+            dragOver ? "border-primary bg-primary/10" : "border-border bg-onyx/30"
+          }`}
+        >
+          {imgUrl && <img src={imgUrl} className="w-16 h-16 rounded object-cover border border-border shrink-0" />}
+          <div className="flex-1 text-xs text-muted-foreground">
+            ลากรูปมาวางที่นี่ หรือวาง (Ctrl+V) หรือ
+            <label className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded border border-border bg-secondary cursor-pointer hover:bg-accent">
+              <Upload className="w-3 h-3" />
+              {uploading ? "กำลังอัปโหลด..." : "เลือกไฟล์"}
+              <input
+                type="file" accept="image/*" className="hidden"
+                onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
+              />
+            </label>
+          </div>
         </div>
       </div>
       <div className="flex gap-2 justify-end">
