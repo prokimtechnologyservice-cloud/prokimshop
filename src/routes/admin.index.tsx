@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical, Copy, Pencil } from "lucide-react";
+import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical, Copy, Pencil, Combine, FolderInput } from "lucide-react";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
@@ -92,6 +92,8 @@ function CatalogManager() {
   const [editingProd, setEditingProd] = useState<Prod | null>(null);
   const [showNewProd, setShowNewProd] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [mergeSrc, setMergeSrc] = useState<Cat | null>(null);
+  const [nestSrc, setNestSrc] = useState<Cat | null>(null);
 
   async function load() {
     const [{ data: c }, { data: p }] = await Promise.all([
@@ -168,6 +170,30 @@ function CatalogManager() {
     }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
   }
+
+  async function mergeInto(src: Cat, targetId: string) {
+    if (!targetId || targetId === src.id) return;
+    const { error: e1 } = await supabase.from("products").update({ category_id: targetId }).eq("category_id", src.id);
+    if (e1) return toast.error(e1.message);
+    // reassign any subcategories of src to target as well
+    await supabase.from("categories").update({ parent_id: targetId }).eq("parent_id", src.id);
+    const { error: e2 } = await supabase.from("categories").delete().eq("id", src.id);
+    if (e2) return toast.error(e2.message);
+    toast.success("รวมหมวดสำเร็จ");
+    setMergeSrc(null);
+    if (active === src.id) setActive(targetId);
+    load();
+  }
+
+  async function nestUnder(src: Cat, parentId: string) {
+    if (!parentId || parentId === src.id) return;
+    const { error } = await supabase.from("categories").update({ parent_id: parentId }).eq("id", src.id);
+    if (error) return toast.error(error.message);
+    toast.success("ย้ายเป็นหมวดย่อยแล้ว");
+    setNestSrc(null);
+    load();
+  }
+
 
   async function delProd(id: string) {
     if (!confirm("ลบสินค้านี้?")) return;
@@ -288,9 +314,32 @@ function CatalogManager() {
                 <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)} title="แก้ไข"><Edit className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => { setNestSrc(c); setMergeSrc(null); }} title="ย้ายเป็นหมวดย่อยของ..."><FolderInput className="w-3 h-3 text-primary" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => { setMergeSrc(c); setNestSrc(null); }} title="รวมสินค้าเข้ากับหมวดอื่น (จะลบหมวดนี้)"><Combine className="w-3 h-3 text-gold" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicateCat(c)} title="คัดลอกหมวด + สินค้า"><Copy className="w-3 h-3 text-gold" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => delCat(c.id)} title="ลบ"><Trash2 className="w-3 h-3 text-destructive" /></Button>
               </div>
+              {nestSrc?.id === c.id && (
+                <CategoryPicker
+                  title="ย้าย"
+                  action="ย้ายเป็นหมวดย่อยของ"
+                  source={c}
+                  cats={cats}
+                  onCancel={() => setNestSrc(null)}
+                  onPick={(id) => nestUnder(c, id)}
+                  allowTopLevelOnly
+                />
+              )}
+              {mergeSrc?.id === c.id && (
+                <CategoryPicker
+                  title="รวมหมวด"
+                  action="ย้ายสินค้าทั้งหมดไปที่ (แล้วลบหมวดนี้)"
+                  source={c}
+                  cats={cats}
+                  onCancel={() => setMergeSrc(null)}
+                  onPick={(id) => mergeInto(c, id)}
+                />
+              )}
               {editingCat?.id === c.id && (
                 <div className="p-2 border border-primary/40 rounded my-1 bg-gradient-card space-y-2">
                   <div>
@@ -999,6 +1048,45 @@ function Stat({ label, value }: { label: string; value: any }) {
     <div className="bg-gradient-card border border-border rounded-lg p-4 shadow-card">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="font-display text-2xl text-gradient-gold mt-1">{value}</div>
+    </div>
+  );
+}
+
+function CategoryPicker({
+  title, action, source, cats, onCancel, onPick, allowTopLevelOnly,
+}: {
+  title: string;
+  action: string;
+  source: Cat;
+  cats: Cat[];
+  onCancel: () => void;
+  onPick: (id: string) => void;
+  allowTopLevelOnly?: boolean;
+}) {
+  const [target, setTarget] = useState("");
+  const options = cats.filter((x) => x.id !== source.id && (!allowTopLevelOnly || !x.parent_id));
+  return (
+    <div className="p-2 border border-gold/50 rounded my-1 bg-gradient-card space-y-2">
+      <div className="text-xs font-medium text-gold">{title}: {source.name}</div>
+      <div>
+        <Label className="text-xs">{action}</Label>
+        <select
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+        >
+          <option value="">— เลือกหมวด —</option>
+          {options.map((x) => (
+            <option key={x.id} value={x.id}>{x.parent_id ? "↳ " : ""}{x.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-3 h-3" /> ยกเลิก</Button>
+        <Button size="sm" variant="luxe" disabled={!target} onClick={() => onPick(target)}>
+          <Save className="w-3 h-3" /> ยืนยัน
+        </Button>
+      </div>
     </div>
   );
 }
