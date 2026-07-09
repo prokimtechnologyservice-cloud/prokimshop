@@ -1051,3 +1051,42 @@ function Stat({ label, value }: { label: string; value: any }) {
     </div>
   );
 }
+
+function CategoryPicker({
+  title, action, source, cats, onCancel, onPick, allowTopLevelOnly,
+}: {
+  title: string;
+  action: string;
+  source: Cat;
+  cats: Cat[];
+  onCancel: () => void;
+  onPick: (id: string) => void;
+  allowTopLevelOnly?: boolean;
+}) {
+  const [target, setTarget] = useState("");
+  const options = cats.filter((x) => x.id !== source.id && (!allowTopLevelOnly || !x.parent_id));
+  return (
+    <div className="p-2 border border-gold/50 rounded my-1 bg-gradient-card space-y-2">
+      <div className="text-xs font-medium text-gold">{title}: {source.name}</div>
+      <div>
+        <Label className="text-xs">{action}</Label>
+        <select
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+        >
+          <option value="">— เลือกหมวด —</option>
+          {options.map((x) => (
+            <option key={x.id} value={x.id}>{x.parent_id ? "↳ " : ""}{x.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-3 h-3" /> ยกเลิก</Button>
+        <Button size="sm" variant="luxe" disabled={!target} onClick={() => onPick(target)}>
+          <Save className="w-3 h-3" /> ยืนยัน
+        </Button>
+      </div>
+    </div>
+  );
+}
