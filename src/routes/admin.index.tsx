@@ -287,8 +287,9 @@ function CatalogManager() {
                 </button>
                 <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)}><Edit className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)} title="แก้ไข"><Edit className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => duplicateCat(c)} title="คัดลอกหมวด + สินค้า"><Copy className="w-3 h-3 text-gold" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)} title="ลบ"><Trash2 className="w-3 h-3 text-destructive" /></Button>
               </div>
               {editingCat?.id === c.id && (
                 <div className="p-2 border border-primary/40 rounded my-1 bg-gradient-card space-y-2">
