@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical, Copy, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
@@ -91,11 +91,12 @@ function CatalogManager() {
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [editingProd, setEditingProd] = useState<Prod | null>(null);
   const [showNewProd, setShowNewProd] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   async function load() {
     const [{ data: c }, { data: p }] = await Promise.all([
-      supabase.from("categories").select("*").order("sort_order"),
-      supabase.from("products").select("*").order("sort_order"),
+      supabase.from("categories").select("*").order("sort_order").order("created_at"),
+      supabase.from("products").select("*").order("sort_order").order("created_at"),
     ]);
     const catList = ((c as any[]) ?? []).map((x) => ({
       ...x,
@@ -115,9 +116,10 @@ function CatalogManager() {
 
   async function addCat() {
     if (!newCat.trim()) return;
+    const maxOrder = cats.reduce((m, c) => Math.max(m, c.sort_order ?? 0), 0);
     await supabase.from("categories").insert({
       name: newCat.trim(),
-      sort_order: cats.length + 1,
+      sort_order: maxOrder + 10,
       parent_id: newCatParent || null,
     });
     setNewCat(""); setNewCatParent("");
@@ -129,6 +131,32 @@ function CatalogManager() {
     if (!confirm("ลบหมวดและสินค้าทั้งหมดในหมวดนี้?")) return;
     await supabase.from("categories").delete().eq("id", id);
     toast.success("ลบแล้ว"); load();
+  }
+
+  async function duplicateCat(c: Cat) {
+    const maxOrder = cats.reduce((m, x) => Math.max(m, x.sort_order ?? 0), 0);
+    const { data: newCat, error } = await supabase.from("categories").insert({
+      name: c.name + " (สำเนา)",
+      sort_order: maxOrder + 10,
+      parent_id: c.parent_id,
+      search_keywords: c.search_keywords,
+    }).select("id").single();
+    if (error || !newCat) return toast.error(error?.message ?? "ผิดพลาด");
+    const catProds = prods.filter((p) => p.category_id === c.id);
+    if (catProds.length) {
+      await supabase.from("products").insert(catProds.map((p) => ({
+        category_id: newCat.id,
+        name: p.name,
+        price: p.price,
+        description: p.description,
+        image_url: p.image_url,
+        sort_order: p.sort_order,
+        stock: p.stock,
+        search_keywords: p.search_keywords,
+      })));
+    }
+    toast.success(`คัดลอกหมวด + ${catProds.length} สินค้า`);
+    load();
   }
 
   async function saveEditCat() {
@@ -145,6 +173,22 @@ function CatalogManager() {
     if (!confirm("ลบสินค้านี้?")) return;
     await supabase.from("products").delete().eq("id", id);
     toast.success("ลบแล้ว"); load();
+  }
+
+  async function duplicateProd(p: Prod) {
+    const maxOrder = prods.filter((x) => x.category_id === p.category_id)
+      .reduce((m, x) => Math.max(m, x.sort_order ?? 0), 0);
+    await supabase.from("products").insert({
+      category_id: p.category_id,
+      name: p.name + " (สำเนา)",
+      price: p.price,
+      description: p.description,
+      image_url: p.image_url,
+      sort_order: maxOrder + 10,
+      stock: p.stock,
+      search_keywords: p.search_keywords,
+    });
+    toast.success("คัดลอกแล้ว"); load();
   }
 
   async function swapOrder(table: "categories" | "products", a: { id: string; sort_order: number }, b: { id: string; sort_order: number }) {
@@ -243,8 +287,9 @@ function CatalogManager() {
                 </button>
                 <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)}><Edit className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)} title="แก้ไข"><Edit className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => duplicateCat(c)} title="คัดลอกหมวด + สินค้า"><Copy className="w-3 h-3 text-gold" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)} title="ลบ"><Trash2 className="w-3 h-3 text-destructive" /></Button>
               </div>
               {editingCat?.id === c.id && (
                 <div className="p-2 border border-primary/40 rounded my-1 bg-gradient-card space-y-2">
@@ -289,12 +334,25 @@ function CatalogManager() {
       </aside>
 
       <section className="bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
           <h3 className="font-display text-lg">สินค้า ({visible.length})</h3>
-          <Button variant="luxe" size="sm" onClick={() => setShowNewProd(true)} disabled={!active}>
-            <Plus className="w-4 h-4" /> เพิ่มสินค้า
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)} disabled={!active || visible.length === 0}>
+              <Pencil className="w-4 h-4" /> แก้พร้อมกัน
+            </Button>
+            <Button variant="luxe" size="sm" onClick={() => setShowNewProd(true)} disabled={!active}>
+              <Plus className="w-4 h-4" /> เพิ่มสินค้า
+            </Button>
+          </div>
         </div>
+
+        {bulkOpen && active && (
+          <BulkEditProducts
+            products={visible}
+            onClose={() => setBulkOpen(false)}
+            onSaved={() => { setBulkOpen(false); load(); }}
+          />
+        )}
 
         {showNewProd && active && (
           <ProductForm
@@ -339,8 +397,9 @@ function CatalogManager() {
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === 0} onClick={() => moveProd(p.id, -1)}><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === visible.length - 1} onClick={() => moveProd(p.id, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)}><Edit className="w-4 h-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => delProd(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)} title="แก้ไข"><Edit className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => duplicateProd(p)} title="คัดลอกสินค้า"><Copy className="w-4 h-4 text-gold" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => delProd(p.id)} title="ลบ"><Trash2 className="w-4 h-4 text-destructive" /></Button>
               </div>
             ),
           )}
@@ -403,7 +462,9 @@ function ProductForm({
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
     } else {
-      await supabase.from("products").insert(payload);
+      const { data: sib } = await supabase.from("products").select("sort_order").eq("category_id", categoryId);
+      const maxOrder = (sib ?? []).reduce((m: number, x: any) => Math.max(m, x.sort_order ?? 0), 0);
+      await supabase.from("products").insert({ ...payload, sort_order: maxOrder + 10 });
     }
     toast.success("บันทึกแล้ว");
     onSaved();
@@ -494,6 +555,148 @@ function ProductForm({
     </div>
   );
 }
+
+// ============ BULK EDIT ============
+type BulkRow = {
+  id: string;
+  name: string;
+  description: string;
+  stockMode: "none" | "in" | "out";
+  stockQty: string;
+};
+
+function BulkEditProducts({
+  products, onClose, onSaved,
+}: {
+  products: Prod[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [rows, setRows] = useState<BulkRow[]>(
+    products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description ?? "",
+      stockMode: p.stock == null ? "none" : p.stock === 0 ? "out" : "in",
+      stockQty: p.stock && p.stock > 0 ? String(p.stock) : "",
+    })),
+  );
+  const [saving, setSaving] = useState(false);
+
+  // apply-to-all controls
+  const [applyDesc, setApplyDesc] = useState("");
+  const [applyStockMode, setApplyStockMode] = useState<"none" | "in" | "out">("in");
+  const [applyStockQty, setApplyStockQty] = useState("");
+
+  function applyDescToAll() {
+    setRows((rs) => rs.map((r) => ({ ...r, description: applyDesc })));
+  }
+  function applyStockToAll() {
+    setRows((rs) => rs.map((r) => ({
+      ...r,
+      stockMode: applyStockMode,
+      stockQty: applyStockMode === "in" ? applyStockQty : "",
+    })));
+  }
+
+  async function saveAll() {
+    setSaving(true);
+    try {
+      await Promise.all(rows.map((r) => {
+        const stockVal =
+          r.stockMode === "none" ? null : r.stockMode === "out" ? 0 : Math.max(0, Number(r.stockQty) || 0);
+        return supabase.from("products").update({
+          description: r.description || null,
+          stock: stockVal,
+        }).eq("id", r.id);
+      }));
+      toast.success(`บันทึก ${rows.length} รายการแล้ว`);
+      onSaved();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 p-4 border border-primary/40 rounded-lg bg-gradient-card space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="font-display text-base text-gradient-gold">แก้พร้อมกัน ({rows.length} รายการ)</div>
+        <Button size="sm" variant="ghost" onClick={onClose}><X className="w-4 h-4" /></Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded border border-border bg-onyx/40">
+        <div className="space-y-1">
+          <Label className="text-xs">ตั้งคำอธิบายให้ทุกชิ้น</Label>
+          <div className="flex gap-2">
+            <Input className="h-8" placeholder="คำอธิบายเดียวกัน" value={applyDesc} onChange={(e) => setApplyDesc(e.target.value)} />
+            <Button size="sm" variant="outline" onClick={applyDescToAll}>ใช้ทั้งหมด</Button>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">ตั้งสต็อกให้ทุกชิ้น</Label>
+          <div className="flex gap-2">
+            <select
+              className="bg-input border border-border rounded px-2 text-xs h-8"
+              value={applyStockMode}
+              onChange={(e) => setApplyStockMode(e.target.value as any)}
+            >
+              <option value="none">ไม่แสดง</option>
+              <option value="in">มี</option>
+              <option value="out">หมด</option>
+            </select>
+            {applyStockMode === "in" && (
+              <Input className="h-8 w-20" type="number" placeholder="จำนวน" value={applyStockQty} onChange={(e) => setApplyStockQty(e.target.value)} />
+            )}
+            <Button size="sm" variant="outline" onClick={applyStockToAll}>ใช้ทั้งหมด</Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+        {rows.map((r, idx) => (
+          <div key={r.id} className="p-2 border border-border rounded bg-onyx/30 grid grid-cols-1 md:grid-cols-[1fr_2fr_auto_auto] gap-2 items-center">
+            <div className="text-sm truncate font-medium">{r.name}</div>
+            <Textarea
+              rows={1}
+              className="text-xs"
+              placeholder="คำอธิบาย"
+              value={r.description}
+              onChange={(e) => setRows(rows.map((x, i) => i === idx ? { ...x, description: e.target.value } : x))}
+            />
+            <select
+              className="bg-input border border-border rounded px-2 text-xs h-8"
+              value={r.stockMode}
+              onChange={(e) => setRows(rows.map((x, i) => i === idx ? { ...x, stockMode: e.target.value as any } : x))}
+            >
+              <option value="none">ไม่แสดง</option>
+              <option value="in">มี</option>
+              <option value="out">หมด</option>
+            </select>
+            <Input
+              className="h-8 w-20"
+              type="number"
+              disabled={r.stockMode !== "in"}
+              placeholder="จำนวน"
+              value={r.stockQty}
+              onChange={(e) => setRows(rows.map((x, i) => i === idx ? { ...x, stockQty: e.target.value } : x))}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <Button variant="ghost" onClick={onClose}>ยกเลิก</Button>
+        <Button variant="luxe" onClick={saveAll} disabled={saving}>
+          <Save className="w-4 h-4" /> บันทึกทั้งหมด
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+
 
 // ============ ANNOUNCEMENTS ============
 function AnnouncementManager() {
