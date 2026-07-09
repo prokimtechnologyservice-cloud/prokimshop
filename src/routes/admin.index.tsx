@@ -171,6 +171,28 @@ function CatalogManager() {
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
   }
 
+  async function mergeInto(src: Cat, targetId: string) {
+    if (!targetId || targetId === src.id) return;
+    const { error: e1 } = await supabase.from("products").update({ category_id: targetId }).eq("category_id", src.id);
+    if (e1) return toast.error(e1.message);
+    // reassign any subcategories of src to target as well
+    await supabase.from("categories").update({ parent_id: targetId }).eq("parent_id", src.id);
+    const { error: e2 } = await supabase.from("categories").delete().eq("id", src.id);
+    if (e2) return toast.error(e2.message);
+    toast.success("รวมหมวดสำเร็จ");
+    setMergeSrc(null);
+    if (active === src.id) setActive(targetId);
+    load();
+  }
+
+  async function nestUnder(src: Cat, parentId: string) {
+    if (!parentId || parentId === src.id) return;
+    const { error } = await supabase.from("categories").update({ parent_id: parentId }).eq("id", src.id);
+    if (error) return toast.error(error.message);
+    toast.success("ย้ายเป็นหมวดย่อยแล้ว");
+    setNestSrc(null);
+    load();
+
   async function delProd(id: string) {
     if (!confirm("ลบสินค้านี้?")) return;
     await supabase.from("products").delete().eq("id", id);
