@@ -92,6 +92,8 @@ function CatalogManager() {
   const [editingProd, setEditingProd] = useState<Prod | null>(null);
   const [showNewProd, setShowNewProd] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [mergeSrc, setMergeSrc] = useState<Cat | null>(null);
+  const [nestSrc, setNestSrc] = useState<Cat | null>(null);
 
   async function load() {
     const [{ data: c }, { data: p }] = await Promise.all([
