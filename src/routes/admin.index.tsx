@@ -192,6 +192,8 @@ function CatalogManager() {
     toast.success("ย้ายเป็นหมวดย่อยแล้ว");
     setNestSrc(null);
     load();
+  }
+
 
   async function delProd(id: string) {
     if (!confirm("ลบสินค้านี้?")) return;
