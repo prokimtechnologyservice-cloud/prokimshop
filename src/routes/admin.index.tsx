@@ -397,8 +397,9 @@ function CatalogManager() {
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === 0} onClick={() => moveProd(p.id, -1)}><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === visible.length - 1} onClick={() => moveProd(p.id, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)}><Edit className="w-4 h-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => delProd(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)} title="แก้ไข"><Edit className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => duplicateProd(p)} title="คัดลอกสินค้า"><Copy className="w-4 h-4 text-gold" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => delProd(p.id)} title="ลบ"><Trash2 className="w-4 h-4 text-destructive" /></Button>
               </div>
             ),
           )}
