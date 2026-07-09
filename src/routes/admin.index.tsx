@@ -556,6 +556,148 @@ function ProductForm({
   );
 }
 
+// ============ BULK EDIT ============
+type BulkRow = {
+  id: string;
+  name: string;
+  description: string;
+  stockMode: "none" | "in" | "out";
+  stockQty: string;
+};
+
+function BulkEditProducts({
+  products, onClose, onSaved,
+}: {
+  products: Prod[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [rows, setRows] = useState<BulkRow[]>(
+    products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description ?? "",
+      stockMode: p.stock == null ? "none" : p.stock === 0 ? "out" : "in",
+      stockQty: p.stock && p.stock > 0 ? String(p.stock) : "",
+    })),
+  );
+  const [saving, setSaving] = useState(false);
+
+  // apply-to-all controls
+  const [applyDesc, setApplyDesc] = useState("");
+  const [applyStockMode, setApplyStockMode] = useState<"none" | "in" | "out">("in");
+  const [applyStockQty, setApplyStockQty] = useState("");
+
+  function applyDescToAll() {
+    setRows((rs) => rs.map((r) => ({ ...r, description: applyDesc })));
+  }
+  function applyStockToAll() {
+    setRows((rs) => rs.map((r) => ({
+      ...r,
+      stockMode: applyStockMode,
+      stockQty: applyStockMode === "in" ? applyStockQty : "",
+    })));
+  }
+
+  async function saveAll() {
+    setSaving(true);
+    try {
+      await Promise.all(rows.map((r) => {
+        const stockVal =
+          r.stockMode === "none" ? null : r.stockMode === "out" ? 0 : Math.max(0, Number(r.stockQty) || 0);
+        return supabase.from("products").update({
+          description: r.description || null,
+          stock: stockVal,
+        }).eq("id", r.id);
+      }));
+      toast.success(`บันทึก ${rows.length} รายการแล้ว`);
+      onSaved();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 p-4 border border-primary/40 rounded-lg bg-gradient-card space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="font-display text-base text-gradient-gold">แก้พร้อมกัน ({rows.length} รายการ)</div>
+        <Button size="sm" variant="ghost" onClick={onClose}><X className="w-4 h-4" /></Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded border border-border bg-onyx/40">
+        <div className="space-y-1">
+          <Label className="text-xs">ตั้งคำอธิบายให้ทุกชิ้น</Label>
+          <div className="flex gap-2">
+            <Input className="h-8" placeholder="คำอธิบายเดียวกัน" value={applyDesc} onChange={(e) => setApplyDesc(e.target.value)} />
+            <Button size="sm" variant="outline" onClick={applyDescToAll}>ใช้ทั้งหมด</Button>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">ตั้งสต็อกให้ทุกชิ้น</Label>
+          <div className="flex gap-2">
+            <select
+              className="bg-input border border-border rounded px-2 text-xs h-8"
+              value={applyStockMode}
+              onChange={(e) => setApplyStockMode(e.target.value as any)}
+            >
+              <option value="none">ไม่แสดง</option>
+              <option value="in">มี</option>
+              <option value="out">หมด</option>
+            </select>
+            {applyStockMode === "in" && (
+              <Input className="h-8 w-20" type="number" placeholder="จำนวน" value={applyStockQty} onChange={(e) => setApplyStockQty(e.target.value)} />
+            )}
+            <Button size="sm" variant="outline" onClick={applyStockToAll}>ใช้ทั้งหมด</Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+        {rows.map((r, idx) => (
+          <div key={r.id} className="p-2 border border-border rounded bg-onyx/30 grid grid-cols-1 md:grid-cols-[1fr_2fr_auto_auto] gap-2 items-center">
+            <div className="text-sm truncate font-medium">{r.name}</div>
+            <Textarea
+              rows={1}
+              className="text-xs"
+              placeholder="คำอธิบาย"
+              value={r.description}
+              onChange={(e) => setRows(rows.map((x, i) => i === idx ? { ...x, description: e.target.value } : x))}
+            />
+            <select
+              className="bg-input border border-border rounded px-2 text-xs h-8"
+              value={r.stockMode}
+              onChange={(e) => setRows(rows.map((x, i) => i === idx ? { ...x, stockMode: e.target.value as any } : x))}
+            >
+              <option value="none">ไม่แสดง</option>
+              <option value="in">มี</option>
+              <option value="out">หมด</option>
+            </select>
+            <Input
+              className="h-8 w-20"
+              type="number"
+              disabled={r.stockMode !== "in"}
+              placeholder="จำนวน"
+              value={r.stockQty}
+              onChange={(e) => setRows(rows.map((x, i) => i === idx ? { ...x, stockQty: e.target.value } : x))}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <Button variant="ghost" onClick={onClose}>ยกเลิก</Button>
+        <Button variant="luxe" onClick={saveAll} disabled={saving}>
+          <Save className="w-4 h-4" /> บันทึกทั้งหมด
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+
+
 // ============ ANNOUNCEMENTS ============
 function AnnouncementManager() {
   const [list, setList] = useState<Ann[]>([]);
