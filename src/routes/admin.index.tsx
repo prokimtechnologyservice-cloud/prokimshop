@@ -462,7 +462,9 @@ function ProductForm({
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
     } else {
-      await supabase.from("products").insert(payload);
+      const { data: sib } = await supabase.from("products").select("sort_order").eq("category_id", categoryId);
+      const maxOrder = (sib ?? []).reduce((m: number, x: any) => Math.max(m, x.sort_order ?? 0), 0);
+      await supabase.from("products").insert({ ...payload, sort_order: maxOrder + 10 });
     }
     toast.success("บันทึกแล้ว");
     onSaved();
