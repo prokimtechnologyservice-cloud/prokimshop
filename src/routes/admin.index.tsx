@@ -334,12 +334,25 @@ function CatalogManager() {
       </aside>
 
       <section className="bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
           <h3 className="font-display text-lg">สินค้า ({visible.length})</h3>
-          <Button variant="luxe" size="sm" onClick={() => setShowNewProd(true)} disabled={!active}>
-            <Plus className="w-4 h-4" /> เพิ่มสินค้า
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)} disabled={!active || visible.length === 0}>
+              <Pencil className="w-4 h-4" /> แก้พร้อมกัน
+            </Button>
+            <Button variant="luxe" size="sm" onClick={() => setShowNewProd(true)} disabled={!active}>
+              <Plus className="w-4 h-4" /> เพิ่มสินค้า
+            </Button>
+          </div>
         </div>
+
+        {bulkOpen && active && (
+          <BulkEditProducts
+            products={visible}
+            onClose={() => setBulkOpen(false)}
+            onSaved={() => { setBulkOpen(false); load(); }}
+          />
+        )}
 
         {showNewProd && active && (
           <ProductForm
