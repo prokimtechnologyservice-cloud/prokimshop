@@ -314,9 +314,32 @@ function CatalogManager() {
                 <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)} title="แก้ไข"><Edit className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => { setNestSrc(c); setMergeSrc(null); }} title="ย้ายเป็นหมวดย่อยของ..."><FolderInput className="w-3 h-3 text-primary" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => { setMergeSrc(c); setNestSrc(null); }} title="รวมสินค้าเข้ากับหมวดอื่น (จะลบหมวดนี้)"><Combine className="w-3 h-3 text-gold" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicateCat(c)} title="คัดลอกหมวด + สินค้า"><Copy className="w-3 h-3 text-gold" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => delCat(c.id)} title="ลบ"><Trash2 className="w-3 h-3 text-destructive" /></Button>
               </div>
+              {nestSrc?.id === c.id && (
+                <CategoryPicker
+                  title="ย้าย"
+                  action="ย้ายเป็นหมวดย่อยของ"
+                  source={c}
+                  cats={cats}
+                  onCancel={() => setNestSrc(null)}
+                  onPick={(id) => nestUnder(c, id)}
+                  allowTopLevelOnly
+                />
+              )}
+              {mergeSrc?.id === c.id && (
+                <CategoryPicker
+                  title="รวมหมวด"
+                  action="ย้ายสินค้าทั้งหมดไปที่ (แล้วลบหมวดนี้)"
+                  source={c}
+                  cats={cats}
+                  onCancel={() => setMergeSrc(null)}
+                  onPick={(id) => mergeInto(c, id)}
+                />
+              )}
               {editingCat?.id === c.id && (
                 <div className="p-2 border border-primary/40 rounded my-1 bg-gradient-card space-y-2">
                   <div>
