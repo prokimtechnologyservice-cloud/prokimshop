@@ -91,11 +91,12 @@ function CatalogManager() {
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [editingProd, setEditingProd] = useState<Prod | null>(null);
   const [showNewProd, setShowNewProd] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   async function load() {
     const [{ data: c }, { data: p }] = await Promise.all([
-      supabase.from("categories").select("*").order("sort_order"),
-      supabase.from("products").select("*").order("sort_order"),
+      supabase.from("categories").select("*").order("sort_order").order("created_at"),
+      supabase.from("products").select("*").order("sort_order").order("created_at"),
     ]);
     const catList = ((c as any[]) ?? []).map((x) => ({
       ...x,
@@ -115,9 +116,10 @@ function CatalogManager() {
 
   async function addCat() {
     if (!newCat.trim()) return;
+    const maxOrder = cats.reduce((m, c) => Math.max(m, c.sort_order ?? 0), 0);
     await supabase.from("categories").insert({
       name: newCat.trim(),
-      sort_order: cats.length + 1,
+      sort_order: maxOrder + 10,
       parent_id: newCatParent || null,
     });
     setNewCat(""); setNewCatParent("");
@@ -129,6 +131,32 @@ function CatalogManager() {
     if (!confirm("ลบหมวดและสินค้าทั้งหมดในหมวดนี้?")) return;
     await supabase.from("categories").delete().eq("id", id);
     toast.success("ลบแล้ว"); load();
+  }
+
+  async function duplicateCat(c: Cat) {
+    const maxOrder = cats.reduce((m, x) => Math.max(m, x.sort_order ?? 0), 0);
+    const { data: newCat, error } = await supabase.from("categories").insert({
+      name: c.name + " (สำเนา)",
+      sort_order: maxOrder + 10,
+      parent_id: c.parent_id,
+      search_keywords: c.search_keywords,
+    }).select("id").single();
+    if (error || !newCat) return toast.error(error?.message ?? "ผิดพลาด");
+    const catProds = prods.filter((p) => p.category_id === c.id);
+    if (catProds.length) {
+      await supabase.from("products").insert(catProds.map((p) => ({
+        category_id: newCat.id,
+        name: p.name,
+        price: p.price,
+        description: p.description,
+        image_url: p.image_url,
+        sort_order: p.sort_order,
+        stock: p.stock,
+        search_keywords: p.search_keywords,
+      })));
+    }
+    toast.success(`คัดลอกหมวด + ${catProds.length} สินค้า`);
+    load();
   }
 
   async function saveEditCat() {
@@ -145,6 +173,22 @@ function CatalogManager() {
     if (!confirm("ลบสินค้านี้?")) return;
     await supabase.from("products").delete().eq("id", id);
     toast.success("ลบแล้ว"); load();
+  }
+
+  async function duplicateProd(p: Prod) {
+    const maxOrder = prods.filter((x) => x.category_id === p.category_id)
+      .reduce((m, x) => Math.max(m, x.sort_order ?? 0), 0);
+    await supabase.from("products").insert({
+      category_id: p.category_id,
+      name: p.name + " (สำเนา)",
+      price: p.price,
+      description: p.description,
+      image_url: p.image_url,
+      sort_order: maxOrder + 10,
+      stock: p.stock,
+      search_keywords: p.search_keywords,
+    });
+    toast.success("คัดลอกแล้ว"); load();
   }
 
   async function swapOrder(table: "categories" | "products", a: { id: string; sort_order: number }, b: { id: string; sort_order: number }) {
