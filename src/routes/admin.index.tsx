@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical, Copy, Pencil, Combine, FolderInput } from "lucide-react";
+import { Crown, LogOut, Plus, Trash2, Edit, Save, X, Upload, Power, ArrowUp, ArrowDown, GripVertical, Copy, Pencil, Combine, FolderInput, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
@@ -313,11 +314,19 @@ function CatalogManager() {
                 </button>
                 <Button size="icon" variant="ghost" disabled={i === 0} onClick={() => moveCat(i, -1)}><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" disabled={i === cats.length - 1} onClick={() => moveCat(i, 1)}><ArrowDown className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => setEditingCat(c)} title="แก้ไข"><Edit className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => { setNestSrc(c); setMergeSrc(null); }} title="ย้ายเป็นหมวดย่อยของ..."><FolderInput className="w-3 h-3 text-primary" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => { setMergeSrc(c); setNestSrc(null); }} title="รวมสินค้าเข้ากับหมวดอื่น (จะลบหมวดนี้)"><Combine className="w-3 h-3 text-gold" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => duplicateCat(c)} title="คัดลอกหมวด + สินค้า"><Copy className="w-3 h-3 text-gold" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => delCat(c.id)} title="ลบ"><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()} title="ตัวเลือก"><MoreVertical className="w-3 h-3" /></Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="z-50 bg-popover">
+                    <DropdownMenuItem onClick={() => setEditingCat(c)}><Edit className="w-3 h-3 mr-2" />แก้ไข</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setNestSrc(c); setMergeSrc(null); }}><FolderInput className="w-3 h-3 mr-2 text-primary" />ย้ายเป็นหมวดย่อยของ...</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setMergeSrc(c); setNestSrc(null); }}><Combine className="w-3 h-3 mr-2 text-gold" />รวมเข้ากับหมวดอื่น</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => duplicateCat(c)}><Copy className="w-3 h-3 mr-2 text-gold" />คัดลอกหมวด + สินค้า</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => delCat(c.id)} className="text-destructive"><Trash2 className="w-3 h-3 mr-2" />ลบ</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               {nestSrc?.id === c.id && (
                 <CategoryPicker
@@ -446,9 +455,17 @@ function CatalogManager() {
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === 0} onClick={() => moveProd(p.id, -1)}><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={i === visible.length - 1} onClick={() => moveProd(p.id, 1)}><ArrowDown className="w-3 h-3" /></Button>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => setEditingProd(p)} title="แก้ไข"><Edit className="w-4 h-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => duplicateProd(p)} title="คัดลอกสินค้า"><Copy className="w-4 h-4 text-gold" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => delProd(p.id)} title="ลบ"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" title="ตัวเลือก"><MoreVertical className="w-4 h-4" /></Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="z-50 bg-popover">
+                    <DropdownMenuItem onClick={() => setEditingProd(p)}><Edit className="w-3 h-3 mr-2" />แก้ไข</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => duplicateProd(p)}><Copy className="w-3 h-3 mr-2 text-gold" />คัดลอก</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => delProd(p.id)} className="text-destructive"><Trash2 className="w-3 h-3 mr-2" />ลบ</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ),
           )}
