@@ -190,6 +190,9 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          ip_address: string | null
+          paid_from_balance: boolean
+          payment_status: string
           receipt_code: string | null
           status: string
           total: number
@@ -198,6 +201,9 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          ip_address?: string | null
+          paid_from_balance?: boolean
+          payment_status?: string
           receipt_code?: string | null
           status?: string
           total?: number
@@ -206,6 +212,9 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          ip_address?: string | null
+          paid_from_balance?: boolean
+          payment_status?: string
           receipt_code?: string | null
           status?: string
           total?: number
@@ -454,12 +463,66 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          ip_address: string | null
+          note: string | null
+          type: string
+          user_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          note?: string | null
+          type: string
+          user_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          note?: string | null
+          type?: string
+          user_id?: string
+          voucher_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      deduct_balance: {
+        Args: { _amount: number; _order_id: string; _user_id: string }
+        Returns: number
+      }
       generate_receipt_code: { Args: never; Returns: string }
+      topup_balance: {
+        Args: {
+          _amount: number
+          _ip: string
+          _user_id: string
+          _voucher: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       staff_role: "admin" | "manager"
