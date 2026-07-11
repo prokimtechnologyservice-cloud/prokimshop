@@ -1109,3 +1109,143 @@ function CategoryPicker({
     </div>
   );
 }
+
+// ============ ORDERS / IP ============
+type AdminOrder = {
+  id: string;
+  total: number;
+  status: string;
+  created_at: string;
+  receipt_code: string | null;
+  ip_address: string | null;
+  paid_from_balance: boolean;
+  payment_status: string;
+  user_id: string;
+  profiles: { username: string; roblox_name: string | null } | null;
+  order_items: { product_name: string; unit_price: number; quantity: number }[];
+};
+
+function OrdersManager() {
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("orders")
+      .select(
+        "id, total, status, created_at, receipt_code, ip_address, paid_from_balance, payment_status, user_id, profiles(username, roblox_name), order_items(product_name, unit_price, quantity)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
+    setOrders(((data as any[]) ?? []).map((o) => ({ ...o, total: Number(o.total) })));
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  const filtered = orders.filter((o) => {
+    if (!q.trim()) return true;
+    const s = q.trim().toLowerCase();
+    return (
+      (o.receipt_code ?? "").toLowerCase().includes(s) ||
+      (o.ip_address ?? "").toLowerCase().includes(s) ||
+      (o.profiles?.username ?? "").toLowerCase().includes(s) ||
+      (o.profiles?.roblox_name ?? "").toLowerCase().includes(s)
+    );
+  });
+
+  return (
+    <div className="space-y-4 py-4">
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          placeholder="ค้นหา: รหัสใบเสร็จ / IP / ชื่อผู้ใช้"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="max-w-md"
+        />
+        <Button size="sm" variant="outline" onClick={load}>รีเฟรช</Button>
+        <span className="text-xs text-muted-foreground ml-auto">
+          {filtered.length} / {orders.length} รายการ
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="text-muted-foreground text-sm py-6 text-center">กำลังโหลด...</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-muted-foreground text-sm py-6 text-center">ไม่พบรายการ</div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-card/60 text-left">
+              <tr>
+                <th className="p-2">เวลา</th>
+                <th className="p-2">รหัสใบเสร็จ</th>
+                <th className="p-2">ผู้ใช้</th>
+                <th className="p-2">IP</th>
+                <th className="p-2">รายการ</th>
+                <th className="p-2 text-right">ยอด</th>
+                <th className="p-2">การชำระ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((o) => (
+                <tr key={o.id} className="border-t border-border align-top">
+                  <td className="p-2 whitespace-nowrap text-xs text-muted-foreground">
+                    {new Date(o.created_at).toLocaleString("th-TH")}
+                  </td>
+                  <td className="p-2 font-mono text-xs text-gold whitespace-nowrap">
+                    <button
+                      className="hover:underline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(o.receipt_code ?? o.id);
+                        toast.success("คัดลอกรหัสแล้ว");
+                      }}
+                    >
+                      {o.receipt_code ?? o.id.slice(0, 8)}
+                    </button>
+                  </td>
+                  <td className="p-2 text-xs">
+                    <div className="font-medium">{o.profiles?.username ?? "—"}</div>
+                    <div className="text-muted-foreground">
+                      {o.profiles?.roblox_name ?? ""}
+                    </div>
+                  </td>
+                  <td className="p-2 font-mono text-xs">
+                    <button
+                      className="hover:underline text-emerald-400"
+                      onClick={() => {
+                        if (!o.ip_address) return;
+                        navigator.clipboard.writeText(o.ip_address);
+                        toast.success("คัดลอก IP แล้ว");
+                      }}
+                    >
+                      {o.ip_address ?? "—"}
+                    </button>
+                  </td>
+                  <td className="p-2 text-xs max-w-xs">
+                    {o.order_items.map((i, idx) => (
+                      <div key={idx}>
+                        {i.product_name} × {i.quantity}
+                      </div>
+                    ))}
+                  </td>
+                  <td className="p-2 text-right font-bold text-gold whitespace-nowrap">
+                    ฿{o.total.toFixed(2)}
+                  </td>
+                  <td className="p-2 text-xs">
+                    {o.paid_from_balance ? (
+                      <span className="text-emerald-400">✓ ยอดในเว็บ</span>
+                    ) : (
+                      <span className="text-amber-400">ชำระกับแอดมิน</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
