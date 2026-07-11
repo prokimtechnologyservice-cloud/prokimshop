@@ -63,25 +63,28 @@ export async function clearCart(userId: string) {
   window.dispatchEvent(new Event("cart-change"));
 }
 
-export async function checkoutCart(userId: string, items: CartItem[]) {
-  const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const { data: order, error } = await supabase
-    .from("orders")
-    .insert({ user_id: userId, total, status: "pending" })
-    .select("id, receipt_code")
-    .single();
-  if (error) throw error;
-
-  await supabase.from("order_items").insert(
-    items.map((i) => ({
-      order_id: order.id,
-      product_id: i.product_id,
-      product_name: i.product_name,
-      unit_price: i.unit_price,
-      quantity: i.quantity,
-    })),
-  );
-  return { id: order.id as string, receipt_code: (order as any).receipt_code as string };
+export async function checkoutCart(
+  userId: string,
+  items: CartItem[],
+  pay_from_balance = false,
+) {
+  const res = await fetch("/api/public/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: userId,
+      pay_from_balance,
+      items: items.map((i) => ({
+        product_id: i.product_id,
+        product_name: i.product_name,
+        unit_price: i.unit_price,
+        quantity: i.quantity,
+      })),
+    }),
+  });
+  const j = await res.json();
+  if (!res.ok) throw new Error(j?.error ?? "checkout failed");
+  return { id: j.id as string, receipt_code: j.receipt_code as string };
 }
 
 export const ADMIN_CHAT_URL = "https://m.me/61580581317954";
