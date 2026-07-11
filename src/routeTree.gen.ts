@@ -14,6 +14,8 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
+import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
 
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
@@ -40,6 +42,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRedeemVoucherRoute = ApiPublicRedeemVoucherRouteImport.update({
+  id: '/api/public/redeem-voucher',
+  path: '/api/public/redeem-voucher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCheckoutRoute = ApiPublicCheckoutRouteImport.update({
+  id: '/api/public/checkout',
+  path: '/api/public/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +59,8 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +68,8 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +78,37 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history' | '/search' | '/admin/login' | '/admin/'
+  fullPaths:
+    | '/'
+    | '/history'
+    | '/search'
+    | '/admin/login'
+    | '/admin/'
+    | '/api/public/checkout'
+    | '/api/public/redeem-voucher'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history' | '/search' | '/admin/login' | '/admin'
-  id: '__root__' | '/' | '/history' | '/search' | '/admin/login' | '/admin/'
+  to:
+    | '/'
+    | '/history'
+    | '/search'
+    | '/admin/login'
+    | '/admin'
+    | '/api/public/checkout'
+    | '/api/public/redeem-voucher'
+  id:
+    | '__root__'
+    | '/'
+    | '/history'
+    | '/search'
+    | '/admin/login'
+    | '/admin/'
+    | '/api/public/checkout'
+    | '/api/public/redeem-voucher'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +117,8 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
+  ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/redeem-voucher': {
+      id: '/api/public/redeem-voucher'
+      path: '/api/public/redeem-voucher'
+      fullPath: '/api/public/redeem-voucher'
+      preLoaderRoute: typeof ApiPublicRedeemVoucherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/checkout': {
+      id: '/api/public/checkout'
+      path: '/api/public/checkout'
+      fullPath: '/api/public/checkout'
+      preLoaderRoute: typeof ApiPublicCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,16 +181,9 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,
+  ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
