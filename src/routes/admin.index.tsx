@@ -60,6 +60,7 @@ function AdminDashboard() {
           <TabsList className="flex flex-wrap h-auto">
             <TabsTrigger value="catalog">หมวด/สินค้า</TabsTrigger>
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
+            <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
             {isManager && <TabsTrigger value="editor">แก้ไขข้อความ/รูป</TabsTrigger>}
             {isManager && <TabsTrigger value="overlay">วางวัตถุ (ลาก/หมุน)</TabsTrigger>}
@@ -70,6 +71,7 @@ function AdminDashboard() {
 
           <TabsContent value="catalog"><CatalogManager /></TabsContent>
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
+          <TabsContent value="orders"><OrdersManager /></TabsContent>
           <TabsContent value="users"><UsersManager /></TabsContent>
           {isManager && <TabsContent value="editor"><SiteEditor /></TabsContent>}
           {isManager && <TabsContent value="overlay"><OverlayManager /></TabsContent>}
