@@ -146,25 +146,40 @@ export type Database = {
       }
       order_items: {
         Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
           id: string
           order_id: string
           product_id: string | null
+          product_image: string | null
           product_name: string
           quantity: number
           unit_price: number
         }
         Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
           id?: string
           order_id: string
           product_id?: string | null
+          product_image?: string | null
           product_name: string
           quantity?: number
           unit_price: number
         }
         Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
           id?: string
           order_id?: string
           product_id?: string | null
+          product_image?: string | null
           product_name?: string
           quantity?: number
           unit_price?: number
