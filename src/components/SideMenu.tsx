@@ -76,11 +76,19 @@ export function SideMenu({
               />
               {user && (
                 <MenuRow
+                  icon={<Truck className="w-5 h-5 text-gold" />}
+                  label="ติดตามคำสั่งซื้อ"
+                  onClick={() => { close(); navigate({ to: "/orders" }); }}
+                />
+              )}
+              {user && (
+                <MenuRow
                   icon={<History className="w-5 h-5 text-gold" />}
                   label="ประวัติการซื้อ"
                   onClick={() => { close(); navigate({ to: "/history" }); }}
                 />
               )}
+
               <MenuRow
                 icon={user ? <LogOut className="w-5 h-5 text-gold" /> : <UserPlus className="w-5 h-5 text-gold" />}
                 label={user ? `ออกจากระบบ (${user.username})` : "สมัคร / เข้าสู่ระบบ"}
