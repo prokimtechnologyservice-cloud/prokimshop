@@ -111,16 +111,13 @@ export async function setFulfillmentStatus(
   status: FulfillmentStatus,
   staffId?: string | null,
 ) {
-  const patch: Record<string, any> = { fulfillment_status: status };
-  if (status === "pending") {
-    patch.acknowledged = false;
-    patch.acknowledged_at = null;
-    patch.acknowledged_by = null;
-  } else {
-    patch.acknowledged = true;
-    patch.acknowledged_at = new Date().toISOString();
-    if (staffId) patch.acknowledged_by = staffId;
-  }
-  const { error } = await supabase.from("order_items").update(patch).eq("id", itemId);
+  const base = {
+    fulfillment_status: status,
+    acknowledged: status !== "pending",
+    acknowledged_at: status === "pending" ? null : new Date().toISOString(),
+    acknowledged_by:
+      status === "pending" ? null : staffId ?? null,
+  };
+  const { error } = await supabase.from("order_items").update(base).eq("id", itemId);
   if (error) throw error;
 }
