@@ -1,5 +1,36 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type FulfillmentStatus =
+  | "pending"
+  | "acknowledged"
+  | "finding"
+  | "shipping"
+  | "delivered";
+
+export const STATUS_FLOW: FulfillmentStatus[] = [
+  "pending",
+  "acknowledged",
+  "finding",
+  "shipping",
+  "delivered",
+];
+
+export const STATUS_LABEL: Record<FulfillmentStatus, string> = {
+  pending: "รอแอดมินรับ",
+  acknowledged: "แอดมินรับแล้ว",
+  finding: "กำลังหาของ",
+  shipping: "กำลังจัดส่ง",
+  delivered: "จัดส่งสำเร็จ",
+};
+
+export const STATUS_COLOR: Record<FulfillmentStatus, string> = {
+  pending: "bg-amber-500/15 text-amber-300",
+  acknowledged: "bg-sky-500/15 text-sky-300",
+  finding: "bg-violet-500/15 text-violet-300",
+  shipping: "bg-blue-500/15 text-blue-300",
+  delivered: "bg-emerald-500/15 text-emerald-400",
+};
+
 export type TrackingItem = {
   id: string;
   order_id: string;
@@ -11,19 +42,24 @@ export type TrackingItem = {
   created_at: string;
   acknowledged: boolean;
   acknowledged_at: string | null;
+  fulfillment_status: FulfillmentStatus;
   user_id?: string;
   username?: string | null;
   roblox_name?: string | null;
 };
 
-/** All pending items in queue, oldest first (position = index+1). */
+function pickImage(r: any): string | null {
+  return r.product_image ?? r.products?.image_url ?? null;
+}
+
+/** All items still in the fulfillment pipeline (not yet delivered), oldest first. */
 export async function fetchPendingQueue(): Promise<TrackingItem[]> {
   const { data, error } = await supabase
     .from("order_items")
     .select(
-      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, orders!inner(user_id, profiles(username, roblox_name))",
+      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id, profiles(username, roblox_name))",
     )
-    .eq("acknowledged", false)
+    .neq("fulfillment_status", "delivered")
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []).map((r: any) => ({
@@ -31,24 +67,25 @@ export async function fetchPendingQueue(): Promise<TrackingItem[]> {
     order_id: r.order_id,
     product_id: r.product_id,
     product_name: r.product_name,
-    product_image: r.product_image,
+    product_image: pickImage(r),
     unit_price: Number(r.unit_price),
     quantity: r.quantity,
     created_at: r.created_at,
     acknowledged: r.acknowledged,
     acknowledged_at: r.acknowledged_at,
+    fulfillment_status: (r.fulfillment_status ?? "pending") as FulfillmentStatus,
     user_id: r.orders?.user_id,
     username: r.orders?.profiles?.username ?? null,
     roblox_name: r.orders?.profiles?.roblox_name ?? null,
   }));
 }
 
-/** Items for a specific user (both pending and acknowledged), newest first. */
+/** Items for a specific user, newest first. */
 export async function fetchUserTracking(userId: string): Promise<TrackingItem[]> {
   const { data, error } = await supabase
     .from("order_items")
     .select(
-      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, orders!inner(user_id)",
+      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id)",
     )
     .eq("orders.user_id", userId)
     .order("created_at", { ascending: false })
@@ -59,31 +96,31 @@ export async function fetchUserTracking(userId: string): Promise<TrackingItem[]>
     order_id: r.order_id,
     product_id: r.product_id,
     product_name: r.product_name,
-    product_image: r.product_image,
+    product_image: pickImage(r),
     unit_price: Number(r.unit_price),
     quantity: r.quantity,
     created_at: r.created_at,
     acknowledged: r.acknowledged,
     acknowledged_at: r.acknowledged_at,
+    fulfillment_status: (r.fulfillment_status ?? "pending") as FulfillmentStatus,
   }));
 }
 
-export async function acknowledgeItem(itemId: string, staffId: string) {
-  const { error } = await supabase
-    .from("order_items")
-    .update({
-      acknowledged: true,
-      acknowledged_at: new Date().toISOString(),
-      acknowledged_by: staffId,
-    })
-    .eq("id", itemId);
-  if (error) throw error;
-}
-
-export async function unacknowledgeItem(itemId: string) {
-  const { error } = await supabase
-    .from("order_items")
-    .update({ acknowledged: false, acknowledged_at: null, acknowledged_by: null })
-    .eq("id", itemId);
+export async function setFulfillmentStatus(
+  itemId: string,
+  status: FulfillmentStatus,
+  staffId?: string | null,
+) {
+  const patch: Record<string, any> = { fulfillment_status: status };
+  if (status === "pending") {
+    patch.acknowledged = false;
+    patch.acknowledged_at = null;
+    patch.acknowledged_by = null;
+  } else {
+    patch.acknowledged = true;
+    patch.acknowledged_at = new Date().toISOString();
+    if (staffId) patch.acknowledged_by = staffId;
+  }
+  const { error } = await supabase.from("order_items").update(patch).eq("id", itemId);
   if (error) throw error;
 }
