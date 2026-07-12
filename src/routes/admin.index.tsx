@@ -1254,19 +1254,36 @@ function OrdersManager() {
   );
 }
 
-// ============ TRACKING (per-item admin acknowledgement) ============
+// ============ TRACKING (per-item admin fulfillment) ============
+const STATUS_FLOW = ["pending", "acknowledged", "finding", "shipping", "delivered"] as const;
+type FStatus = (typeof STATUS_FLOW)[number];
+const STATUS_LABEL: Record<FStatus, string> = {
+  pending: "รอแอดมินรับ",
+  acknowledged: "แอดมินรับแล้ว",
+  finding: "กำลังหาของ",
+  shipping: "กำลังจัดส่ง",
+  delivered: "จัดส่งสำเร็จ",
+};
+const STATUS_COLOR: Record<FStatus, string> = {
+  pending: "bg-amber-500/15 text-amber-300",
+  acknowledged: "bg-sky-500/15 text-sky-300",
+  finding: "bg-violet-500/15 text-violet-300",
+  shipping: "bg-blue-500/15 text-blue-300",
+  delivered: "bg-emerald-500/15 text-emerald-400",
+};
+
 function TrackingManager() {
   const staff = getStaff();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAck, setShowAck] = useState(false);
+  const [showDone, setShowDone] = useState(false);
 
   async function load() {
     setLoading(true);
     const { data } = await supabase
       .from("order_items")
       .select(
-        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
+        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
       )
       .order("created_at", { ascending: true })
       .limit(500);
@@ -1283,29 +1300,42 @@ function TrackingManager() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  async function toggleAck(it: any) {
-    const patch = it.acknowledged
-      ? { acknowledged: false, acknowledged_at: null, acknowledged_by: null }
-      : { acknowledged: true, acknowledged_at: new Date().toISOString(), acknowledged_by: staff?.id ?? null };
+  async function updateStatus(it: any, status: FStatus) {
+    const patch = {
+      fulfillment_status: status,
+      acknowledged: status !== "pending",
+      acknowledged_at: status === "pending" ? null : new Date().toISOString(),
+      acknowledged_by: status === "pending" ? null : staff?.id ?? null,
+    };
     const { error } = await supabase.from("order_items").update(patch).eq("id", it.id);
     if (error) return toast.error(error.message);
-    toast.success(it.acknowledged ? "ยกเลิกการรับ" : "รับคำสั่งซื้อแล้ว");
+    toast.success(`อัปเดตเป็น "${STATUS_LABEL[status]}"`);
     load();
   }
 
-  const pending = items.filter((i) => !i.acknowledged);
-  const acked = items.filter((i) => i.acknowledged).reverse();
-  const visible = showAck ? [...pending, ...acked] : pending;
+  async function advance(it: any) {
+    const cur = (it.fulfillment_status ?? "pending") as FStatus;
+    const idx = STATUS_FLOW.indexOf(cur);
+    const next = STATUS_FLOW[Math.min(idx + 1, STATUS_FLOW.length - 1)];
+    if (next === cur) return;
+    return updateStatus(it, next);
+  }
+
+  const active = items.filter((i) => (i.fulfillment_status ?? "pending") !== "delivered");
+  const done = items.filter((i) => i.fulfillment_status === "delivered").reverse();
+  const pendingList = active.filter((i) => (i.fulfillment_status ?? "pending") === "pending");
+  const visible = showDone ? [...active, ...done] : active;
 
   return (
     <div className="space-y-4 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="text-sm">
-          <span className="text-amber-300 font-bold">{pending.length}</span> รอรับ ·{" "}
-          <span className="text-emerald-400 font-bold">{acked.length}</span> รับแล้ว
+          <span className="text-amber-300 font-bold">{pendingList.length}</span> รอรับ ·{" "}
+          <span className="text-sky-300 font-bold">{active.length - pendingList.length}</span> กำลังดำเนินการ ·{" "}
+          <span className="text-emerald-400 font-bold">{done.length}</span> สำเร็จ
         </div>
-        <Button size="sm" variant="outline" onClick={() => setShowAck((v) => !v)}>
-          {showAck ? "ซ่อนที่รับแล้ว" : "แสดงที่รับแล้ว"}
+        <Button size="sm" variant="outline" onClick={() => setShowDone((v) => !v)}>
+          {showDone ? "ซ่อนที่จัดส่งแล้ว" : "แสดงที่จัดส่งแล้ว"}
         </Button>
         <Button size="sm" variant="outline" onClick={load}>รีเฟรช</Button>
       </div>
@@ -1316,59 +1346,75 @@ function TrackingManager() {
         <div className="text-muted-foreground text-sm py-6 text-center">ไม่มีรายการ</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {visible.map((it, idx) => {
-            const pendingIdx = pending.findIndex((p) => p.id === it.id);
+          {visible.map((it) => {
+            const status = (it.fulfillment_status ?? "pending") as FStatus;
+            const pendingIdx = pendingList.findIndex((p) => p.id === it.id);
             const queuePos = pendingIdx >= 0 ? pendingIdx + 1 : null;
             const total = Number(it.unit_price) * it.quantity;
             const profile = it.orders?.profiles;
+            const img = it.product_image ?? it.products?.image_url ?? null;
+            const canAdvance = status !== "delivered";
             return (
               <div
                 key={it.id}
-                className={`rounded-lg border p-3 bg-gradient-card flex gap-3 ${
-                  it.acknowledged ? "border-emerald-500/30 opacity-70" : "border-gold/40"
+                className={`rounded-lg border p-3 bg-gradient-card ${
+                  status === "delivered"
+                    ? "border-emerald-500/30 opacity-70"
+                    : status === "pending"
+                      ? "border-gold/40"
+                      : "border-sky-500/40"
                 }`}
               >
-                <div className="w-16 h-16 shrink-0 rounded-md overflow-hidden bg-secondary/40 flex items-center justify-center">
-                  {it.product_image ? (
-                    <img src={it.product_image} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">no img</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 text-sm">
-                  <div className="font-medium truncate">{it.product_name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    จำนวน {it.quantity} × ฿{Number(it.unit_price).toFixed(2)} = <span className="text-gold font-bold">฿{total.toFixed(2)}</span>
+                <div className="flex gap-3">
+                  <div className="w-16 h-16 shrink-0 rounded-md overflow-hidden bg-secondary/40 flex items-center justify-center">
+                    {img ? (
+                      <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">no img</span>
+                    )}
                   </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {new Date(it.created_at).toLocaleString("th-TH")}
+                  <div className="flex-1 min-w-0 text-sm">
+                    <div className="font-medium truncate">{it.product_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      จำนวน {it.quantity} × ฿{Number(it.unit_price).toFixed(2)} = <span className="text-gold font-bold">฿{total.toFixed(2)}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {new Date(it.created_at).toLocaleString("th-TH")}
+                    </div>
+                    <div className="text-[11px] mt-0.5">
+                      <span className="text-muted-foreground">ลูกค้า:</span>{" "}
+                      <span className="font-medium">{profile?.username ?? "—"}</span>
+                      {profile?.roblox_name && <span className="text-muted-foreground"> · {profile.roblox_name}</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      IP: <span className="font-mono">{it.orders?.ip_address ?? "—"}</span>
+                    </div>
                   </div>
-                  <div className="text-[11px] mt-0.5">
-                    <span className="text-muted-foreground">ลูกค้า:</span>{" "}
-                    <span className="font-medium">{profile?.username ?? "—"}</span>
-                    {profile?.roblox_name && <span className="text-muted-foreground"> · {profile.roblox_name}</span>}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    IP: <span className="font-mono">{it.orders?.ip_address ?? "—"}</span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                  {queuePos ? (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300">
-                      คิว #{queuePos}
+                  <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[status]}`}>
+                      {STATUS_LABEL[status]}
                     </span>
-                  ) : (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
-                      ✓ รับแล้ว
-                    </span>
+                    {queuePos && (
+                      <span className="text-[11px] text-muted-foreground">คิว #{queuePos}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {canAdvance && (
+                    <Button size="sm" variant="luxe" onClick={() => advance(it)}>
+                      → {STATUS_LABEL[STATUS_FLOW[STATUS_FLOW.indexOf(status) + 1] as FStatus]}
+                    </Button>
                   )}
-                  <Button
-                    size="sm"
-                    variant={it.acknowledged ? "outline" : "luxe"}
-                    onClick={() => toggleAck(it)}
+                  <select
+                    value={status}
+                    onChange={(e) => updateStatus(it, e.target.value as FStatus)}
+                    className="text-xs bg-secondary border border-border rounded px-2 py-1"
                   >
-                    {it.acknowledged ? "ยกเลิก" : "รับ"}
-                  </Button>
+                    {STATUS_FLOW.map((s) => (
+                      <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             );
@@ -1378,3 +1424,4 @@ function TrackingManager() {
     </div>
   );
 }
+
