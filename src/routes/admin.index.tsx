@@ -73,7 +73,9 @@ function AdminDashboard() {
 
           <TabsContent value="catalog"><CatalogManager /></TabsContent>
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
+          <TabsContent value="tracking"><TrackingManager /></TabsContent>
           <TabsContent value="orders"><OrdersManager /></TabsContent>
+
           <TabsContent value="users"><UsersManager /></TabsContent>
           {isManager && <TabsContent value="editor"><SiteEditor /></TabsContent>}
           {isManager && <TabsContent value="overlay"><OverlayManager /></TabsContent>}
