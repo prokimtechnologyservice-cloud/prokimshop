@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Megaphone, Package, MessageCircle, UserPlus, LogOut, History, Crown, ChevronRight } from "lucide-react";
+import { Megaphone, Package, MessageCircle, UserPlus, LogOut, History, Crown, ChevronRight, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUser, setUser, type UserSession } from "@/lib/auth";
 import { ADMIN_CHAT_URL } from "@/lib/cart";
