@@ -52,16 +52,31 @@ export const Route = createFileRoute("/api/public/checkout")({
             .single();
           if (error) throw error;
 
+          // fetch current product images to snapshot on order items
+          const productIds = Array.from(
+            new Set(body.items.map((i) => i.product_id).filter(Boolean) as string[]),
+          );
+          const imgMap = new Map<string, string | null>();
+          if (productIds.length) {
+            const { data: prods } = await admin
+              .from("products")
+              .select("id, image_url")
+              .in("id", productIds);
+            (prods ?? []).forEach((p: any) => imgMap.set(p.id, p.image_url ?? null));
+          }
+
           const { error: itemsErr } = await admin.from("order_items").insert(
             body.items.map((i) => ({
               order_id: order.id,
               product_id: i.product_id,
               product_name: i.product_name,
+              product_image: i.product_id ? imgMap.get(i.product_id) ?? null : null,
               unit_price: i.unit_price,
               quantity: i.quantity,
             })),
           );
           if (itemsErr) throw itemsErr;
+
 
           if (body.pay_from_balance) {
             const { error: deductErr } = await admin.rpc("deduct_balance", {
