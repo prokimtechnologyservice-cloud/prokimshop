@@ -60,8 +60,10 @@ function AdminDashboard() {
           <TabsList className="flex flex-wrap h-auto">
             <TabsTrigger value="catalog">หมวด/สินค้า</TabsTrigger>
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
+            <TabsTrigger value="tracking">ติดตามคำสั่งซื้อ</TabsTrigger>
             <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
+
             {isManager && <TabsTrigger value="editor">แก้ไขข้อความ/รูป</TabsTrigger>}
             {isManager && <TabsTrigger value="overlay">วางวัตถุ (ลาก/หมุน)</TabsTrigger>}
             {isManager && <TabsTrigger value="staff">สิทธิ์พนักงาน</TabsTrigger>}
