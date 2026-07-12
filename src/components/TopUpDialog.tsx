@@ -46,7 +46,7 @@ export function TopUpDialog({
             <Wallet className="w-5 h-5 text-gold" /> เติมเงินด้วยซอง TrueMoney
           </DialogTitle>
           <DialogDescription>
-            วางลิงก์ซองอั่งเปา TrueMoney ระบบจะรับซองเข้าบัญชีร้าน (0960384928) และเติมยอดให้อัตโนมัติ
+            วางลิงก์ซองอั่งเปา TrueMoney ระบบจะรับซองและเติมยอดเข้าบัญชีของคุณโดยอัตโนมัติ
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

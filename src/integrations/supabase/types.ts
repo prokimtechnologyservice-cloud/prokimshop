@@ -150,6 +150,7 @@ export type Database = {
           acknowledged_at: string | null
           acknowledged_by: string | null
           created_at: string
+          fulfillment_status: string
           id: string
           order_id: string
           product_id: string | null
@@ -163,6 +164,7 @@ export type Database = {
           acknowledged_at?: string | null
           acknowledged_by?: string | null
           created_at?: string
+          fulfillment_status?: string
           id?: string
           order_id: string
           product_id?: string | null
@@ -176,6 +178,7 @@ export type Database = {
           acknowledged_at?: string | null
           acknowledged_by?: string | null
           created_at?: string
+          fulfillment_status?: string
           id?: string
           order_id?: string
           product_id?: string | null
