@@ -1253,3 +1253,128 @@ function OrdersManager() {
     </div>
   );
 }
+
+// ============ TRACKING (per-item admin acknowledgement) ============
+function TrackingManager() {
+  const staff = getStaff();
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAck, setShowAck] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("order_items")
+      .select(
+        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
+      )
+      .order("created_at", { ascending: true })
+      .limit(500);
+    setItems((data as any[]) ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("admin-tracking")
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  async function toggleAck(it: any) {
+    const patch = it.acknowledged
+      ? { acknowledged: false, acknowledged_at: null, acknowledged_by: null }
+      : { acknowledged: true, acknowledged_at: new Date().toISOString(), acknowledged_by: staff?.id ?? null };
+    const { error } = await supabase.from("order_items").update(patch).eq("id", it.id);
+    if (error) return toast.error(error.message);
+    toast.success(it.acknowledged ? "ยกเลิกการรับ" : "รับคำสั่งซื้อแล้ว");
+    load();
+  }
+
+  const pending = items.filter((i) => !i.acknowledged);
+  const acked = items.filter((i) => i.acknowledged).reverse();
+  const visible = showAck ? [...pending, ...acked] : pending;
+
+  return (
+    <div className="space-y-4 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="text-sm">
+          <span className="text-amber-300 font-bold">{pending.length}</span> รอรับ ·{" "}
+          <span className="text-emerald-400 font-bold">{acked.length}</span> รับแล้ว
+        </div>
+        <Button size="sm" variant="outline" onClick={() => setShowAck((v) => !v)}>
+          {showAck ? "ซ่อนที่รับแล้ว" : "แสดงที่รับแล้ว"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={load}>รีเฟรช</Button>
+      </div>
+
+      {loading ? (
+        <div className="text-muted-foreground text-sm py-6 text-center">กำลังโหลด...</div>
+      ) : visible.length === 0 ? (
+        <div className="text-muted-foreground text-sm py-6 text-center">ไม่มีรายการ</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {visible.map((it, idx) => {
+            const pendingIdx = pending.findIndex((p) => p.id === it.id);
+            const queuePos = pendingIdx >= 0 ? pendingIdx + 1 : null;
+            const total = Number(it.unit_price) * it.quantity;
+            const profile = it.orders?.profiles;
+            return (
+              <div
+                key={it.id}
+                className={`rounded-lg border p-3 bg-gradient-card flex gap-3 ${
+                  it.acknowledged ? "border-emerald-500/30 opacity-70" : "border-gold/40"
+                }`}
+              >
+                <div className="w-16 h-16 shrink-0 rounded-md overflow-hidden bg-secondary/40 flex items-center justify-center">
+                  {it.product_image ? (
+                    <img src={it.product_image} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">no img</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 text-sm">
+                  <div className="font-medium truncate">{it.product_name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    จำนวน {it.quantity} × ฿{Number(it.unit_price).toFixed(2)} = <span className="text-gold font-bold">฿{total.toFixed(2)}</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {new Date(it.created_at).toLocaleString("th-TH")}
+                  </div>
+                  <div className="text-[11px] mt-0.5">
+                    <span className="text-muted-foreground">ลูกค้า:</span>{" "}
+                    <span className="font-medium">{profile?.username ?? "—"}</span>
+                    {profile?.roblox_name && <span className="text-muted-foreground"> · {profile.roblox_name}</span>}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    IP: <span className="font-mono">{it.orders?.ip_address ?? "—"}</span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                  {queuePos ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300">
+                      คิว #{queuePos}
+                    </span>
+                  ) : (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
+                      ✓ รับแล้ว
+                    </span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={it.acknowledged ? "outline" : "luxe"}
+                    onClick={() => toggleAck(it)}
+                  >
+                    {it.acknowledged ? "ยกเลิก" : "รับ"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
