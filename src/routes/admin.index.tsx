@@ -413,6 +413,47 @@ function CatalogManager() {
                       })}
                     />
                   </div>
+                  <div>
+                    <Label className="text-xs">Slug (ลิงก์แชร์: /category/&lt;slug&gt;)</Label>
+                    <Input
+                      className="h-8 font-mono text-xs"
+                      value={editingCat.slug ?? ""}
+                      onChange={(e) => setEditingCat({ ...editingCat, slug: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">รูปแบบการแสดงในหน้าแรก</Label>
+                    <select
+                      value={editingCat.display_mode ?? "text"}
+                      onChange={(e) => setEditingCat({ ...editingCat, display_mode: e.target.value })}
+                      className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+                    >
+                      <option value="text">ข้อความ (ชื่อหมวด)</option>
+                      <option value="image">รูปภาพ 16:9 (ซ่อนชื่อ)</option>
+                    </select>
+                  </div>
+                  {editingCat.display_mode === "image" && (
+                    <div>
+                      <Label className="text-xs">รูปภาพหมวด (16:9)</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        {editingCat.image_url && (
+                          <img src={editingCat.image_url} className="w-24 aspect-video object-cover rounded border border-border" />
+                        )}
+                        <label className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border bg-secondary cursor-pointer hover:bg-accent text-xs">
+                          <Upload className="w-3 h-3" /> เลือกไฟล์
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            const url = await uploadCatImage(f);
+                            if (url) setEditingCat({ ...editingCat, image_url: url });
+                          }} />
+                        </label>
+                        {editingCat.image_url && (
+                          <Button size="sm" variant="ghost" onClick={() => setEditingCat({ ...editingCat, image_url: null })}>ลบรูป</Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => setEditingCat(null)}><X className="w-3 h-3" /> ยกเลิก</Button>
                     <Button size="sm" variant="luxe" onClick={saveEditCat}><Save className="w-3 h-3" /> บันทึก</Button>
