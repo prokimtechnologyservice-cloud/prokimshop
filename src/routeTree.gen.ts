@@ -14,6 +14,8 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
@@ -43,6 +45,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductIdRoute = ProductIdRouteImport.update({
+  id: '/product/$id',
+  path: '/product/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategorySlugRoute = CategorySlugRouteImport.update({
+  id: '/category/$slug',
+  path: '/category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
@@ -65,6 +77,8 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/admin/login': typeof AdminLoginRoute
+  '/category/$slug': typeof CategorySlugRoute
+  '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/admin/login': typeof AdminLoginRoute
+  '/category/$slug': typeof CategorySlugRoute
+  '/product/$id': typeof ProductIdRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/admin/login': typeof AdminLoginRoute
+  '/category/$slug': typeof CategorySlugRoute
+  '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
@@ -98,6 +116,8 @@ export interface FileRouteTypes {
     | '/orders'
     | '/search'
     | '/admin/login'
+    | '/category/$slug'
+    | '/product/$id'
     | '/admin/'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
@@ -108,6 +128,8 @@ export interface FileRouteTypes {
     | '/orders'
     | '/search'
     | '/admin/login'
+    | '/category/$slug'
+    | '/product/$id'
     | '/admin'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
@@ -118,6 +140,8 @@ export interface FileRouteTypes {
     | '/orders'
     | '/search'
     | '/admin/login'
+    | '/category/$slug'
+    | '/product/$id'
     | '/admin/'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
@@ -129,6 +153,8 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  CategorySlugRoute: typeof CategorySlugRoute
+  ProductIdRoute: typeof ProductIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
@@ -171,6 +197,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/product/$id': {
+      id: '/product/$id'
+      path: '/product/$id'
+      fullPath: '/product/$id'
+      preLoaderRoute: typeof ProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/category/$slug': {
+      id: '/category/$slug'
+      path: '/category/$slug'
+      fullPath: '/category/$slug'
+      preLoaderRoute: typeof CategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
@@ -201,6 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
   AdminLoginRoute: AdminLoginRoute,
+  CategorySlugRoute: CategorySlugRoute,
+  ProductIdRoute: ProductIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,

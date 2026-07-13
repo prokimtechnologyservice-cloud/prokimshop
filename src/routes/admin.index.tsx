@@ -19,8 +19,8 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[] };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[] };
+type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[]; slug: string | null; display_mode: string | null; image_url: string | null };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[]; product_type: string; is_featured: boolean; is_new: boolean; claim_instructions: string | null };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
@@ -111,6 +111,9 @@ function CatalogManager() {
       ...x,
       parent_id: x.parent_id ?? null,
       search_keywords: x.search_keywords ?? [],
+      slug: x.slug ?? null,
+      display_mode: x.display_mode ?? "text",
+      image_url: x.image_url ?? null,
     })) as Cat[];
     setCats(catList);
     setProds(((p as any[]) ?? []).map((x) => ({
@@ -118,18 +121,30 @@ function CatalogManager() {
       price: Number(x.price),
       stock: x.stock ?? null,
       search_keywords: x.search_keywords ?? [],
+      product_type: x.product_type ?? "normal",
+      is_featured: !!x.is_featured,
+      is_new: !!x.is_new,
+      claim_instructions: x.claim_instructions ?? null,
     })));
     if (!active && catList[0]) setActive(catList[0].id);
   }
   useEffect(() => { load(); }, []);
 
+  function makeSlug(name: string) {
+    return name.trim().toLowerCase().replace(/[^a-z0-9\u0e00-\u0e7f]+/g, "-").replace(/(^-+|-+$)/g, "") || "cat";
+  }
   async function addCat() {
     if (!newCat.trim()) return;
     const maxOrder = cats.reduce((m, c) => Math.max(m, c.sort_order ?? 0), 0);
+    let base = makeSlug(newCat);
+    let slug = base;
+    let i = 1;
+    while (cats.some((c) => c.slug === slug)) slug = `${base}-${++i}`;
     await supabase.from("categories").insert({
       name: newCat.trim(),
       sort_order: maxOrder + 10,
       parent_id: newCatParent || null,
+      slug,
     });
     setNewCat(""); setNewCatParent("");
     toast.success("เพิ่มหมวดหมู่แล้ว");
@@ -174,8 +189,20 @@ function CatalogManager() {
       name: editingCat.name,
       parent_id: editingCat.parent_id || null,
       search_keywords: editingCat.search_keywords,
+      slug: editingCat.slug || makeSlug(editingCat.name),
+      display_mode: editingCat.display_mode ?? "text",
+      image_url: editingCat.image_url,
     }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
+  }
+
+  async function uploadCatImage(file: File): Promise<string | null> {
+    if (!file.type.startsWith("image/")) { toast.error("ต้องเป็นรูปภาพ"); return null; }
+    const ext = file.name.split(".").pop();
+    const path = `cat-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file);
+    if (error) { toast.error(error.message); return null; }
+    return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
   }
 
   async function mergeInto(src: Cat, targetId: string) {
@@ -386,6 +413,47 @@ function CatalogManager() {
                       })}
                     />
                   </div>
+                  <div>
+                    <Label className="text-xs">Slug (ลิงก์แชร์: /category/&lt;slug&gt;)</Label>
+                    <Input
+                      className="h-8 font-mono text-xs"
+                      value={editingCat.slug ?? ""}
+                      onChange={(e) => setEditingCat({ ...editingCat, slug: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">รูปแบบการแสดงในหน้าแรก</Label>
+                    <select
+                      value={editingCat.display_mode ?? "text"}
+                      onChange={(e) => setEditingCat({ ...editingCat, display_mode: e.target.value })}
+                      className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+                    >
+                      <option value="text">ข้อความ (ชื่อหมวด)</option>
+                      <option value="image">รูปภาพ 16:9 (ซ่อนชื่อ)</option>
+                    </select>
+                  </div>
+                  {editingCat.display_mode === "image" && (
+                    <div>
+                      <Label className="text-xs">รูปภาพหมวด (16:9)</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        {editingCat.image_url && (
+                          <img src={editingCat.image_url} className="w-24 aspect-video object-cover rounded border border-border" />
+                        )}
+                        <label className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border bg-secondary cursor-pointer hover:bg-accent text-xs">
+                          <Upload className="w-3 h-3" /> เลือกไฟล์
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            const url = await uploadCatImage(f);
+                            if (url) setEditingCat({ ...editingCat, image_url: url });
+                          }} />
+                        </label>
+                        {editingCat.image_url && (
+                          <Button size="sm" variant="ghost" onClick={() => setEditingCat({ ...editingCat, image_url: null })}>ลบรูป</Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => setEditingCat(null)}><X className="w-3 h-3" /> ยกเลิก</Button>
                     <Button size="sm" variant="luxe" onClick={saveEditCat}><Save className="w-3 h-3" /> บันทึก</Button>
@@ -500,6 +568,41 @@ function ProductForm({
   );
   const [stockQty, setStockQty] = useState(String(product?.stock ?? ""));
   const [keywords, setKeywords] = useState((product?.search_keywords ?? []).join(", "));
+  const [productType, setProductType] = useState<string>(product?.product_type ?? "normal");
+  const [isFeatured, setIsFeatured] = useState<boolean>(!!product?.is_featured);
+  const [isNew, setIsNew] = useState<boolean>(!!product?.is_new);
+  const [claim, setClaim] = useState<string>(product?.claim_instructions ?? "");
+  const [accounts, setAccounts] = useState<{ id: string; payload: string; status: string }[]>([]);
+  const [newAccounts, setNewAccounts] = useState("");
+
+  useEffect(() => {
+    if (!product) return;
+    supabase
+      .from("product_account_stock")
+      .select("id, payload, status")
+      .eq("product_id", product.id)
+      .order("created_at")
+      .then(({ data }) => setAccounts((data as any[]) ?? []));
+  }, [product?.id]);
+
+  async function addAccounts() {
+    if (!product || !newAccounts.trim()) return;
+    const lines = newAccounts.split("\n").map((s) => s.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const { error } = await supabase.from("product_account_stock").insert(
+      lines.map((payload) => ({ product_id: product.id, payload })),
+    );
+    if (error) return toast.error(error.message);
+    setNewAccounts("");
+    toast.success(`เพิ่ม ${lines.length} บัญชี`);
+    const { data } = await supabase.from("product_account_stock").select("id, payload, status").eq("product_id", product.id).order("created_at");
+    setAccounts((data as any[]) ?? []);
+  }
+
+  async function delAccount(id: string) {
+    await supabase.from("product_account_stock").delete().eq("id", id);
+    setAccounts((a) => a.filter((x) => x.id !== id));
+  }
 
   async function uploadFile(file: File) {
     if (!file.type.startsWith("image/")) return toast.error("ต้องเป็นไฟล์รูปภาพ");
@@ -530,6 +633,10 @@ function ProductForm({
       category_id: categoryId,
       stock: stockVal,
       search_keywords: keywords.split(",").map((s) => s.trim()).filter(Boolean),
+      product_type: productType,
+      is_featured: isFeatured,
+      is_new: isNew,
+      claim_instructions: claim || null,
     };
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
@@ -620,6 +727,67 @@ function ProductForm({
           </div>
         </div>
       </div>
+      <div className="flex flex-wrap gap-4 pt-1 border-t border-border/60">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">ประเภท:</Label>
+          <select
+            value={productType}
+            onChange={(e) => setProductType(e.target.value)}
+            className="bg-input border border-border rounded px-2 h-8 text-xs"
+          >
+            <option value="normal">สินค้าปกติ</option>
+            <option value="account">ไก่ตัน (บัญชี)</option>
+          </select>
+        </div>
+        <label className="flex items-center gap-1 text-xs cursor-pointer">
+          <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} /> ⭐ สินค้าแนะนำ
+        </label>
+        <label className="flex items-center gap-1 text-xs cursor-pointer">
+          <input type="checkbox" checked={isNew} onChange={(e) => setIsNew(e.target.checked)} /> ✨ สินค้ามาใหม่
+        </label>
+      </div>
+
+      {productType === "account" && (
+        <div className="space-y-2 border border-gold/40 rounded p-3 bg-onyx/30">
+          <Label className="text-xs text-gold">คลังบัญชี (ไก่ตัน) — 1 บรรทัด = 1 บัญชี</Label>
+          {product ? (
+            <>
+              <div className="text-[11px] text-muted-foreground">
+                คงเหลือ {accounts.filter((a) => a.status === "available").length} · ขายแล้ว {accounts.filter((a) => a.status === "sold").length}
+              </div>
+              <Textarea
+                rows={3}
+                placeholder="user1:pass1&#10;user2:pass2"
+                value={newAccounts}
+                onChange={(e) => setNewAccounts(e.target.value)}
+              />
+              <Button size="sm" variant="outline" onClick={addAccounts}>เพิ่มบัญชี</Button>
+              <div className="max-h-40 overflow-auto space-y-1 mt-2">
+                {accounts.map((a) => (
+                  <div key={a.id} className="flex items-center gap-2 text-xs">
+                    <span className={`px-1.5 py-0.5 rounded ${a.status === "sold" ? "bg-emerald-500/20 text-emerald-400" : "bg-gold/20 text-gold"}`}>
+                      {a.status === "sold" ? "ขายแล้ว" : "ว่าง"}
+                    </span>
+                    <span className="font-mono truncate flex-1">{a.payload}</span>
+                    {a.status !== "sold" && (
+                      <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => delAccount(a.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">บันทึกสินค้าก่อน แล้วเปิดแก้ไขเพื่อเพิ่มบัญชี</div>
+          )}
+          <div>
+            <Label className="text-xs">คำแนะนำหลังซื้อ (แสดงให้ลูกค้าใน /orders)</Label>
+            <Textarea rows={3} value={claim} onChange={(e) => setClaim(e.target.value)} placeholder="เช่น ต้องเปลี่ยนรหัสทันที..." />
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 justify-end">
         <Button variant="ghost" onClick={onClose}>ยกเลิก</Button>
         <Button variant="luxe" onClick={save}>บันทึก</Button>
