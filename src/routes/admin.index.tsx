@@ -633,6 +633,10 @@ function ProductForm({
       category_id: categoryId,
       stock: stockVal,
       search_keywords: keywords.split(",").map((s) => s.trim()).filter(Boolean),
+      product_type: productType,
+      is_featured: isFeatured,
+      is_new: isNew,
+      claim_instructions: claim || null,
     };
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
@@ -723,6 +727,67 @@ function ProductForm({
           </div>
         </div>
       </div>
+      <div className="flex flex-wrap gap-4 pt-1 border-t border-border/60">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">ประเภท:</Label>
+          <select
+            value={productType}
+            onChange={(e) => setProductType(e.target.value)}
+            className="bg-input border border-border rounded px-2 h-8 text-xs"
+          >
+            <option value="normal">สินค้าปกติ</option>
+            <option value="account">ไก่ตัน (บัญชี)</option>
+          </select>
+        </div>
+        <label className="flex items-center gap-1 text-xs cursor-pointer">
+          <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} /> ⭐ สินค้าแนะนำ
+        </label>
+        <label className="flex items-center gap-1 text-xs cursor-pointer">
+          <input type="checkbox" checked={isNew} onChange={(e) => setIsNew(e.target.checked)} /> ✨ สินค้ามาใหม่
+        </label>
+      </div>
+
+      {productType === "account" && (
+        <div className="space-y-2 border border-gold/40 rounded p-3 bg-onyx/30">
+          <Label className="text-xs text-gold">คลังบัญชี (ไก่ตัน) — 1 บรรทัด = 1 บัญชี</Label>
+          {product ? (
+            <>
+              <div className="text-[11px] text-muted-foreground">
+                คงเหลือ {accounts.filter((a) => a.status === "available").length} · ขายแล้ว {accounts.filter((a) => a.status === "sold").length}
+              </div>
+              <Textarea
+                rows={3}
+                placeholder="user1:pass1&#10;user2:pass2"
+                value={newAccounts}
+                onChange={(e) => setNewAccounts(e.target.value)}
+              />
+              <Button size="sm" variant="outline" onClick={addAccounts}>เพิ่มบัญชี</Button>
+              <div className="max-h-40 overflow-auto space-y-1 mt-2">
+                {accounts.map((a) => (
+                  <div key={a.id} className="flex items-center gap-2 text-xs">
+                    <span className={`px-1.5 py-0.5 rounded ${a.status === "sold" ? "bg-emerald-500/20 text-emerald-400" : "bg-gold/20 text-gold"}`}>
+                      {a.status === "sold" ? "ขายแล้ว" : "ว่าง"}
+                    </span>
+                    <span className="font-mono truncate flex-1">{a.payload}</span>
+                    {a.status !== "sold" && (
+                      <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => delAccount(a.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">บันทึกสินค้าก่อน แล้วเปิดแก้ไขเพื่อเพิ่มบัญชี</div>
+          )}
+          <div>
+            <Label className="text-xs">คำแนะนำหลังซื้อ (แสดงให้ลูกค้าใน /orders)</Label>
+            <Textarea rows={3} value={claim} onChange={(e) => setClaim(e.target.value)} placeholder="เช่น ต้องเปลี่ยนรหัสทันที..." />
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 justify-end">
         <Button variant="ghost" onClick={onClose}>ยกเลิก</Button>
         <Button variant="luxe" onClick={save}>บันทึก</Button>
