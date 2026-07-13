@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
@@ -12,11 +14,18 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star } from "lucide-react";
+import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
+import { RobloxIdDialog } from "@/components/RobloxIdDialog";
+
+const searchSchema = z.object({
+  cat: fallback(z.string(), "").default(""),
+  p: fallback(z.string(), "").default(""),
+});
 
 export const Route = createFileRoute("/")({
+  validateSearch: zodValidator(searchSchema),
   head: () => ({
     meta: [
       { title: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
@@ -34,6 +43,9 @@ type Category = {
   name: string;
   sort_order: number;
   parent_id: string | null;
+  slug: string | null;
+  display_mode: string | null;
+  image_url: string | null;
 };
 type Product = {
   id: string;
@@ -44,72 +56,120 @@ type Product = {
   image_url: string | null;
   stock: number | null;
   created_at: string;
+  product_type: string;
+  is_featured: boolean;
+  is_new: boolean;
+  account_available?: number;
 };
-type ProductRow = Omit<Product, "price" | "stock"> & { price: number | string; stock: number | null };
 
 function Index() {
+  const { cat: deepCat, p: deepProd } = Route.useSearch();
   const [cats, setCats] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [activeParent, setActiveParent] = useState<string | null>(null);
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const [topCatId, setTopCatId] = useState<string | null>(null);
-  const [topProductIds, setTopProductIds] = useState<string[]>([]);
   const [siteOpen, setSiteOpen] = useState(true);
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
+  const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
   const { content } = useSiteContent();
+  const user = getUser();
+
+  async function load() {
+    const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: acct }] = await Promise.all([
+      supabase.from("categories").select("*").order("sort_order").order("created_at"),
+      supabase.from("products").select("*").order("sort_order").order("created_at"),
+      supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("category_views").select("category_id"),
+      supabase.from("product_account_stock").select("product_id, status").eq("status", "available"),
+    ]);
+    const catList = ((c as any[]) ?? []).map((x) => ({
+      ...x,
+      parent_id: x.parent_id ?? null,
+      slug: x.slug ?? null,
+      display_mode: x.display_mode ?? "text",
+      image_url: x.image_url ?? null,
+    })) as Category[];
+    setCats(catList);
+
+    // count available accounts per product
+    const acctCount: Record<string, number> = {};
+    ((acct as any[]) ?? []).forEach((r) => {
+      acctCount[r.product_id] = (acctCount[r.product_id] ?? 0) + 1;
+    });
+
+    const prodList = ((p as any[]) ?? []).map((x) => {
+      const type = x.product_type ?? "normal";
+      const avail = acctCount[x.id] ?? 0;
+      return {
+        ...x,
+        price: Number(x.price),
+        stock: type === "account" ? avail : x.stock,
+        product_type: type,
+        is_featured: !!x.is_featured,
+        is_new: !!x.is_new,
+        account_available: type === "account" ? avail : undefined,
+      };
+    }) as Product[];
+    setProducts(prodList);
+
+    if (s) {
+      setSiteOpen(s.is_open);
+      setClosedMsg(s.closed_message ?? "");
+    }
+    const catCounts: Record<string, number> = {};
+    ((vw as { category_id: string }[]) ?? []).forEach((v) => {
+      catCounts[v.category_id] = (catCounts[v.category_id] ?? 0) + 1;
+    });
+    const topEntry = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
+    if (topEntry) setTopCatId(topEntry[0]);
+
+    return { catList, prodList };
+  }
 
   useEffect(() => {
     (async () => {
-      const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: oi }] = await Promise.all([
-        supabase.from("categories").select("*").order("sort_order"),
-        supabase.from("products").select("*").order("sort_order"),
-        supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
-        supabase.from("category_views").select("category_id"),
-        supabase.from("order_items").select("product_id, quantity"),
-      ]);
-      const catList = ((c as Category[]) ?? []).map((x) => ({ ...x, parent_id: x.parent_id ?? null }));
-      setCats(catList);
-      setProducts(
-        ((p as ProductRow[]) ?? []).map((x) => ({ ...x, price: Number(x.price), stock: x.stock })),
-      );
+      const { catList, prodList } = await load();
+
+      // deep-link handling
+      if (deepProd) {
+        const found = prodList.find((x) => x.id === deepProd);
+        if (found) setDetail(found);
+      }
+      if (deepCat) {
+        const target = catList.find((c) => c.slug === deepCat);
+        if (target) {
+          if (target.parent_id) {
+            setActiveParent(target.parent_id);
+            setActiveSub(target.id);
+          } else {
+            setActiveParent(target.id);
+            const firstChild = catList.find((c) => c.parent_id === target.id);
+            setActiveSub(firstChild?.id ?? null);
+          }
+          setTimeout(
+            () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+            300,
+          );
+          return;
+        }
+      }
       const firstParent = catList.find((c) => !c.parent_id);
-      if (firstParent) {
+      if (firstParent && !activeParent) {
         setActiveParent(firstParent.id);
         const firstChild = catList.find((c) => c.parent_id === firstParent.id);
         setActiveSub(firstChild?.id ?? null);
       }
-      if (s) {
-        setSiteOpen(s.is_open);
-        setClosedMsg(s.closed_message ?? "");
-      }
-
-      // most-viewed category
-      const catCounts: Record<string, number> = {};
-      ((vw as { category_id: string }[]) ?? []).forEach((v) => {
-        catCounts[v.category_id] = (catCounts[v.category_id] ?? 0) + 1;
-      });
-      const topEntry = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
-      if (topEntry) setTopCatId(topEntry[0]);
-
-      // best-sellers
-      const prodCounts: Record<string, number> = {};
-      ((oi as { product_id: string | null; quantity: number }[]) ?? []).forEach((o) => {
-        if (!o.product_id) return;
-        prodCounts[o.product_id] = (prodCounts[o.product_id] ?? 0) + o.quantity;
-      });
-      setTopProductIds(
-        Object.entries(prodCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id]) => id),
-      );
 
       const sk = sessionStorage.getItem("vk") || crypto.randomUUID();
       sessionStorage.setItem("vk", sk);
       supabase.from("visits").insert({ session_key: sk });
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // track category view
   useEffect(() => {
     const id = activeSub || activeParent;
     if (!id) return;
@@ -134,12 +194,42 @@ function Index() {
     );
   }
 
-  async function handleAdd(p: Product) {
-    if (p.stock === 0) return toast.error("สินค้าหมด");
+  async function requestAdd(p: Product) {
+    if ((p.stock ?? null) === 0) return toast.error("สินค้าหมด");
     const u = getUser();
     if (!u) return toast.error("กรุณาเข้าสู่ระบบก่อน");
-    await addToCart(u.id, { id: p.id, name: p.name, price: p.price });
-    toast.success(`เพิ่ม ${p.name} ลงตะกร้า`);
+    // account (ไก่ตัน) products don't need roblox id (delivered as account payload)
+    if (p.product_type === "account") {
+      await addToCart(u.id, { id: p.id, name: p.name, price: p.price }, null);
+      toast.success(`เพิ่ม ${p.name} ลงตะกร้า`);
+      return;
+    }
+    setPending(p);
+  }
+
+  async function confirmAdd(robloxName: string) {
+    if (!pending) return;
+    const u = getUser();
+    if (!u) return;
+    await addToCart(u.id, { id: pending.id, name: pending.name, price: pending.price }, robloxName);
+    toast.success(`เพิ่ม ${pending.name} ลงตะกร้า (ID: ${robloxName})`);
+    setPending(null);
+  }
+
+  function shareProduct(p: Product) {
+    const url = `${window.location.origin}/product/${p.id}`;
+    navigator.clipboard?.writeText(url).then(
+      () => toast.success("คัดลอกลิงก์แล้ว"),
+      () => toast.error("คัดลอกไม่สำเร็จ"),
+    );
+  }
+  function shareCategory(c: Category) {
+    if (!c.slug) return toast.error("หมวดนี้ยังไม่มีลิงก์แชร์");
+    const url = `${window.location.origin}/category/${c.slug}`;
+    navigator.clipboard?.writeText(url).then(
+      () => toast.success("คัดลอกลิงก์หมวดแล้ว"),
+      () => toast.error("คัดลอกไม่สำเร็จ"),
+    );
   }
 
   if (!siteOpen) {
@@ -160,17 +250,16 @@ function Index() {
   const visible = products.filter((p) => p.category_id === effectiveCatId);
 
   const topCat = topCatId ? cats.find((c) => c.id === topCatId) : null;
-  const topProducts = topProductIds
-    .map((id) => products.find((p) => p.id === id))
-    .filter((x): x is Product => !!x);
-  const newestProducts = useMemo(
-    () => [...products].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 6),
+
+  const featured = useMemo(
+    () => products.filter((p) => p.is_featured).slice(0, 6),
     [products],
   );
-  const newestCats = useMemo(
-    () => [...parents].slice(-3).reverse(),
-    [parents],
+  const newest = useMemo(
+    () => products.filter((p) => p.is_new).slice(0, 6),
+    [products],
   );
+  const newestCats = useMemo(() => [...parents].slice(-3).reverse(), [parents]);
 
   return (
     <div className="min-h-screen">
@@ -223,7 +312,7 @@ function Index() {
       )}
 
       {/* Highlights */}
-      {(topCat || topProducts.length > 0 || newestCats.length > 0) && (
+      {(topCat || featured.length > 0 || newestCats.length > 0) && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
           {(topCat || newestCats.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -261,27 +350,27 @@ function Index() {
             </div>
           )}
 
-          {topProducts.length > 0 && (
+          {featured.length > 0 && (
             <div>
               <h3 className="font-display text-lg mb-3 flex items-center gap-2">
-                <Flame className="w-5 h-5 text-primary" /> ขายดี · มาแรง
+                <Flame className="w-5 h-5 text-primary" /> สินค้าแนะนำ
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {topProducts.map((p) => (
-                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => handleAdd(p)} compact />
+                {featured.map((p) => (
+                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} compact />
                 ))}
               </div>
             </div>
           )}
 
-          {newestProducts.length > 0 && (
+          {newest.length > 0 && (
             <div>
               <h3 className="font-display text-lg mb-3 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-gold" /> สินค้ามาใหม่
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {newestProducts.map((p) => (
-                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => handleAdd(p)} compact />
+                {newest.map((p) => (
+                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} compact />
                 ))}
               </div>
             </div>
@@ -292,47 +381,81 @@ function Index() {
       {/* Category tabs */}
       <section className="sticky top-16 z-30 glass border-b border-border/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex gap-2 overflow-x-auto">
-          {parents.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => handleSelectCategory(c.id)}
-              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap border transition ${
-                activeParent === c.id
-                  ? "bg-gradient-crimson border-primary text-primary-foreground shadow-luxe"
-                  : "border-border bg-card hover:border-primary/50"
-              }`}
-            >
-              {c.name}
-            </button>
-          ))}
+          {parents.map((c) => {
+            const isImg = c.display_mode === "image" && c.image_url;
+            const active = activeParent === c.id;
+            return (
+              <button
+                key={c.id}
+                onClick={() => handleSelectCategory(c.id)}
+                className={`shrink-0 rounded-xl overflow-hidden border transition ${
+                  isImg ? "w-40 aspect-video" : "px-4 py-2 text-sm whitespace-nowrap"
+                } ${
+                  active
+                    ? "border-primary shadow-luxe ring-2 ring-primary/40"
+                    : "border-border bg-card hover:border-primary/50"
+                }`}
+              >
+                {isImg ? (
+                  <img src={c.image_url!} alt={c.name} className="w-full h-full object-cover" />
+                ) : (
+                  c.name
+                )}
+              </button>
+            );
+          })}
         </div>
         {subs.length > 0 && (
           <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-3 flex gap-2 overflow-x-auto">
-            {subs.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setActiveSub(c.id)}
-                className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap border transition ${
-                  activeSub === c.id
-                    ? "bg-gold text-onyx border-gold font-medium"
-                    : "border-border bg-card hover:border-gold/50"
-                }`}
-              >
-                {c.name}
-              </button>
-            ))}
+            {subs.map((c) => {
+              const isImg = c.display_mode === "image" && c.image_url;
+              const active = activeSub === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setActiveSub(c.id)}
+                  className={`shrink-0 rounded-lg overflow-hidden border transition ${
+                    isImg ? "w-32 aspect-video" : "px-3 py-1.5 text-xs whitespace-nowrap"
+                  } ${
+                    active
+                      ? "border-gold ring-2 ring-gold/40"
+                      : "border-border bg-card hover:border-gold/50"
+                  }`}
+                >
+                  {isImg ? (
+                    <img src={c.image_url!} alt={c.name} className="w-full h-full object-cover" />
+                  ) : (
+                    c.name
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </section>
 
       {/* Product grid */}
       <main ref={productsRef} className="mx-auto max-w-7xl px-4 sm:px-6 py-10 scroll-mt-32">
-        <h2 className="font-display text-3xl mb-6">
-          {cats.find((c) => c.id === effectiveCatId)?.name ?? ""}
-        </h2>
+        <div className="flex items-center justify-between mb-6 gap-2">
+          <h2 className="font-display text-3xl">
+            {cats.find((c) => c.id === effectiveCatId)?.name ?? ""}
+          </h2>
+          {effectiveCatId && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const c = cats.find((x) => x.id === effectiveCatId);
+                if (c) shareCategory(c);
+              }}
+            >
+              <Share2 className="w-4 h-4 mr-1" /> แชร์หมวดนี้
+            </Button>
+          )}
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {visible.map((p) => (
-            <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => handleAdd(p)} />
+            <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} />
           ))}
         </div>
         {visible.length === 0 && (
@@ -345,8 +468,13 @@ function Index() {
           {detail && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display text-2xl text-gradient-gold pr-6">
+                <DialogTitle className="font-display text-2xl text-gradient-gold pr-6 flex items-center gap-2">
                   {detail.name}
+                  {detail.product_type === "account" && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40 font-normal">
+                      ไก่ตัน
+                    </span>
+                  )}
                 </DialogTitle>
                 <DialogDescription className="text-gold font-bold text-lg">
                   {detail.price > 0 ? `฿${detail.price.toFixed(2)}` : "ติดต่อแอดมิน"}
@@ -376,20 +504,34 @@ function Index() {
               {detail.stock != null && detail.stock > 0 && (
                 <div className="text-sm text-gold">คงเหลือ {detail.stock} ชิ้น</div>
               )}
-              <Button
-                variant="luxe"
-                disabled={detail.stock === 0}
-                onClick={() => {
-                  handleAdd(detail);
-                  setDetail(null);
-                }}
-              >
-                <ShoppingCart className="w-4 h-4" /> {detail.stock === 0 ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="luxe"
+                  disabled={detail.stock === 0}
+                  className="flex-1"
+                  onClick={() => {
+                    requestAdd(detail);
+                    setDetail(null);
+                  }}
+                >
+                  <ShoppingCart className="w-4 h-4" /> {detail.stock === 0 ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
+                </Button>
+                <Button variant="outline" onClick={() => shareProduct(detail)}>
+                  <Share2 className="w-4 h-4" /> แชร์
+                </Button>
+              </div>
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      <RobloxIdDialog
+        open={!!pending}
+        productName={pending?.name ?? ""}
+        defaultName={user?.roblox_name}
+        onConfirm={confirmAdd}
+        onOpenChange={(v) => !v && setPending(null)}
+      />
 
       <footer
         data-site-key="footer_text"
@@ -431,6 +573,11 @@ function ProductCard({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-onyx/90 via-transparent to-transparent" />
+        {p.product_type === "account" && (
+          <span className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-gold/90 text-onyx font-bold">
+            ไก่ตัน
+          </span>
+        )}
         {sold && (
           <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
             <span className="text-2xl sm:text-3xl font-bold text-destructive tracking-widest drop-shadow-lg">
