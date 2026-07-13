@@ -189,8 +189,20 @@ function CatalogManager() {
       name: editingCat.name,
       parent_id: editingCat.parent_id || null,
       search_keywords: editingCat.search_keywords,
+      slug: editingCat.slug || makeSlug(editingCat.name),
+      display_mode: editingCat.display_mode ?? "text",
+      image_url: editingCat.image_url,
     }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
+  }
+
+  async function uploadCatImage(file: File): Promise<string | null> {
+    if (!file.type.startsWith("image/")) { toast.error("ต้องเป็นรูปภาพ"); return null; }
+    const ext = file.name.split(".").pop();
+    const path = `cat-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file);
+    if (error) { toast.error(error.message); return null; }
+    return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
   }
 
   async function mergeInto(src: Cat, targetId: string) {
