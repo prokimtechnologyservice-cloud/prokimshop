@@ -88,7 +88,7 @@ export async function fetchUserTracking(userId: string): Promise<TrackingItem[]>
   const { data, error } = await supabase
     .from("order_items")
     .select(
-      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id)",
+      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, roblox_name, delivered_payload, products(image_url, claim_instructions, product_type), orders!inner(user_id)",
     )
     .eq("orders.user_id", userId)
     .order("created_at", { ascending: false })
@@ -106,6 +106,10 @@ export async function fetchUserTracking(userId: string): Promise<TrackingItem[]>
     acknowledged: r.acknowledged,
     acknowledged_at: r.acknowledged_at,
     fulfillment_status: (r.fulfillment_status ?? "pending") as FulfillmentStatus,
+    roblox_name: r.roblox_name ?? null,
+    delivered_payload: r.delivered_payload ?? null,
+    claim_instructions: r.products?.claim_instructions ?? null,
+    product_type: r.products?.product_type ?? "normal",
   }));
 }
 
