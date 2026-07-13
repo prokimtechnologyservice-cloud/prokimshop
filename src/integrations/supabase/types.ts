@@ -42,6 +42,7 @@ export type Database = {
           product_id: string | null
           product_name: string
           quantity: number
+          roblox_name: string | null
           unit_price: number
           user_id: string
         }
@@ -51,6 +52,7 @@ export type Database = {
           product_id?: string | null
           product_name: string
           quantity?: number
+          roblox_name?: string | null
           unit_price: number
           user_id: string
         }
@@ -60,6 +62,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string
           quantity?: number
+          roblox_name?: string | null
           unit_price?: number
           user_id?: string
         }
@@ -83,26 +86,35 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          display_mode: string
           id: string
+          image_url: string | null
           name: string
           parent_id: string | null
           search_keywords: string[]
+          slug: string | null
           sort_order: number
         }
         Insert: {
           created_at?: string
+          display_mode?: string
           id?: string
+          image_url?: string | null
           name: string
           parent_id?: string | null
           search_keywords?: string[]
+          slug?: string | null
           sort_order?: number
         }
         Update: {
           created_at?: string
+          display_mode?: string
           id?: string
+          image_url?: string | null
           name?: string
           parent_id?: string | null
           search_keywords?: string[]
+          slug?: string | null
           sort_order?: number
         }
         Relationships: [
@@ -150,6 +162,7 @@ export type Database = {
           acknowledged_at: string | null
           acknowledged_by: string | null
           created_at: string
+          delivered_payload: string | null
           fulfillment_status: string
           id: string
           order_id: string
@@ -157,6 +170,7 @@ export type Database = {
           product_image: string | null
           product_name: string
           quantity: number
+          roblox_name: string | null
           unit_price: number
         }
         Insert: {
@@ -164,6 +178,7 @@ export type Database = {
           acknowledged_at?: string | null
           acknowledged_by?: string | null
           created_at?: string
+          delivered_payload?: string | null
           fulfillment_status?: string
           id?: string
           order_id: string
@@ -171,6 +186,7 @@ export type Database = {
           product_image?: string | null
           product_name: string
           quantity?: number
+          roblox_name?: string | null
           unit_price: number
         }
         Update: {
@@ -178,6 +194,7 @@ export type Database = {
           acknowledged_at?: string | null
           acknowledged_by?: string | null
           created_at?: string
+          delivered_payload?: string | null
           fulfillment_status?: string
           id?: string
           order_id?: string
@@ -185,6 +202,7 @@ export type Database = {
           product_image?: string | null
           product_name?: string
           quantity?: number
+          roblox_name?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -248,15 +266,60 @@ export type Database = {
           },
         ]
       }
+      product_account_stock: {
+        Row: {
+          created_at: string
+          id: string
+          order_item_id: string | null
+          payload: string
+          product_id: string
+          sold_at: string | null
+          sold_to: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_item_id?: string | null
+          payload: string
+          product_id: string
+          sold_at?: string | null
+          sold_to?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_item_id?: string | null
+          payload?: string
+          product_id?: string
+          sold_at?: string | null
+          sold_to?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_account_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null
+          claim_instructions: string | null
           created_at: string
           description: string | null
           id: string
           image_url: string | null
+          is_featured: boolean
+          is_new: boolean
           name: string
           price: number
+          product_type: string
           search_keywords: string[]
           sort_order: number
           stock: number | null
@@ -264,12 +327,16 @@ export type Database = {
         }
         Insert: {
           category_id?: string | null
+          claim_instructions?: string | null
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
+          is_new?: boolean
           name: string
           price?: number
+          product_type?: string
           search_keywords?: string[]
           sort_order?: number
           stock?: number | null
@@ -277,12 +344,16 @@ export type Database = {
         }
         Update: {
           category_id?: string | null
+          claim_instructions?: string | null
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
+          is_new?: boolean
           name?: string
           price?: number
+          product_type?: string
           search_keywords?: string[]
           sort_order?: number
           stock?: number | null
