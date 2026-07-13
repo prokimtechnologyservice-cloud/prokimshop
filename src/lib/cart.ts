@@ -84,6 +84,7 @@ export async function checkoutCart(
         product_name: i.product_name,
         unit_price: i.unit_price,
         quantity: i.quantity,
+        roblox_name: i.roblox_name ?? null,
       })),
     }),
   });
