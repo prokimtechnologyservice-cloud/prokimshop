@@ -130,13 +130,21 @@ function CatalogManager() {
   }
   useEffect(() => { load(); }, []);
 
+  function makeSlug(name: string) {
+    return name.trim().toLowerCase().replace(/[^a-z0-9\u0e00-\u0e7f]+/g, "-").replace(/(^-+|-+$)/g, "") || "cat";
+  }
   async function addCat() {
     if (!newCat.trim()) return;
     const maxOrder = cats.reduce((m, c) => Math.max(m, c.sort_order ?? 0), 0);
+    let base = makeSlug(newCat);
+    let slug = base;
+    let i = 1;
+    while (cats.some((c) => c.slug === slug)) slug = `${base}-${++i}`;
     await supabase.from("categories").insert({
       name: newCat.trim(),
       sort_order: maxOrder + 10,
       parent_id: newCatParent || null,
+      slug,
     });
     setNewCat(""); setNewCatParent("");
     toast.success("เพิ่มหมวดหมู่แล้ว");
