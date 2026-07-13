@@ -6,29 +6,33 @@ export type CartItem = {
   product_name: string;
   unit_price: number;
   quantity: number;
+  roblox_name?: string | null;
 };
 
 export async function fetchCart(userId: string): Promise<CartItem[]> {
   const { data, error } = await supabase
     .from("cart_items")
-    .select("id, product_id, product_name, unit_price, quantity")
+    .select("id, product_id, product_name, unit_price, quantity, roblox_name")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((d) => ({ ...d, unit_price: Number(d.unit_price) }));
+  return (data ?? []).map((d: any) => ({ ...d, unit_price: Number(d.unit_price) }));
 }
 
 export async function addToCart(
   userId: string,
   product: { id: string; name: string; price: number },
+  roblox_name?: string | null,
 ) {
-  // merge if same product
-  const { data: existing } = await supabase
+  // merge only when same product AND same roblox_name
+  const q = supabase
     .from("cart_items")
     .select("id, quantity")
     .eq("user_id", userId)
-    .eq("product_id", product.id)
-    .maybeSingle();
+    .eq("product_id", product.id);
+  const { data: existing } = roblox_name
+    ? await q.eq("roblox_name", roblox_name).maybeSingle()
+    : await q.is("roblox_name", null).maybeSingle();
 
   if (existing) {
     await supabase
@@ -42,6 +46,7 @@ export async function addToCart(
       product_name: product.name,
       unit_price: product.price,
       quantity: 1,
+      roblox_name: roblox_name ?? null,
     });
   }
   window.dispatchEvent(new Event("cart-change"));
