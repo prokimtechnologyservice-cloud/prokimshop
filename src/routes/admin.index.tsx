@@ -568,6 +568,41 @@ function ProductForm({
   );
   const [stockQty, setStockQty] = useState(String(product?.stock ?? ""));
   const [keywords, setKeywords] = useState((product?.search_keywords ?? []).join(", "));
+  const [productType, setProductType] = useState<string>(product?.product_type ?? "normal");
+  const [isFeatured, setIsFeatured] = useState<boolean>(!!product?.is_featured);
+  const [isNew, setIsNew] = useState<boolean>(!!product?.is_new);
+  const [claim, setClaim] = useState<string>(product?.claim_instructions ?? "");
+  const [accounts, setAccounts] = useState<{ id: string; payload: string; status: string }[]>([]);
+  const [newAccounts, setNewAccounts] = useState("");
+
+  useEffect(() => {
+    if (!product) return;
+    supabase
+      .from("product_account_stock")
+      .select("id, payload, status")
+      .eq("product_id", product.id)
+      .order("created_at")
+      .then(({ data }) => setAccounts((data as any[]) ?? []));
+  }, [product?.id]);
+
+  async function addAccounts() {
+    if (!product || !newAccounts.trim()) return;
+    const lines = newAccounts.split("\n").map((s) => s.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const { error } = await supabase.from("product_account_stock").insert(
+      lines.map((payload) => ({ product_id: product.id, payload })),
+    );
+    if (error) return toast.error(error.message);
+    setNewAccounts("");
+    toast.success(`เพิ่ม ${lines.length} บัญชี`);
+    const { data } = await supabase.from("product_account_stock").select("id, payload, status").eq("product_id", product.id).order("created_at");
+    setAccounts((data as any[]) ?? []);
+  }
+
+  async function delAccount(id: string) {
+    await supabase.from("product_account_stock").delete().eq("id", id);
+    setAccounts((a) => a.filter((x) => x.id !== id));
+  }
 
   async function uploadFile(file: File) {
     if (!file.type.startsWith("image/")) return toast.error("ต้องเป็นไฟล์รูปภาพ");
