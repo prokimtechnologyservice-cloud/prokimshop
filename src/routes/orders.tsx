@@ -10,7 +10,9 @@ import {
   STATUS_COLOR,
   type TrackingItem,
 } from "@/lib/tracking";
-import { Package, Clock, Loader2, CheckCircle2 } from "lucide-react";
+import { Package, Clock, Loader2, CheckCircle2, KeyRound, Copy, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/orders")({
@@ -170,11 +172,69 @@ function OrdersPage() {
                     );
                   })}
                 </div>
+
+                {it.roblox_name && it.product_type !== "account" && (
+                  <div className="mt-2 text-[11px] text-muted-foreground">
+                    ผู้เล่น Roblox: <span className="text-gold font-medium">{it.roblox_name}</span>
+                  </div>
+                )}
+
+                {it.product_type === "account" && it.delivered_payload && (
+                  <AccountPayloadBlock payload={it.delivered_payload} instructions={it.claim_instructions ?? undefined} />
+                )}
               </div>
             );
           })}
         </div>
       </main>
+    </div>
+  );
+}
+
+function AccountPayloadBlock({
+  payload,
+  instructions,
+}: {
+  payload: string;
+  instructions?: string;
+}) {
+  const defaultClaim = `คำแนะนำ:
+1. เมื่อได้ไอดีไปต้องเปลี่ยนรหัสทันที
+
+วิธีเคลมเมื่อไอดีมีปัญหา:
+1. อัดวิดีโอตั้งแต่ ซื้อสินค้า → เข้ารหัส
+2. หากไม่มีหลักฐาน แอดมินไม่คืนเงินทุกกรณี`;
+  const text = instructions?.trim() ? instructions : defaultClaim;
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="rounded-lg border border-gold/50 bg-onyx/60 p-3">
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-[11px] uppercase tracking-widest text-gold flex items-center gap-1">
+            <KeyRound className="w-3 h-3" /> บัญชีที่ได้รับ
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              navigator.clipboard?.writeText(payload);
+              toast.success("คัดลอกแล้ว");
+            }}
+          >
+            <Copy className="w-3 h-3 mr-1" /> คัดลอก
+          </Button>
+        </div>
+        <pre className="whitespace-pre-wrap break-all font-mono text-xs text-gold select-all">
+          {payload}
+        </pre>
+      </div>
+      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs">
+        <div className="flex items-center gap-1 text-destructive font-bold mb-1">
+          <ShieldAlert className="w-3.5 h-3.5" /> อ่านก่อนใช้งาน
+        </div>
+        <pre className="whitespace-pre-wrap font-sans text-muted-foreground leading-relaxed">
+          {text}
+        </pre>
+      </div>
     </div>
   );
 }
