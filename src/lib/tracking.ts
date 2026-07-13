@@ -46,6 +46,9 @@ export type TrackingItem = {
   user_id?: string;
   username?: string | null;
   roblox_name?: string | null;
+  delivered_payload?: string | null;
+  claim_instructions?: string | null;
+  product_type?: string;
 };
 
 function pickImage(r: any): string | null {
