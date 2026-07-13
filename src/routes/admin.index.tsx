@@ -19,8 +19,8 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[] };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[] };
+type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[]; slug: string | null; display_mode: string | null; image_url: string | null };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[]; product_type: string; is_featured: boolean; is_new: boolean; claim_instructions: string | null };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
@@ -111,6 +111,9 @@ function CatalogManager() {
       ...x,
       parent_id: x.parent_id ?? null,
       search_keywords: x.search_keywords ?? [],
+      slug: x.slug ?? null,
+      display_mode: x.display_mode ?? "text",
+      image_url: x.image_url ?? null,
     })) as Cat[];
     setCats(catList);
     setProds(((p as any[]) ?? []).map((x) => ({
@@ -118,6 +121,10 @@ function CatalogManager() {
       price: Number(x.price),
       stock: x.stock ?? null,
       search_keywords: x.search_keywords ?? [],
+      product_type: x.product_type ?? "normal",
+      is_featured: !!x.is_featured,
+      is_new: !!x.is_new,
+      claim_instructions: x.claim_instructions ?? null,
     })));
     if (!active && catList[0]) setActive(catList[0].id);
   }
