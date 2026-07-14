@@ -548,6 +548,20 @@ function Index() {
         onOpenChange={(v) => !v && setPending(null)}
       />
 
+      <MysteryBoxDialog
+        open={!!boxDetail}
+        box={boxDetail ? {
+          id: boxDetail.id,
+          name: boxDetail.name,
+          description: boxDetail.description,
+          image_url: boxDetail.image_url,
+          box_spin_price: Number(boxDetail.box_spin_price ?? 0),
+          box_border_color: boxDetail.box_border_color ?? null,
+          box_bg_color: boxDetail.box_bg_color ?? null,
+        } : null}
+        onOpenChange={(v) => !v && setBoxDetail(null)}
+      />
+
       <footer
         data-site-key="footer_text"
         className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap"
