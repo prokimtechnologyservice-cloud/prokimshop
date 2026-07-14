@@ -634,10 +634,47 @@ function ProductForm({
     }
   }
 
+  useEffect(() => {
+    if (productType !== "mystery_box") return;
+    supabase.from("products").select("id, name, image_url, product_type").order("name")
+      .then(({ data }) => setAllProducts((data as any[]) ?? []));
+    if (product) {
+      (supabase as any).from("mystery_box_items")
+        .select("id, prize_product_id, weight, stock, products:prize_product_id(id, name, image_url)")
+        .eq("box_product_id", product.id).order("created_at")
+        .then(({ data }: any) => setBoxPrizes((data as any[]) ?? []));
+    }
+  }, [productType, product?.id]);
+
+  async function addPrize() {
+    if (!product || !prizePick) return;
+    const { error } = await (supabase as any).from("mystery_box_items").insert({
+      box_product_id: product.id,
+      prize_product_id: prizePick,
+      weight: Math.max(1, Number(prizeWeight) || 1),
+      stock: Math.max(0, Number(prizeStock) || 0),
+    });
+    if (error) return toast.error(error.message);
+    setPrizePick(""); setPrizeWeight("1"); setPrizeStock("1");
+    const { data } = await (supabase as any).from("mystery_box_items")
+      .select("id, prize_product_id, weight, stock, products:prize_product_id(id, name, image_url)")
+      .eq("box_product_id", product.id).order("created_at");
+    setBoxPrizes((data as any[]) ?? []);
+    toast.success("เพิ่มรางวัลแล้ว");
+  }
+  async function delPrize(id: string) {
+    await (supabase as any).from("mystery_box_items").delete().eq("id", id);
+    setBoxPrizes((p) => p.filter((x) => x.id !== id));
+  }
+  async function updatePrize(id: string, patch: any) {
+    await (supabase as any).from("mystery_box_items").update(patch).eq("id", id);
+    setBoxPrizes((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+
   async function save() {
     const stockVal =
       stockMode === "none" ? null : stockMode === "out" ? 0 : Math.max(0, Number(stockQty) || 0);
-    const payload = {
+    const payload: any = {
       name: name.trim(),
       price: Number(price) || 0,
       description: desc || null,
@@ -649,6 +686,9 @@ function ProductForm({
       is_featured: isFeatured,
       is_new: isNew,
       claim_instructions: claim || null,
+      box_spin_price: productType === "mystery_box" ? Number(boxSpinPrice) || 0 : 0,
+      box_border_color: productType === "mystery_box" ? boxBorder : null,
+      box_bg_color: productType === "mystery_box" ? boxBg : null,
     };
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
