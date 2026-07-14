@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
+import { ChatAdmin } from "@/components/admin/ChatAdmin";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -62,6 +63,7 @@ function AdminDashboard() {
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
             <TabsTrigger value="tracking">ติดตามคำสั่งซื้อ</TabsTrigger>
             <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
+            <TabsTrigger value="chat">แชทลูกค้า</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
 
             {isManager && <TabsTrigger value="editor">แก้ไขข้อความ/รูป</TabsTrigger>}
@@ -75,6 +77,8 @@ function AdminDashboard() {
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
           <TabsContent value="tracking"><TrackingManager /></TabsContent>
           <TabsContent value="orders"><OrdersManager /></TabsContent>
+          <TabsContent value="chat"><ChatAdmin /></TabsContent>
+
 
           <TabsContent value="users"><UsersManager /></TabsContent>
           {isManager && <TabsContent value="editor"><SiteEditor /></TabsContent>}

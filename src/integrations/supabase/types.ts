@@ -156,6 +156,174 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_admin_read_at: string
+          last_user_read_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_admin_read_at?: string
+          last_user_read_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_admin_read_at?: string
+          last_user_read_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_threads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mystery_box_items: {
+        Row: {
+          box_product_id: string
+          created_at: string
+          id: string
+          prize_product_id: string
+          stock: number
+          weight: number
+        }
+        Insert: {
+          box_product_id: string
+          created_at?: string
+          id?: string
+          prize_product_id: string
+          stock?: number
+          weight?: number
+        }
+        Update: {
+          box_product_id?: string
+          created_at?: string
+          id?: string
+          prize_product_id?: string
+          stock?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mystery_box_items_box_product_id_fkey"
+            columns: ["box_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mystery_box_items_prize_product_id_fkey"
+            columns: ["prize_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mystery_box_spins: {
+        Row: {
+          box_product_id: string | null
+          created_at: string
+          id: string
+          order_id: string | null
+          prize_product_id: string | null
+          spin_price: number
+          user_id: string | null
+        }
+        Insert: {
+          box_product_id?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          prize_product_id?: string | null
+          spin_price?: number
+          user_id?: string | null
+        }
+        Update: {
+          box_product_id?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          prize_product_id?: string | null
+          spin_price?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mystery_box_spins_box_product_id_fkey"
+            columns: ["box_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mystery_box_spins_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mystery_box_spins_prize_product_id_fkey"
+            columns: ["prize_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mystery_box_spins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           acknowledged: boolean
@@ -165,6 +333,8 @@ export type Database = {
           delivered_payload: string | null
           fulfillment_status: string
           id: string
+          mystery_box_id: string | null
+          mystery_box_name: string | null
           order_id: string
           product_id: string | null
           product_image: string | null
@@ -181,6 +351,8 @@ export type Database = {
           delivered_payload?: string | null
           fulfillment_status?: string
           id?: string
+          mystery_box_id?: string | null
+          mystery_box_name?: string | null
           order_id: string
           product_id?: string | null
           product_image?: string | null
@@ -197,6 +369,8 @@ export type Database = {
           delivered_payload?: string | null
           fulfillment_status?: string
           id?: string
+          mystery_box_id?: string | null
+          mystery_box_name?: string | null
           order_id?: string
           product_id?: string | null
           product_image?: string | null
@@ -309,6 +483,9 @@ export type Database = {
       }
       products: {
         Row: {
+          box_bg_color: string | null
+          box_border_color: string | null
+          box_spin_price: number
           category_id: string | null
           claim_instructions: string | null
           created_at: string
@@ -326,6 +503,9 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          box_bg_color?: string | null
+          box_border_color?: string | null
+          box_spin_price?: number
           category_id?: string | null
           claim_instructions?: string | null
           created_at?: string
@@ -343,6 +523,9 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          box_bg_color?: string | null
+          box_border_color?: string | null
+          box_spin_price?: number
           category_id?: string | null
           claim_instructions?: string | null
           created_at?: string

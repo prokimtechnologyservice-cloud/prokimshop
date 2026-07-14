@@ -18,6 +18,8 @@ import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2 } from "
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 import { RobloxIdDialog } from "@/components/RobloxIdDialog";
+import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
+import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
 
 const searchSchema = z.object({
   cat: fallback(z.string(), "").default(""),
@@ -60,6 +62,9 @@ type Product = {
   is_featured: boolean;
   is_new: boolean;
   account_available?: number;
+  box_spin_price?: number;
+  box_border_color?: string | null;
+  box_bg_color?: string | null;
 };
 
 function Index() {
@@ -72,6 +77,7 @@ function Index() {
   const [siteOpen, setSiteOpen] = useState(true);
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
+  const [boxDetail, setBoxDetail] = useState<Product | null>(null);
   const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
   const { content } = useSiteContent();
@@ -194,7 +200,16 @@ function Index() {
     );
   }
 
+  function openDetail(p: Product) {
+    if (p.product_type === "mystery_box") setBoxDetail(p);
+    else setDetail(p);
+  }
+
   async function requestAdd(p: Product) {
+    if (p.product_type === "mystery_box") {
+      setBoxDetail(p);
+      return;
+    }
     if ((p.stock ?? null) === 0) return toast.error("สินค้าหมด");
     const u = getUser();
     if (!u) return toast.error("กรุณาเข้าสู่ระบบก่อน");
