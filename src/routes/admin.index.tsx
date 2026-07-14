@@ -578,6 +578,14 @@ function ProductForm({
   const [claim, setClaim] = useState<string>(product?.claim_instructions ?? "");
   const [accounts, setAccounts] = useState<{ id: string; payload: string; status: string }[]>([]);
   const [newAccounts, setNewAccounts] = useState("");
+  const [boxSpinPrice, setBoxSpinPrice] = useState<string>(String((product as any)?.box_spin_price ?? 0));
+  const [boxBorder, setBoxBorder] = useState<string>((product as any)?.box_border_color ?? "default");
+  const [boxBg, setBoxBg] = useState<string>((product as any)?.box_bg_color ?? "default");
+  const [boxPrizes, setBoxPrizes] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [prizePick, setPrizePick] = useState("");
+  const [prizeWeight, setPrizeWeight] = useState("1");
+  const [prizeStock, setPrizeStock] = useState("1");
 
   useEffect(() => {
     if (!product) return;
