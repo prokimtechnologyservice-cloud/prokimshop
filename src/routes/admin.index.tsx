@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
+import { ChatAdmin } from "@/components/admin/ChatAdmin";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -62,6 +63,7 @@ function AdminDashboard() {
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
             <TabsTrigger value="tracking">ติดตามคำสั่งซื้อ</TabsTrigger>
             <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
+            <TabsTrigger value="chat">แชทลูกค้า</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
 
             {isManager && <TabsTrigger value="editor">แก้ไขข้อความ/รูป</TabsTrigger>}
@@ -75,6 +77,8 @@ function AdminDashboard() {
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
           <TabsContent value="tracking"><TrackingManager /></TabsContent>
           <TabsContent value="orders"><OrdersManager /></TabsContent>
+          <TabsContent value="chat"><ChatAdmin /></TabsContent>
+
 
           <TabsContent value="users"><UsersManager /></TabsContent>
           {isManager && <TabsContent value="editor"><SiteEditor /></TabsContent>}
@@ -574,6 +578,14 @@ function ProductForm({
   const [claim, setClaim] = useState<string>(product?.claim_instructions ?? "");
   const [accounts, setAccounts] = useState<{ id: string; payload: string; status: string }[]>([]);
   const [newAccounts, setNewAccounts] = useState("");
+  const [boxSpinPrice, setBoxSpinPrice] = useState<string>(String((product as any)?.box_spin_price ?? 0));
+  const [boxBorder, setBoxBorder] = useState<string>((product as any)?.box_border_color ?? "default");
+  const [boxBg, setBoxBg] = useState<string>((product as any)?.box_bg_color ?? "default");
+  const [boxPrizes, setBoxPrizes] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [prizePick, setPrizePick] = useState("");
+  const [prizeWeight, setPrizeWeight] = useState("1");
+  const [prizeStock, setPrizeStock] = useState("1");
 
   useEffect(() => {
     if (!product) return;
@@ -622,10 +634,47 @@ function ProductForm({
     }
   }
 
+  useEffect(() => {
+    if (productType !== "mystery_box") return;
+    supabase.from("products").select("id, name, image_url, product_type").order("name")
+      .then(({ data }) => setAllProducts((data as any[]) ?? []));
+    if (product) {
+      (supabase as any).from("mystery_box_items")
+        .select("id, prize_product_id, weight, stock, products:prize_product_id(id, name, image_url)")
+        .eq("box_product_id", product.id).order("created_at")
+        .then(({ data }: any) => setBoxPrizes((data as any[]) ?? []));
+    }
+  }, [productType, product?.id]);
+
+  async function addPrize() {
+    if (!product || !prizePick) return;
+    const { error } = await (supabase as any).from("mystery_box_items").insert({
+      box_product_id: product.id,
+      prize_product_id: prizePick,
+      weight: Math.max(1, Number(prizeWeight) || 1),
+      stock: Math.max(0, Number(prizeStock) || 0),
+    });
+    if (error) return toast.error(error.message);
+    setPrizePick(""); setPrizeWeight("1"); setPrizeStock("1");
+    const { data } = await (supabase as any).from("mystery_box_items")
+      .select("id, prize_product_id, weight, stock, products:prize_product_id(id, name, image_url)")
+      .eq("box_product_id", product.id).order("created_at");
+    setBoxPrizes((data as any[]) ?? []);
+    toast.success("เพิ่มรางวัลแล้ว");
+  }
+  async function delPrize(id: string) {
+    await (supabase as any).from("mystery_box_items").delete().eq("id", id);
+    setBoxPrizes((p) => p.filter((x) => x.id !== id));
+  }
+  async function updatePrize(id: string, patch: any) {
+    await (supabase as any).from("mystery_box_items").update(patch).eq("id", id);
+    setBoxPrizes((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+
   async function save() {
     const stockVal =
       stockMode === "none" ? null : stockMode === "out" ? 0 : Math.max(0, Number(stockQty) || 0);
-    const payload = {
+    const payload: any = {
       name: name.trim(),
       price: Number(price) || 0,
       description: desc || null,
@@ -637,6 +686,9 @@ function ProductForm({
       is_featured: isFeatured,
       is_new: isNew,
       claim_instructions: claim || null,
+      box_spin_price: productType === "mystery_box" ? Number(boxSpinPrice) || 0 : 0,
+      box_border_color: productType === "mystery_box" ? boxBorder : null,
+      box_bg_color: productType === "mystery_box" ? boxBg : null,
     };
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
@@ -737,6 +789,7 @@ function ProductForm({
           >
             <option value="normal">สินค้าปกติ</option>
             <option value="account">ไก่ตัน (บัญชี)</option>
+            <option value="mystery_box">กล่องสุ่ม</option>
           </select>
         </div>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
@@ -787,6 +840,64 @@ function ProductForm({
           </div>
         </div>
       )}
+
+      {productType === "mystery_box" && (
+        <div className="space-y-2 border border-primary/40 rounded p-3 bg-onyx/30">
+          <Label className="text-xs text-primary">ตั้งค่ากล่องสุ่ม</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <Label className="text-[10px]">ราคา/สุ่ม (บาท)</Label>
+              <Input type="number" min={0} value={boxSpinPrice} onChange={(e) => setBoxSpinPrice(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">สีขอบ</Label>
+              <select className="w-full bg-input border border-border rounded px-2 h-9 text-xs" value={boxBorder} onChange={(e) => setBoxBorder(e.target.value)}>
+                {["default","green","blue","white","red","black","purple","pink","orange","yellow","navy"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px]">สีพื้นหลัง</Label>
+              <select className="w-full bg-input border border-border rounded px-2 h-9 text-xs" value={boxBg} onChange={(e) => setBoxBg(e.target.value)}>
+                {["default","green","blue","white","red","black","purple","pink","orange","yellow","navy"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          {product ? (
+            <>
+              <Label className="text-xs mt-2 block">รางวัลในกล่อง</Label>
+              <div className="flex gap-1 flex-wrap items-end">
+                <select className="flex-1 min-w-[160px] bg-input border border-border rounded px-2 h-8 text-xs" value={prizePick} onChange={(e) => setPrizePick(e.target.value)}>
+                  <option value="">— เลือกสินค้า —</option>
+                  {allProducts.filter((x) => x.id !== product.id && x.product_type !== "mystery_box").map((x) => (
+                    <option key={x.id} value={x.id}>{x.name}</option>
+                  ))}
+                </select>
+                <Input className="w-20 h-8" type="number" min={1} value={prizeWeight} onChange={(e) => setPrizeWeight(e.target.value)} placeholder="weight" title="น้ำหนักการสุ่ม" />
+                <Input className="w-20 h-8" type="number" min={0} value={prizeStock} onChange={(e) => setPrizeStock(e.target.value)} placeholder="stock" title="สต็อกในกล่อง" />
+                <Button size="sm" variant="outline" onClick={addPrize}>เพิ่ม</Button>
+              </div>
+              <div className="max-h-56 overflow-auto space-y-1 mt-2">
+                {boxPrizes.map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-2 text-xs p-1 rounded border border-border">
+                    <div className="w-8 h-8 rounded overflow-hidden bg-onyx shrink-0">
+                      {p.products?.image_url && <img src={p.products.image_url} className="w-full h-full object-cover" />}
+                    </div>
+                    <span className="flex-1 truncate">{p.products?.name}</span>
+                    <label className="text-[10px]">w:<Input className="w-14 h-6 inline-block ml-1" type="number" defaultValue={p.weight} onBlur={(e) => updatePrize(p.id, { weight: Math.max(1, Number(e.target.value)||1) })} /></label>
+                    <label className="text-[10px]">stock:<Input className="w-14 h-6 inline-block ml-1" type="number" defaultValue={p.stock} onBlur={(e) => updatePrize(p.id, { stock: Math.max(0, Number(e.target.value)||0) })} /></label>
+                    <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => delPrize(p.id)}><Trash2 className="w-3 h-3" /></Button>
+                  </div>
+                ))}
+                {boxPrizes.length === 0 && <div className="text-[10px] text-muted-foreground">ยังไม่มีรางวัล</div>}
+              </div>
+            </>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">บันทึกกล่องก่อน แล้วเปิดแก้ไขเพื่อเพิ่มรางวัล</div>
+          )}
+        </div>
+      )}
+
+
 
       <div className="flex gap-2 justify-end">
         <Button variant="ghost" onClick={onClose}>ยกเลิก</Button>

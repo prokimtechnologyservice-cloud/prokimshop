@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { Toaster } from "@/components/ui/sonner";
 import { OverlayLayer } from "@/components/OverlayLayer";
 import { LiveOverlayEditor } from "@/components/LiveOverlayEditor";
+import { ChatWidget } from "@/components/ChatWidget";
 
 import appCss from "../styles.css?url";
 
@@ -76,6 +77,7 @@ function RootComponent() {
       <Outlet />
       <OverlayLayer />
       <LiveOverlayEditor />
+      <ChatWidget />
     </div>
   );
 }

@@ -177,3 +177,8 @@
     -webkit-backdrop-filter: blur(12px);
   }
 }
+
+@keyframes reel {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

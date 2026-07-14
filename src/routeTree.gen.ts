@@ -17,6 +17,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
 
@@ -60,6 +61,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSpinBoxRoute = ApiPublicSpinBoxRouteImport.update({
+  id: '/api/public/spin-box',
+  path: '/api/public/spin-box',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRedeemVoucherRoute = ApiPublicRedeemVoucherRouteImport.update({
   id: '/api/public/redeem-voucher',
   path: '/api/public/redeem-voucher',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
+  '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
+  '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
+  '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
+    | '/api/public/spin-box'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
+    | '/api/public/spin-box'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
+    | '/api/public/spin-box'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
+  ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/spin-box': {
+      id: '/api/public/spin-box'
+      path: '/api/public/spin-box'
+      fullPath: '/api/public/spin-box'
+      preLoaderRoute: typeof ApiPublicSpinBoxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/redeem-voucher': {
       id: '/api/public/redeem-voucher'
       path: '/api/public/redeem-voucher'
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
+  ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

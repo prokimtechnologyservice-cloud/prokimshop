@@ -18,6 +18,8 @@ import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2 } from "
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 import { RobloxIdDialog } from "@/components/RobloxIdDialog";
+import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
+import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
 
 const searchSchema = z.object({
   cat: fallback(z.string(), "").default(""),
@@ -60,6 +62,9 @@ type Product = {
   is_featured: boolean;
   is_new: boolean;
   account_available?: number;
+  box_spin_price?: number;
+  box_border_color?: string | null;
+  box_bg_color?: string | null;
 };
 
 function Index() {
@@ -72,6 +77,7 @@ function Index() {
   const [siteOpen, setSiteOpen] = useState(true);
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
+  const [boxDetail, setBoxDetail] = useState<Product | null>(null);
   const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
   const { content } = useSiteContent();
@@ -136,7 +142,7 @@ function Index() {
       // deep-link handling
       if (deepProd) {
         const found = prodList.find((x) => x.id === deepProd);
-        if (found) setDetail(found);
+        if (found) openDetail(found);
       }
       if (deepCat) {
         const target = catList.find((c) => c.slug === deepCat);
@@ -194,7 +200,16 @@ function Index() {
     );
   }
 
+  function openDetail(p: Product) {
+    if (p.product_type === "mystery_box") setBoxDetail(p);
+    else setDetail(p);
+  }
+
   async function requestAdd(p: Product) {
+    if (p.product_type === "mystery_box") {
+      setBoxDetail(p);
+      return;
+    }
     if ((p.stock ?? null) === 0) return toast.error("สินค้าหมด");
     const u = getUser();
     if (!u) return toast.error("กรุณาเข้าสู่ระบบก่อน");
@@ -357,7 +372,7 @@ function Index() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {featured.map((p) => (
-                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} compact />
+                  <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} compact />
                 ))}
               </div>
             </div>
@@ -370,7 +385,7 @@ function Index() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {newest.map((p) => (
-                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} compact />
+                  <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} compact />
                 ))}
               </div>
             </div>
@@ -455,7 +470,7 @@ function Index() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {visible.map((p) => (
-            <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} />
+            <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} />
           ))}
         </div>
         {visible.length === 0 && (
@@ -531,6 +546,20 @@ function Index() {
         defaultName={user?.roblox_name}
         onConfirm={confirmAdd}
         onOpenChange={(v) => !v && setPending(null)}
+      />
+
+      <MysteryBoxDialog
+        open={!!boxDetail}
+        box={boxDetail ? {
+          id: boxDetail.id,
+          name: boxDetail.name,
+          description: boxDetail.description,
+          image_url: boxDetail.image_url,
+          box_spin_price: Number(boxDetail.box_spin_price ?? 0),
+          box_border_color: boxDetail.box_border_color ?? null,
+          box_bg_color: boxDetail.box_bg_color ?? null,
+        } : null}
+        onOpenChange={(v) => !v && setBoxDetail(null)}
       />
 
       <footer
