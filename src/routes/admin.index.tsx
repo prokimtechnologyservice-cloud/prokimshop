@@ -841,6 +841,64 @@ function ProductForm({
         </div>
       )}
 
+      {productType === "mystery_box" && (
+        <div className="space-y-2 border border-primary/40 rounded p-3 bg-onyx/30">
+          <Label className="text-xs text-primary">ตั้งค่ากล่องสุ่ม</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <Label className="text-[10px]">ราคา/สุ่ม (บาท)</Label>
+              <Input type="number" min={0} value={boxSpinPrice} onChange={(e) => setBoxSpinPrice(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">สีขอบ</Label>
+              <select className="w-full bg-input border border-border rounded px-2 h-9 text-xs" value={boxBorder} onChange={(e) => setBoxBorder(e.target.value)}>
+                {["default","green","blue","white","red","black","purple","pink","orange","yellow","navy"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px]">สีพื้นหลัง</Label>
+              <select className="w-full bg-input border border-border rounded px-2 h-9 text-xs" value={boxBg} onChange={(e) => setBoxBg(e.target.value)}>
+                {["default","green","blue","white","red","black","purple","pink","orange","yellow","navy"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          {product ? (
+            <>
+              <Label className="text-xs mt-2 block">รางวัลในกล่อง</Label>
+              <div className="flex gap-1 flex-wrap items-end">
+                <select className="flex-1 min-w-[160px] bg-input border border-border rounded px-2 h-8 text-xs" value={prizePick} onChange={(e) => setPrizePick(e.target.value)}>
+                  <option value="">— เลือกสินค้า —</option>
+                  {allProducts.filter((x) => x.id !== product.id && x.product_type !== "mystery_box").map((x) => (
+                    <option key={x.id} value={x.id}>{x.name}</option>
+                  ))}
+                </select>
+                <Input className="w-20 h-8" type="number" min={1} value={prizeWeight} onChange={(e) => setPrizeWeight(e.target.value)} placeholder="weight" title="น้ำหนักการสุ่ม" />
+                <Input className="w-20 h-8" type="number" min={0} value={prizeStock} onChange={(e) => setPrizeStock(e.target.value)} placeholder="stock" title="สต็อกในกล่อง" />
+                <Button size="sm" variant="outline" onClick={addPrize}>เพิ่ม</Button>
+              </div>
+              <div className="max-h-56 overflow-auto space-y-1 mt-2">
+                {boxPrizes.map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-2 text-xs p-1 rounded border border-border">
+                    <div className="w-8 h-8 rounded overflow-hidden bg-onyx shrink-0">
+                      {p.products?.image_url && <img src={p.products.image_url} className="w-full h-full object-cover" />}
+                    </div>
+                    <span className="flex-1 truncate">{p.products?.name}</span>
+                    <label className="text-[10px]">w:<Input className="w-14 h-6 inline-block ml-1" type="number" defaultValue={p.weight} onBlur={(e) => updatePrize(p.id, { weight: Math.max(1, Number(e.target.value)||1) })} /></label>
+                    <label className="text-[10px]">stock:<Input className="w-14 h-6 inline-block ml-1" type="number" defaultValue={p.stock} onBlur={(e) => updatePrize(p.id, { stock: Math.max(0, Number(e.target.value)||0) })} /></label>
+                    <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => delPrize(p.id)}><Trash2 className="w-3 h-3" /></Button>
+                  </div>
+                ))}
+                {boxPrizes.length === 0 && <div className="text-[10px] text-muted-foreground">ยังไม่มีรางวัล</div>}
+              </div>
+            </>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">บันทึกกล่องก่อน แล้วเปิดแก้ไขเพื่อเพิ่มรางวัล</div>
+          )}
+        </div>
+      )}
+
+
+
       <div className="flex gap-2 justify-end">
         <Button variant="ghost" onClick={onClose}>ยกเลิก</Button>
         <Button variant="luxe" onClick={save}>บันทึก</Button>
