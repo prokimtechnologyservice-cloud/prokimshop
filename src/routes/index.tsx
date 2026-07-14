@@ -142,7 +142,7 @@ function Index() {
       // deep-link handling
       if (deepProd) {
         const found = prodList.find((x) => x.id === deepProd);
-        if (found) setDetail(found);
+        if (found) openDetail(found);
       }
       if (deepCat) {
         const target = catList.find((c) => c.slug === deepCat);
@@ -372,7 +372,7 @@ function Index() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {featured.map((p) => (
-                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} compact />
+                  <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} compact />
                 ))}
               </div>
             </div>
@@ -385,7 +385,7 @@ function Index() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {newest.map((p) => (
-                  <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} compact />
+                  <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} compact />
                 ))}
               </div>
             </div>
@@ -470,7 +470,7 @@ function Index() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {visible.map((p) => (
-            <ProductCard key={p.id} p={p} onOpen={() => setDetail(p)} onAdd={() => requestAdd(p)} />
+            <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} />
           ))}
         </div>
         {visible.length === 0 && (
