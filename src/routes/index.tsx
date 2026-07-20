@@ -30,10 +30,10 @@ export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
   head: () => ({
     meta: [
-      { title: "PROKIM — ร้านไอเทมเกมพรีเมียม" },
+      { title: "Prokim shop - ร้านไอเทมเกมพรีเมียม" },
       {
         name: "description",
-        content: "ซื้อ Robux, Blox Fruits, Brookhaven และไอเทม 99 คืนในป่า ในที่เดียว",
+        content: "มีต้องแต่ Robux, Blox Fruits, Brookhaven , Grow a garden และอื่นของ roblox ในที่เดียว",
       },
     ],
   }),
