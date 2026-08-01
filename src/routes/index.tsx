@@ -48,6 +48,7 @@ type Category = {
   slug: string | null;
   display_mode: string | null;
   image_url: string | null;
+  product_sort_mode: string;
 };
 type Product = {
   id: string;
@@ -61,6 +62,8 @@ type Product = {
   product_type: string;
   is_featured: boolean;
   is_new: boolean;
+  is_preorder: boolean;
+  preorder_note: string | null;
   account_available?: number;
   box_spin_price?: number;
   box_border_color?: string | null;
