@@ -664,17 +664,24 @@ function ProductCard({
   onOpen,
   onAdd,
   compact,
+  soldCount,
 }: {
   p: Product;
   onOpen: () => void;
   onAdd: () => void;
   compact?: boolean;
+  soldCount?: number;
 }) {
-  const sold = p.stock === 0;
+  const preorder = p.is_preorder;
+  const sold = p.stock === 0 && !preorder;
   return (
     <button
       onClick={onOpen}
-      className="group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-luxe hover:border-primary/50 transition"
+      className={`group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card transition ${
+        sold
+          ? "opacity-55 grayscale hover:opacity-70"
+          : "hover:shadow-luxe hover:border-primary/50"
+      }`}
     >
       <div className="aspect-square bg-onyx relative overflow-hidden">
         {p.image_url ? (
@@ -690,8 +697,13 @@ function ProductCard({
             ไก่ตัน
           </span>
         )}
+        {preorder && (
+          <span className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/90 text-white font-bold">
+            พรีออเดอร์
+          </span>
+        )}
         {sold && (
-          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-2xl sm:text-3xl font-bold text-destructive tracking-widest drop-shadow-lg">
               หมด
             </span>
@@ -713,6 +725,13 @@ function ProductCard({
         {p.stock != null && p.stock > 0 && (
           <div className="text-[11px] text-muted-foreground">คงเหลือ {p.stock} ชิ้น</div>
         )}
+        {sold && <div className="text-[11px] font-bold text-destructive">สินค้าหมด</div>}
+        {preorder && (
+          <div className="text-[11px] text-sky-400">พร้อมสั่งจอง (รอรอบจัดส่ง)</div>
+        )}
+        {soldCount != null && soldCount > 0 && (
+          <div className="text-[11px] text-muted-foreground">ขายไปแล้ว {soldCount} ชิ้น</div>
+        )}
         <Button
           onClick={(e) => {
             e.stopPropagation();
@@ -723,8 +742,11 @@ function ProductCard({
           disabled={sold}
           className="w-full"
         >
-          <ShoppingCart className="w-3.5 h-3.5" /> {sold ? "หมด" : "เพิ่มลงตะกร้า"}
+          <ShoppingCart className="w-3.5 h-3.5" />{" "}
+          {preorder ? "สั่งจอง" : sold ? "หมด" : "เพิ่มลงตะกร้า"}
         </Button>
+      </div>
+    </button>
       </div>
     </button>
   );
