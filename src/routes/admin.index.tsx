@@ -199,6 +199,7 @@ function CatalogManager() {
       slug: editingCat.slug || makeSlug(editingCat.name),
       display_mode: editingCat.display_mode ?? "text",
       image_url: editingCat.image_url,
+      product_sort_mode: editingCat.product_sort_mode ?? "manual",
     }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
   }
