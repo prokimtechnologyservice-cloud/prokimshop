@@ -91,6 +91,7 @@ export type Database = {
           image_url: string | null
           name: string
           parent_id: string | null
+          product_sort_mode: string
           search_keywords: string[]
           slug: string | null
           sort_order: number
@@ -102,6 +103,7 @@ export type Database = {
           image_url?: string | null
           name: string
           parent_id?: string | null
+          product_sort_mode?: string
           search_keywords?: string[]
           slug?: string | null
           sort_order?: number
@@ -113,6 +115,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           parent_id?: string | null
+          product_sort_mode?: string
           search_keywords?: string[]
           slug?: string | null
           sort_order?: number
@@ -340,6 +343,9 @@ export type Database = {
           product_image: string | null
           product_name: string
           quantity: number
+          return_reason: string | null
+          return_status: string
+          returned_at: string | null
           roblox_name: string | null
           unit_price: number
         }
@@ -358,6 +364,9 @@ export type Database = {
           product_image?: string | null
           product_name: string
           quantity?: number
+          return_reason?: string | null
+          return_status?: string
+          returned_at?: string | null
           roblox_name?: string | null
           unit_price: number
         }
@@ -376,6 +385,9 @@ export type Database = {
           product_image?: string | null
           product_name?: string
           quantity?: number
+          return_reason?: string | null
+          return_status?: string
+          returned_at?: string | null
           roblox_name?: string | null
           unit_price?: number
         }
@@ -494,7 +506,9 @@ export type Database = {
           image_url: string | null
           is_featured: boolean
           is_new: boolean
+          is_preorder: boolean
           name: string
+          preorder_note: string | null
           price: number
           product_type: string
           search_keywords: string[]
@@ -514,7 +528,9 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean
           is_new?: boolean
+          is_preorder?: boolean
           name: string
+          preorder_note?: string | null
           price?: number
           product_type?: string
           search_keywords?: string[]
@@ -534,7 +550,9 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean
           is_new?: boolean
+          is_preorder?: boolean
           name?: string
+          preorder_note?: string | null
           price?: number
           product_type?: string
           search_keywords?: string[]
@@ -781,6 +799,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_product_stock: {
+        Args: { _delta: number; _product_id: string }
+        Returns: number
+      }
       deduct_balance: {
         Args: { _amount: number; _order_id: string; _user_id: string }
         Returns: number

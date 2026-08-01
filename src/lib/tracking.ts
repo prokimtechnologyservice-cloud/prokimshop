@@ -49,6 +49,9 @@ export type TrackingItem = {
   delivered_payload?: string | null;
   claim_instructions?: string | null;
   product_type?: string;
+  return_status?: string;
+  return_reason?: string | null;
+  returned_at?: string | null;
 };
 
 function pickImage(r: any): string | null {
@@ -60,7 +63,7 @@ export async function fetchPendingQueue(): Promise<TrackingItem[]> {
   const { data, error } = await supabase
     .from("order_items")
     .select(
-      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id, profiles(username, roblox_name))",
+      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, returned_at, products(image_url), orders!inner(user_id, profiles(username, roblox_name))",
     )
     .neq("fulfillment_status", "delivered")
     .order("created_at", { ascending: true });
@@ -77,6 +80,9 @@ export async function fetchPendingQueue(): Promise<TrackingItem[]> {
     acknowledged: r.acknowledged,
     acknowledged_at: r.acknowledged_at,
     fulfillment_status: (r.fulfillment_status ?? "pending") as FulfillmentStatus,
+    return_status: r.return_status ?? "none",
+    return_reason: r.return_reason ?? null,
+    returned_at: r.returned_at ?? null,
     user_id: r.orders?.user_id,
     username: r.orders?.profiles?.username ?? null,
     roblox_name: r.orders?.profiles?.roblox_name ?? null,
@@ -88,7 +94,7 @@ export async function fetchUserTracking(userId: string): Promise<TrackingItem[]>
   const { data, error } = await supabase
     .from("order_items")
     .select(
-      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, roblox_name, delivered_payload, products(image_url, claim_instructions, product_type), orders!inner(user_id)",
+      "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, returned_at, roblox_name, delivered_payload, products(image_url, claim_instructions, product_type), orders!inner(user_id)",
     )
     .eq("orders.user_id", userId)
     .order("created_at", { ascending: false })
@@ -106,6 +112,9 @@ export async function fetchUserTracking(userId: string): Promise<TrackingItem[]>
     acknowledged: r.acknowledged,
     acknowledged_at: r.acknowledged_at,
     fulfillment_status: (r.fulfillment_status ?? "pending") as FulfillmentStatus,
+    return_status: r.return_status ?? "none",
+    return_reason: r.return_reason ?? null,
+    returned_at: r.returned_at ?? null,
     roblox_name: r.roblox_name ?? null,
     delivered_payload: r.delivered_payload ?? null,
     claim_instructions: r.products?.claim_instructions ?? null,
@@ -127,4 +136,41 @@ export async function setFulfillmentStatus(
   };
   const { error } = await supabase.from("order_items").update(base).eq("id", itemId);
   if (error) throw error;
+}
+
+export const RETURN_LABEL: Record<string, string> = {
+  none: "",
+  requested: "ขอคืนสินค้า (รอแอดมิน)",
+  approved: "คืนสินค้าแล้ว",
+  rejected: "ปฏิเสธการคืน",
+};
+
+/** Customer asks to return an item. */
+export async function requestReturn(itemId: string, reason: string) {
+  const { error } = await supabase
+    .from("order_items")
+    .update({ return_status: "requested", return_reason: reason || null })
+    .eq("id", itemId);
+  if (error) throw error;
+}
+
+/** Admin approves/rejects a return. Approving restores tracked stock. */
+export async function resolveReturn(
+  item: { id: string; product_id: string | null; quantity: number },
+  approve: boolean,
+) {
+  const { error } = await supabase
+    .from("order_items")
+    .update({
+      return_status: approve ? "approved" : "rejected",
+      returned_at: approve ? new Date().toISOString() : null,
+    })
+    .eq("id", item.id);
+  if (error) throw error;
+  if (approve && item.product_id) {
+    await (supabase as any).rpc("adjust_product_stock", {
+      _product_id: item.product_id,
+      _delta: item.quantity,
+    });
+  }
 }

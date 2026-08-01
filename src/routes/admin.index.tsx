@@ -15,13 +15,14 @@ import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
 import { ChatAdmin } from "@/components/admin/ChatAdmin";
+import { RETURN_LABEL, resolveReturn } from "@/lib/tracking";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[]; slug: string | null; display_mode: string | null; image_url: string | null };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[]; product_type: string; is_featured: boolean; is_new: boolean; claim_instructions: string | null };
+type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[]; slug: string | null; display_mode: string | null; image_url: string | null; product_sort_mode: string };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[]; product_type: string; is_featured: boolean; is_new: boolean; claim_instructions: string | null; is_preorder: boolean; preorder_note: string | null };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
@@ -118,6 +119,7 @@ function CatalogManager() {
       slug: x.slug ?? null,
       display_mode: x.display_mode ?? "text",
       image_url: x.image_url ?? null,
+      product_sort_mode: x.product_sort_mode ?? "manual",
     })) as Cat[];
     setCats(catList);
     setProds(((p as any[]) ?? []).map((x) => ({
@@ -128,6 +130,8 @@ function CatalogManager() {
       product_type: x.product_type ?? "normal",
       is_featured: !!x.is_featured,
       is_new: !!x.is_new,
+      is_preorder: !!x.is_preorder,
+      preorder_note: x.preorder_note ?? null,
       claim_instructions: x.claim_instructions ?? null,
     })));
     if (!active && catList[0]) setActive(catList[0].id);
@@ -196,6 +200,7 @@ function CatalogManager() {
       slug: editingCat.slug || makeSlug(editingCat.name),
       display_mode: editingCat.display_mode ?? "text",
       image_url: editingCat.image_url,
+      product_sort_mode: editingCat.product_sort_mode ?? "manual",
     }).eq("id", editingCat.id);
     setEditingCat(null); toast.success("บันทึกแล้ว"); load();
   }
@@ -436,6 +441,20 @@ function CatalogManager() {
                       <option value="image">รูปภาพ 16:9 (ซ่อนชื่อ)</option>
                     </select>
                   </div>
+                  <div>
+                    <Label className="text-xs">โหมดเรียงสินค้าในหมวดนี้ (ที่ผู้ใช้เห็น)</Label>
+                    <select
+                      value={editingCat.product_sort_mode ?? "manual"}
+                      onChange={(e) => setEditingCat({ ...editingCat, product_sort_mode: e.target.value })}
+                      className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+                    >
+                      <option value="manual">เรียงเอง (ตามลำดับที่ลาก)</option>
+                      <option value="newest">ใหม่สุดก่อน</option>
+                      <option value="price_asc">ราคาน้อย → มาก</option>
+                      <option value="price_desc">ราคามาก → น้อย</option>
+                      <option value="bestseller">ขายดีที่สุดก่อน</option>
+                    </select>
+                  </div>
                   {editingCat.display_mode === "image" && (
                     <div>
                       <Label className="text-xs">รูปภาพหมวด (16:9)</Label>
@@ -576,6 +595,8 @@ function ProductForm({
   const [isFeatured, setIsFeatured] = useState<boolean>(!!product?.is_featured);
   const [isNew, setIsNew] = useState<boolean>(!!product?.is_new);
   const [claim, setClaim] = useState<string>(product?.claim_instructions ?? "");
+  const [isPreorder, setIsPreorder] = useState<boolean>(!!product?.is_preorder);
+  const [preorderNote, setPreorderNote] = useState<string>(product?.preorder_note ?? "");
   const [accounts, setAccounts] = useState<{ id: string; payload: string; status: string }[]>([]);
   const [newAccounts, setNewAccounts] = useState("");
   const [boxSpinPrice, setBoxSpinPrice] = useState<string>(String((product as any)?.box_spin_price ?? 0));
@@ -686,6 +707,8 @@ function ProductForm({
       is_featured: isFeatured,
       is_new: isNew,
       claim_instructions: claim || null,
+      is_preorder: isPreorder,
+      preorder_note: isPreorder ? preorderNote || null : null,
       box_spin_price: productType === "mystery_box" ? Number(boxSpinPrice) || 0 : 0,
       box_border_color: productType === "mystery_box" ? boxBorder : null,
       box_bg_color: productType === "mystery_box" ? boxBg : null,
@@ -734,6 +757,27 @@ function ProductForm({
           <div>
             <Label>จำนวนคงเหลือ</Label>
             <Input type="number" min={1} value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
+          </div>
+        )}
+      </div>
+      <div className="space-y-2 p-3 rounded-lg border border-sky-500/40 bg-sky-500/5">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPreorder}
+            onChange={(e) => setIsPreorder(e.target.checked)}
+          />
+          สินค้าพรีออเดอร์ (สั่งจองได้แม้ของหมด)
+        </label>
+        {isPreorder && (
+          <div>
+            <Label className="text-xs">ข้อความแจ้งลูกค้า (เวลารอ / เงื่อนไข)</Label>
+            <Textarea
+              rows={2}
+              value={preorderNote}
+              onChange={(e) => setPreorderNote(e.target.value)}
+              placeholder="เช่น รอของ 1-3 วัน จัดส่งตามรอบ"
+            />
           </div>
         )}
       </div>
@@ -1562,7 +1606,7 @@ function TrackingManager() {
     const { data } = await supabase
       .from("order_items")
       .select(
-        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
+        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
       )
       .order("created_at", { ascending: true })
       .limit(500);
@@ -1590,6 +1634,16 @@ function TrackingManager() {
     if (error) return toast.error(error.message);
     toast.success(`อัปเดตเป็น "${STATUS_LABEL[status]}"`);
     load();
+  }
+
+  async function handleReturn(it: any, approve: boolean) {
+    try {
+      await resolveReturn({ id: it.id, product_id: it.product_id, quantity: Number(it.quantity) }, approve);
+      toast.success(approve ? "อนุมัติคืนสินค้าแล้ว (คืนสต็อก)" : "ปฏิเสธคำขอคืนแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "ผิดพลาด");
+    }
   }
 
   async function advance(it: any) {
@@ -1694,7 +1748,23 @@ function TrackingManager() {
                       <option key={s} value={s}>{STATUS_LABEL[s]}</option>
                     ))}
                   </select>
+                  {it.return_status === "requested" && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => handleReturn(it, true)}>
+                        อนุมัติคืนสินค้า (คืนสต็อก)
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleReturn(it, false)}>
+                        ปฏิเสธ
+                      </Button>
+                    </>
+                  )}
                 </div>
+                {it.return_status && it.return_status !== "none" && (
+                  <div className="mt-2 text-[11px] rounded border border-border bg-secondary/30 px-2 py-1">
+                    <span className="text-destructive font-medium">{RETURN_LABEL[it.return_status]}</span>
+                    {it.return_reason && <span className="text-muted-foreground"> — {it.return_reason}</span>}
+                  </div>
+                )}
               </div>
             );
           })}

@@ -8,9 +8,11 @@ import {
   STATUS_FLOW,
   STATUS_LABEL,
   STATUS_COLOR,
+  RETURN_LABEL,
+  requestReturn,
   type TrackingItem,
 } from "@/lib/tracking";
-import { Package, Clock, Loader2, CheckCircle2, KeyRound, Copy, ShieldAlert } from "lucide-react";
+import { Package, Clock, Loader2, CheckCircle2, KeyRound, Copy, ShieldAlert, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -182,6 +184,44 @@ function OrdersPage() {
                 {it.product_type === "account" && it.delivered_payload && (
                   <AccountPayloadBlock payload={it.delivered_payload} instructions={it.claim_instructions ?? undefined} />
                 )}
+
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  {it.return_status && it.return_status !== "none" ? (
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full ${
+                        it.return_status === "approved"
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : it.return_status === "rejected"
+                            ? "bg-destructive/15 text-destructive"
+                            : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {RETURN_LABEL[it.return_status]}
+                    </span>
+                  ) : (
+                    <span />
+                  )}
+                  {(!it.return_status || it.return_status === "none") && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-[11px] h-7 text-muted-foreground hover:text-destructive"
+                      onClick={async () => {
+                        const reason = prompt("เหตุผลในการขอคืนสินค้า");
+                        if (reason == null) return;
+                        try {
+                          await requestReturn(it.id, reason);
+                          toast.success("ส่งคำขอคืนสินค้าแล้ว");
+                          load();
+                        } catch (e: any) {
+                          toast.error(e.message ?? "ส่งคำขอไม่สำเร็จ");
+                        }
+                      }}
+                    >
+                      <RotateCcw className="w-3 h-3" /> ขอคืนสินค้า
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })}

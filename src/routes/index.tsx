@@ -48,6 +48,7 @@ type Category = {
   slug: string | null;
   display_mode: string | null;
   image_url: string | null;
+  product_sort_mode: string;
 };
 type Product = {
   id: string;
@@ -61,6 +62,8 @@ type Product = {
   product_type: string;
   is_featured: boolean;
   is_new: boolean;
+  is_preorder: boolean;
+  preorder_note: string | null;
   account_available?: number;
   box_spin_price?: number;
   box_border_color?: string | null;
@@ -74,6 +77,7 @@ function Index() {
   const [activeParent, setActiveParent] = useState<string | null>(null);
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const [topCatId, setTopCatId] = useState<string | null>(null);
+  const [sales, setSales] = useState<Record<string, number>>({});
   const [siteOpen, setSiteOpen] = useState(true);
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
@@ -84,21 +88,32 @@ function Index() {
   const user = getUser();
 
   async function load() {
-    const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: acct }] = await Promise.all([
-      supabase.from("categories").select("*").order("sort_order").order("created_at"),
-      supabase.from("products").select("*").order("sort_order").order("created_at"),
-      supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("category_views").select("category_id"),
-      supabase.from("product_account_stock").select("product_id, status").eq("status", "available"),
-    ]);
+    const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: acct }, { data: sold }] =
+      await Promise.all([
+        supabase.from("categories").select("*").order("sort_order").order("created_at"),
+        supabase.from("products").select("*").order("sort_order").order("created_at"),
+        supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+        supabase.from("category_views").select("category_id"),
+        supabase.from("product_account_stock").select("product_id, status").eq("status", "available"),
+        supabase.from("order_items").select("product_id, quantity"),
+      ]);
     const catList = ((c as any[]) ?? []).map((x) => ({
       ...x,
       parent_id: x.parent_id ?? null,
       slug: x.slug ?? null,
       display_mode: x.display_mode ?? "text",
       image_url: x.image_url ?? null,
+      product_sort_mode: x.product_sort_mode ?? "manual",
     })) as Category[];
     setCats(catList);
+
+    // count sold quantity per product (best sellers)
+    const saleCount: Record<string, number> = {};
+    ((sold as any[]) ?? []).forEach((r) => {
+      if (!r.product_id) return;
+      saleCount[r.product_id] = (saleCount[r.product_id] ?? 0) + Number(r.quantity ?? 1);
+    });
+    setSales(saleCount);
 
     // count available accounts per product
     const acctCount: Record<string, number> = {};
@@ -116,6 +131,8 @@ function Index() {
         product_type: type,
         is_featured: !!x.is_featured,
         is_new: !!x.is_new,
+        is_preorder: !!x.is_preorder,
+        preorder_note: x.preorder_note ?? null,
         account_available: type === "account" ? avail : undefined,
       };
     }) as Product[];
@@ -210,7 +227,10 @@ function Index() {
       setBoxDetail(p);
       return;
     }
-    if ((p.stock ?? null) === 0) return toast.error("สินค้าหมด");
+    if ((p.stock ?? null) === 0 && !p.is_preorder) return toast.error("สินค้าหมด");
+    if (p.is_preorder) {
+      toast.info(p.preorder_note || "สินค้าพรีออเดอร์ — ต้องรอรอบจัดส่งจากแอดมิน");
+    }
     const u = getUser();
     if (!u) return toast.error("กรุณาเข้าสู่ระบบก่อน");
     // account (ไก่ตัน) products don't need roblox id (delivered as account payload)
@@ -262,7 +282,24 @@ function Index() {
   const parents = cats.filter((c) => !c.parent_id);
   const subs = activeParent ? cats.filter((c) => c.parent_id === activeParent) : [];
   const effectiveCatId = subs.length > 0 ? activeSub : activeParent;
-  const visible = products.filter((p) => p.category_id === effectiveCatId);
+  const sortMode =
+    cats.find((c) => c.id === effectiveCatId)?.product_sort_mode ?? "manual";
+  const visible = useMemo(() => {
+    const list = products.filter((p) => p.category_id === effectiveCatId);
+    const arr = [...list];
+    switch (sortMode) {
+      case "newest":
+        return arr.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      case "price_asc":
+        return arr.sort((a, b) => a.price - b.price);
+      case "price_desc":
+        return arr.sort((a, b) => b.price - a.price);
+      case "bestseller":
+        return arr.sort((a, b) => (sales[b.id] ?? 0) - (sales[a.id] ?? 0));
+      default:
+        return arr;
+    }
+  }, [products, effectiveCatId, sortMode, sales]);
 
   const topCat = topCatId ? cats.find((c) => c.id === topCatId) : null;
 
@@ -273,6 +310,14 @@ function Index() {
   const newest = useMemo(
     () => products.filter((p) => p.is_new).slice(0, 6),
     [products],
+  );
+  const bestSellers = useMemo(
+    () =>
+      products
+        .filter((p) => (sales[p.id] ?? 0) > 0)
+        .sort((a, b) => (sales[b.id] ?? 0) - (sales[a.id] ?? 0))
+        .slice(0, 6),
+    [products, sales],
   );
   const newestCats = useMemo(() => [...parents].slice(-3).reverse(), [parents]);
 
@@ -362,6 +407,26 @@ function Index() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {bestSellers.length > 0 && (
+            <div>
+              <h3 className="font-display text-lg mb-3 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-gold" /> สินค้าขายดีที่สุด
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {bestSellers.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    p={p}
+                    soldCount={sales[p.id] ?? 0}
+                    onOpen={() => openDetail(p)}
+                    onAdd={() => requestAdd(p)}
+                    compact
+                  />
+                ))}
+              </div>
             </div>
           )}
 
@@ -507,10 +572,15 @@ function Index() {
                     <Crown className="w-16 h-16 text-primary/30" />
                   </div>
                 )}
-                {detail.stock === 0 && (
+                {detail.stock === 0 && !detail.is_preorder && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <span className="text-4xl font-bold text-destructive tracking-widest">หมด</span>
                   </div>
+                )}
+                {detail.is_preorder && (
+                  <span className="absolute top-2 left-2 text-[11px] px-2 py-0.5 rounded-full bg-sky-500/90 text-white font-bold">
+                    พรีออเดอร์
+                  </span>
                 )}
               </div>
               <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
@@ -519,17 +589,30 @@ function Index() {
               {detail.stock != null && detail.stock > 0 && (
                 <div className="text-sm text-gold">คงเหลือ {detail.stock} ชิ้น</div>
               )}
+              {detail.stock === 0 && !detail.is_preorder && (
+                <div className="text-sm font-bold text-destructive">สินค้าหมด</div>
+              )}
+              {detail.is_preorder && (
+                <div className="text-sm text-sky-400 whitespace-pre-wrap">
+                  {detail.preorder_note || "สินค้าพรีออเดอร์ — สั่งจองได้ รอรอบจัดส่งจากแอดมิน"}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button
                   variant="luxe"
-                  disabled={detail.stock === 0}
+                  disabled={detail.stock === 0 && !detail.is_preorder}
                   className="flex-1"
                   onClick={() => {
                     requestAdd(detail);
                     setDetail(null);
                   }}
                 >
-                  <ShoppingCart className="w-4 h-4" /> {detail.stock === 0 ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
+                  <ShoppingCart className="w-4 h-4" />{" "}
+                  {detail.is_preorder
+                    ? "สั่งจอง (พรีออเดอร์)"
+                    : detail.stock === 0
+                      ? "สินค้าหมด"
+                      : "เพิ่มลงตะกร้า"}
                 </Button>
                 <Button variant="outline" onClick={() => shareProduct(detail)}>
                   <Share2 className="w-4 h-4" /> แชร์
@@ -581,17 +664,24 @@ function ProductCard({
   onOpen,
   onAdd,
   compact,
+  soldCount,
 }: {
   p: Product;
   onOpen: () => void;
   onAdd: () => void;
   compact?: boolean;
+  soldCount?: number;
 }) {
-  const sold = p.stock === 0;
+  const preorder = p.is_preorder;
+  const sold = p.stock === 0 && !preorder;
   return (
     <button
       onClick={onOpen}
-      className="group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-luxe hover:border-primary/50 transition"
+      className={`group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card transition ${
+        sold
+          ? "opacity-55 grayscale hover:opacity-70"
+          : "hover:shadow-luxe hover:border-primary/50"
+      }`}
     >
       <div className="aspect-square bg-onyx relative overflow-hidden">
         {p.image_url ? (
@@ -607,8 +697,13 @@ function ProductCard({
             ไก่ตัน
           </span>
         )}
+        {preorder && (
+          <span className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/90 text-white font-bold">
+            พรีออเดอร์
+          </span>
+        )}
         {sold && (
-          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-2xl sm:text-3xl font-bold text-destructive tracking-widest drop-shadow-lg">
               หมด
             </span>
@@ -630,6 +725,13 @@ function ProductCard({
         {p.stock != null && p.stock > 0 && (
           <div className="text-[11px] text-muted-foreground">คงเหลือ {p.stock} ชิ้น</div>
         )}
+        {sold && <div className="text-[11px] font-bold text-destructive">สินค้าหมด</div>}
+        {preorder && (
+          <div className="text-[11px] text-sky-400">พร้อมสั่งจอง (รอรอบจัดส่ง)</div>
+        )}
+        {soldCount != null && soldCount > 0 && (
+          <div className="text-[11px] text-muted-foreground">ขายไปแล้ว {soldCount} ชิ้น</div>
+        )}
         <Button
           onClick={(e) => {
             e.stopPropagation();
@@ -640,7 +742,8 @@ function ProductCard({
           disabled={sold}
           className="w-full"
         >
-          <ShoppingCart className="w-3.5 h-3.5" /> {sold ? "หมด" : "เพิ่มลงตะกร้า"}
+          <ShoppingCart className="w-3.5 h-3.5" />{" "}
+          {preorder ? "สั่งจอง" : sold ? "หมด" : "เพิ่มลงตะกร้า"}
         </Button>
       </div>
     </button>

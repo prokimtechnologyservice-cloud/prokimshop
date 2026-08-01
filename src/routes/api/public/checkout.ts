@@ -44,18 +44,49 @@ export const Route = createFileRoute("/api/public/checkout")({
           const productIds = Array.from(
             new Set(body.items.map((i) => i.product_id).filter(Boolean) as string[]),
           );
-          const prodMap = new Map<string, { image_url: string | null; product_type: string }>();
+          const prodMap = new Map<
+            string,
+            {
+              image_url: string | null;
+              product_type: string;
+              stock: number | null;
+              is_preorder: boolean;
+              name: string;
+            }
+          >();
           if (productIds.length) {
             const { data: prods } = await admin
               .from("products")
-              .select("id, image_url, product_type")
+              .select("id, name, image_url, product_type, stock, is_preorder")
               .in("id", productIds);
             (prods ?? []).forEach((p: any) =>
               prodMap.set(p.id, {
                 image_url: p.image_url ?? null,
                 product_type: p.product_type ?? "normal",
+                stock: p.stock ?? null,
+                is_preorder: !!p.is_preorder,
+                name: p.name ?? "",
               }),
             );
+          }
+
+          // Preflight: normal-product stock check (pre-orders bypass stock)
+          const needQty: Record<string, number> = {};
+          for (const it of body.items) {
+            if (!it.product_id) continue;
+            const info = prodMap.get(it.product_id);
+            if (!info || info.product_type !== "normal") continue;
+            needQty[it.product_id] = (needQty[it.product_id] ?? 0) + Number(it.quantity);
+          }
+          for (const [pid, qty] of Object.entries(needQty)) {
+            const info = prodMap.get(pid)!;
+            if (info.is_preorder || info.stock == null) continue;
+            if (info.stock < qty) {
+              return Response.json(
+                { error: `สินค้า "${info.name}" คงเหลือไม่พอ (เหลือ ${info.stock} ชิ้น)` },
+                { status: 400 },
+              );
+            }
           }
 
           // Determine how many "account" units needed per product
@@ -151,6 +182,13 @@ export const Route = createFileRoute("/api/public/checkout")({
               .in("id", allReservedIds);
           }
 
+          // Deduct tracked stock for normal (non-preorder) products
+          for (const [pid, qty] of Object.entries(needQty)) {
+            const info = prodMap.get(pid)!;
+            if (info.is_preorder || info.stock == null) continue;
+            await admin.rpc("adjust_product_stock", { _product_id: pid, _delta: -qty });
+          }
+
           if (body.pay_from_balance) {
             const { error: deductErr } = await admin.rpc("deduct_balance", {
               _user_id: body.user_id,
@@ -165,6 +203,11 @@ export const Route = createFileRoute("/api/public/checkout")({
                   .from("product_account_stock")
                   .update({ status: "available", sold_to: null, sold_at: null })
                   .in("id", allReservedIds);
+              }
+              for (const [pid, qty] of Object.entries(needQty)) {
+                const info = prodMap.get(pid)!;
+                if (info.is_preorder || info.stock == null) continue;
+                await admin.rpc("adjust_product_stock", { _product_id: pid, _delta: qty });
               }
               return Response.json(
                 { error: deductErr.message || "insufficient" },
