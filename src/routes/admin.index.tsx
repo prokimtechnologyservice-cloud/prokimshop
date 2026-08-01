@@ -594,6 +594,8 @@ function ProductForm({
   const [isFeatured, setIsFeatured] = useState<boolean>(!!product?.is_featured);
   const [isNew, setIsNew] = useState<boolean>(!!product?.is_new);
   const [claim, setClaim] = useState<string>(product?.claim_instructions ?? "");
+  const [isPreorder, setIsPreorder] = useState<boolean>(!!product?.is_preorder);
+  const [preorderNote, setPreorderNote] = useState<string>(product?.preorder_note ?? "");
   const [accounts, setAccounts] = useState<{ id: string; payload: string; status: string }[]>([]);
   const [newAccounts, setNewAccounts] = useState("");
   const [boxSpinPrice, setBoxSpinPrice] = useState<string>(String((product as any)?.box_spin_price ?? 0));
