@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
 import { ChatAdmin } from "@/components/admin/ChatAdmin";
+import { RETURN_LABEL, resolveReturn } from "@/lib/tracking";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
