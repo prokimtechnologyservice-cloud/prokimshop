@@ -282,7 +282,24 @@ function Index() {
   const parents = cats.filter((c) => !c.parent_id);
   const subs = activeParent ? cats.filter((c) => c.parent_id === activeParent) : [];
   const effectiveCatId = subs.length > 0 ? activeSub : activeParent;
-  const visible = products.filter((p) => p.category_id === effectiveCatId);
+  const sortMode =
+    cats.find((c) => c.id === effectiveCatId)?.product_sort_mode ?? "manual";
+  const visible = useMemo(() => {
+    const list = products.filter((p) => p.category_id === effectiveCatId);
+    const arr = [...list];
+    switch (sortMode) {
+      case "newest":
+        return arr.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      case "price_asc":
+        return arr.sort((a, b) => a.price - b.price);
+      case "price_desc":
+        return arr.sort((a, b) => b.price - a.price);
+      case "bestseller":
+        return arr.sort((a, b) => (sales[b.id] ?? 0) - (sales[a.id] ?? 0));
+      default:
+        return arr;
+    }
+  }, [products, effectiveCatId, sortMode, sales]);
 
   const topCat = topCatId ? cats.find((c) => c.id === topCatId) : null;
 
@@ -293,6 +310,14 @@ function Index() {
   const newest = useMemo(
     () => products.filter((p) => p.is_new).slice(0, 6),
     [products],
+  );
+  const bestSellers = useMemo(
+    () =>
+      products
+        .filter((p) => (sales[p.id] ?? 0) > 0)
+        .sort((a, b) => (sales[b.id] ?? 0) - (sales[a.id] ?? 0))
+        .slice(0, 6),
+    [products, sales],
   );
   const newestCats = useMemo(() => [...parents].slice(-3).reverse(), [parents]);
 
