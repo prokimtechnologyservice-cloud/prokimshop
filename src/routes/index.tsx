@@ -77,6 +77,7 @@ function Index() {
   const [activeParent, setActiveParent] = useState<string | null>(null);
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const [topCatId, setTopCatId] = useState<string | null>(null);
+  const [sales, setSales] = useState<Record<string, number>>({});
   const [siteOpen, setSiteOpen] = useState(true);
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
