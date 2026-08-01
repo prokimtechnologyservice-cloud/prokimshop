@@ -747,7 +747,5 @@ function ProductCard({
         </Button>
       </div>
     </button>
-      </div>
-    </button>
   );
 }
