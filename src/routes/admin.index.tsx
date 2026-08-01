@@ -118,6 +118,7 @@ function CatalogManager() {
       slug: x.slug ?? null,
       display_mode: x.display_mode ?? "text",
       image_url: x.image_url ?? null,
+      product_sort_mode: x.product_sort_mode ?? "manual",
     })) as Cat[];
     setCats(catList);
     setProds(((p as any[]) ?? []).map((x) => ({
@@ -128,6 +129,8 @@ function CatalogManager() {
       product_type: x.product_type ?? "normal",
       is_featured: !!x.is_featured,
       is_new: !!x.is_new,
+      is_preorder: !!x.is_preorder,
+      preorder_note: x.preorder_note ?? null,
       claim_instructions: x.claim_instructions ?? null,
     })));
     if (!active && catList[0]) setActive(catList[0].id);
