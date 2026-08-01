@@ -440,6 +440,20 @@ function CatalogManager() {
                       <option value="image">รูปภาพ 16:9 (ซ่อนชื่อ)</option>
                     </select>
                   </div>
+                  <div>
+                    <Label className="text-xs">โหมดเรียงสินค้าในหมวดนี้ (ที่ผู้ใช้เห็น)</Label>
+                    <select
+                      value={editingCat.product_sort_mode ?? "manual"}
+                      onChange={(e) => setEditingCat({ ...editingCat, product_sort_mode: e.target.value })}
+                      className="w-full bg-input border border-border rounded px-2 text-xs h-8"
+                    >
+                      <option value="manual">เรียงเอง (ตามลำดับที่ลาก)</option>
+                      <option value="newest">ใหม่สุดก่อน</option>
+                      <option value="price_asc">ราคาน้อย → มาก</option>
+                      <option value="price_desc">ราคามาก → น้อย</option>
+                      <option value="bestseller">ขายดีที่สุดก่อน</option>
+                    </select>
+                  </div>
                   {editingCat.display_mode === "image" && (
                     <div>
                       <Label className="text-xs">รูปภาพหมวด (16:9)</Label>
