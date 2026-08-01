@@ -1605,7 +1605,7 @@ function TrackingManager() {
     const { data } = await supabase
       .from("order_items")
       .select(
-        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
+        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
       )
       .order("created_at", { ascending: true })
       .limit(500);
@@ -1633,6 +1633,16 @@ function TrackingManager() {
     if (error) return toast.error(error.message);
     toast.success(`อัปเดตเป็น "${STATUS_LABEL[status]}"`);
     load();
+  }
+
+  async function handleReturn(it: any, approve: boolean) {
+    try {
+      await resolveReturn({ id: it.id, product_id: it.product_id, quantity: Number(it.quantity) }, approve);
+      toast.success(approve ? "อนุมัติคืนสินค้าแล้ว (คืนสต็อก)" : "ปฏิเสธคำขอคืนแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "ผิดพลาด");
+    }
   }
 
   async function advance(it: any) {
@@ -1737,7 +1747,23 @@ function TrackingManager() {
                       <option key={s} value={s}>{STATUS_LABEL[s]}</option>
                     ))}
                   </select>
+                  {it.return_status === "requested" && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => handleReturn(it, true)}>
+                        อนุมัติคืนสินค้า (คืนสต็อก)
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleReturn(it, false)}>
+                        ปฏิเสธ
+                      </Button>
+                    </>
+                  )}
                 </div>
+                {it.return_status && it.return_status !== "none" && (
+                  <div className="mt-2 text-[11px] rounded border border-border bg-secondary/30 px-2 py-1">
+                    <span className="text-destructive font-medium">{RETURN_LABEL[it.return_status]}</span>
+                    {it.return_reason && <span className="text-muted-foreground"> — {it.return_reason}</span>}
+                  </div>
+                )}
               </div>
             );
           })}
