@@ -706,6 +706,8 @@ function ProductForm({
       is_featured: isFeatured,
       is_new: isNew,
       claim_instructions: claim || null,
+      is_preorder: isPreorder,
+      preorder_note: isPreorder ? preorderNote || null : null,
       box_spin_price: productType === "mystery_box" ? Number(boxSpinPrice) || 0 : 0,
       box_border_color: productType === "mystery_box" ? boxBorder : null,
       box_bg_color: productType === "mystery_box" ? boxBg : null,
