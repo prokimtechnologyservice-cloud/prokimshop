@@ -20,8 +20,8 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[]; slug: string | null; display_mode: string | null; image_url: string | null };
-type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[]; product_type: string; is_featured: boolean; is_new: boolean; claim_instructions: string | null };
+type Cat = { id: string; name: string; sort_order: number; parent_id: string | null; search_keywords: string[]; slug: string | null; display_mode: string | null; image_url: string | null; product_sort_mode: string };
+type Prod = { id: string; category_id: string; name: string; price: number; description: string | null; image_url: string | null; sort_order: number; stock: number | null; search_keywords: string[]; product_type: string; is_featured: boolean; is_new: boolean; claim_instructions: string | null; is_preorder: boolean; preorder_note: string | null };
 type Ann = { id: string; title: string; content: string };
 type UserRow = { id: string; username: string; roblox_name: string | null; balance: number };
 
