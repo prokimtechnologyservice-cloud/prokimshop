@@ -759,6 +759,27 @@ function ProductForm({
           </div>
         )}
       </div>
+      <div className="space-y-2 p-3 rounded-lg border border-sky-500/40 bg-sky-500/5">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPreorder}
+            onChange={(e) => setIsPreorder(e.target.checked)}
+          />
+          สินค้าพรีออเดอร์ (สั่งจองได้แม้ของหมด)
+        </label>
+        {isPreorder && (
+          <div>
+            <Label className="text-xs">ข้อความแจ้งลูกค้า (เวลารอ / เงื่อนไข)</Label>
+            <Textarea
+              rows={2}
+              value={preorderNote}
+              onChange={(e) => setPreorderNote(e.target.value)}
+              placeholder="เช่น รอของ 1-3 วัน จัดส่งตามรอบ"
+            />
+          </div>
+        )}
+      </div>
       <div>
         <Label>คำค้นหา alias (คั่นด้วย ,)</Label>
         <Input
