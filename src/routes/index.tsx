@@ -227,7 +227,10 @@ function Index() {
       setBoxDetail(p);
       return;
     }
-    if ((p.stock ?? null) === 0) return toast.error("สินค้าหมด");
+    if ((p.stock ?? null) === 0 && !p.is_preorder) return toast.error("สินค้าหมด");
+    if (p.is_preorder) {
+      toast.info(p.preorder_note || "สินค้าพรีออเดอร์ — ต้องรอรอบจัดส่งจากแอดมิน");
+    }
     const u = getUser();
     if (!u) return toast.error("กรุณาเข้าสู่ระบบก่อน");
     // account (ไก่ตัน) products don't need roblox id (delivered as account payload)
