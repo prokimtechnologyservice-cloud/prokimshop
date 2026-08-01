@@ -204,6 +204,11 @@ export const Route = createFileRoute("/api/public/checkout")({
                   .update({ status: "available", sold_to: null, sold_at: null })
                   .in("id", allReservedIds);
               }
+              for (const [pid, qty] of Object.entries(needQty)) {
+                const info = prodMap.get(pid)!;
+                if (info.is_preorder || info.stock == null) continue;
+                await admin.rpc("adjust_product_stock", { _product_id: pid, _delta: qty });
+              }
               return Response.json(
                 { error: deductErr.message || "insufficient" },
                 { status: 400 },
