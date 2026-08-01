@@ -182,6 +182,13 @@ export const Route = createFileRoute("/api/public/checkout")({
               .in("id", allReservedIds);
           }
 
+          // Deduct tracked stock for normal (non-preorder) products
+          for (const [pid, qty] of Object.entries(needQty)) {
+            const info = prodMap.get(pid)!;
+            if (info.is_preorder || info.stock == null) continue;
+            await admin.rpc("adjust_product_stock", { _product_id: pid, _delta: -qty });
+          }
+
           if (body.pay_from_balance) {
             const { error: deductErr } = await admin.rpc("deduct_balance", {
               _user_id: body.user_id,
