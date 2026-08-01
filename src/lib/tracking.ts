@@ -49,6 +49,9 @@ export type TrackingItem = {
   delivered_payload?: string | null;
   claim_instructions?: string | null;
   product_type?: string;
+  return_status?: string;
+  return_reason?: string | null;
+  returned_at?: string | null;
 };
 
 function pickImage(r: any): string | null {
