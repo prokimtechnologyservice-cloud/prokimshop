@@ -88,21 +88,32 @@ function Index() {
   const user = getUser();
 
   async function load() {
-    const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: acct }] = await Promise.all([
-      supabase.from("categories").select("*").order("sort_order").order("created_at"),
-      supabase.from("products").select("*").order("sort_order").order("created_at"),
-      supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("category_views").select("category_id"),
-      supabase.from("product_account_stock").select("product_id, status").eq("status", "available"),
-    ]);
+    const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: acct }, { data: sold }] =
+      await Promise.all([
+        supabase.from("categories").select("*").order("sort_order").order("created_at"),
+        supabase.from("products").select("*").order("sort_order").order("created_at"),
+        supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+        supabase.from("category_views").select("category_id"),
+        supabase.from("product_account_stock").select("product_id, status").eq("status", "available"),
+        supabase.from("order_items").select("product_id, quantity"),
+      ]);
     const catList = ((c as any[]) ?? []).map((x) => ({
       ...x,
       parent_id: x.parent_id ?? null,
       slug: x.slug ?? null,
       display_mode: x.display_mode ?? "text",
       image_url: x.image_url ?? null,
+      product_sort_mode: x.product_sort_mode ?? "manual",
     })) as Category[];
     setCats(catList);
+
+    // count sold quantity per product (best sellers)
+    const saleCount: Record<string, number> = {};
+    ((sold as any[]) ?? []).forEach((r) => {
+      if (!r.product_id) return;
+      saleCount[r.product_id] = (saleCount[r.product_id] ?? 0) + Number(r.quantity ?? 1);
+    });
+    setSales(saleCount);
 
     // count available accounts per product
     const acctCount: Record<string, number> = {};
@@ -120,6 +131,8 @@ function Index() {
         product_type: type,
         is_featured: !!x.is_featured,
         is_new: !!x.is_new,
+        is_preorder: !!x.is_preorder,
+        preorder_note: x.preorder_note ?? null,
         account_available: type === "account" ? avail : undefined,
       };
     }) as Product[];
