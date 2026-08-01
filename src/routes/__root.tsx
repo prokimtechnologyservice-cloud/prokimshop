@@ -33,6 +33,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-site-verification", content: "fQy3aPoH2g-e7jCqW80gJ6N_aEFheLJFW8vRWBJquZM" },
       { title: "Prokim shop — ร้านไอเทมเกมพรีเมียม" },
       { name: "description", content: "ซื้อ Robux, Blox Fruits, Brookhaven , Grow a garden 2 , และอื่นของ roblox ในที่เดียว" },
       { property: "og:title", content: "Prokim shop — ร้านไอเทมเกมพรีเมียม" },
