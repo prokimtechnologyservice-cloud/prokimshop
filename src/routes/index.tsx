@@ -572,10 +572,15 @@ function Index() {
                     <Crown className="w-16 h-16 text-primary/30" />
                   </div>
                 )}
-                {detail.stock === 0 && (
+                {detail.stock === 0 && !detail.is_preorder && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <span className="text-4xl font-bold text-destructive tracking-widest">หมด</span>
                   </div>
+                )}
+                {detail.is_preorder && (
+                  <span className="absolute top-2 left-2 text-[11px] px-2 py-0.5 rounded-full bg-sky-500/90 text-white font-bold">
+                    พรีออเดอร์
+                  </span>
                 )}
               </div>
               <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
@@ -584,17 +589,30 @@ function Index() {
               {detail.stock != null && detail.stock > 0 && (
                 <div className="text-sm text-gold">คงเหลือ {detail.stock} ชิ้น</div>
               )}
+              {detail.stock === 0 && !detail.is_preorder && (
+                <div className="text-sm font-bold text-destructive">สินค้าหมด</div>
+              )}
+              {detail.is_preorder && (
+                <div className="text-sm text-sky-400 whitespace-pre-wrap">
+                  {detail.preorder_note || "สินค้าพรีออเดอร์ — สั่งจองได้ รอรอบจัดส่งจากแอดมิน"}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button
                   variant="luxe"
-                  disabled={detail.stock === 0}
+                  disabled={detail.stock === 0 && !detail.is_preorder}
                   className="flex-1"
                   onClick={() => {
                     requestAdd(detail);
                     setDetail(null);
                   }}
                 >
-                  <ShoppingCart className="w-4 h-4" /> {detail.stock === 0 ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
+                  <ShoppingCart className="w-4 h-4" />{" "}
+                  {detail.is_preorder
+                    ? "สั่งจอง (พรีออเดอร์)"
+                    : detail.stock === 0
+                      ? "สินค้าหมด"
+                      : "เพิ่มลงตะกร้า"}
                 </Button>
                 <Button variant="outline" onClick={() => shareProduct(detail)}>
                   <Share2 className="w-4 h-4" /> แชร์
