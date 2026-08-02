@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2 } from "lucide-react";
+import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2, Gavel } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 import { RobloxIdDialog } from "@/components/RobloxIdDialog";
