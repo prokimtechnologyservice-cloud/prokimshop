@@ -1688,7 +1688,47 @@ function TrackingManager() {
     load();
   }
 
+  async function deleteItem(it: any) {
+    if (!confirm(`ลบรายการ "${it.product_name}" ออกจากระบบติดตาม?`)) return;
+    const { error } = await supabase.from("order_items").delete().eq("id", it.id);
+    if (error) return toast.error(error.message);
+    // remove the parent order too when it has no items left
+    const { count } = await supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", it.order_id);
+    if (!count) await supabase.from("orders").delete().eq("id", it.order_id);
+    toast.success("ลบรายการแล้ว");
+    load();
+  }
+
+  async function refundItem(it: any) {
+    const amount = Number(it.unit_price) * Number(it.quantity);
+    const uid = it.orders?.user_id;
+    if (!uid) return toast.error("ไม่พบผู้ใช้ของรายการนี้");
+    if (!confirm(`คืนเงิน ฿${amount.toFixed(2)} เข้ายอดในเว็บของลูกค้า?`)) return;
+    const { error } = await (supabase as any).rpc("refund_to_user", {
+      _user_id: uid,
+      _amount: amount,
+      _note: `refund:${it.order_id}`,
+    });
+    if (error) return toast.error(error.message);
+    await supabase
+      .from("order_items")
+      .update({ return_status: "approved", returned_at: new Date().toISOString() })
+      .eq("id", it.id);
+    if (it.product_id) {
+      await (supabase as any).rpc("adjust_product_stock", {
+        _product_id: it.product_id,
+        _delta: Number(it.quantity),
+      });
+    }
+    toast.success("คืนเงินเข้ายอดในเว็บแล้ว");
+    load();
+  }
+
   async function handleReturn(it: any, approve: boolean) {
+
     try {
       await resolveReturn({ id: it.id, product_id: it.product_id, quantity: Number(it.quantity) }, approve);
       toast.success(approve ? "อนุมัติคืนสินค้าแล้ว (คืนสต็อก)" : "ปฏิเสธคำขอคืนแล้ว");
