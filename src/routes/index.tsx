@@ -742,11 +742,17 @@ function ProductCard({
             ไก่ตัน
           </span>
         )}
+        {p.product_type === "auction" && (
+          <span className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-gold text-onyx font-bold">
+            ประมูล
+          </span>
+        )}
         {preorder && (
           <span className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/90 text-white font-bold">
             พรีออเดอร์
           </span>
         )}
+
         {sold && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-2xl sm:text-3xl font-bold text-destructive tracking-widest drop-shadow-lg">
