@@ -166,7 +166,9 @@ function Index() {
 
   useEffect(() => {
     (async () => {
+      await settleAuctions();
       const { catList, prodList } = await load();
+
 
       // deep-link handling
       if (deepProd) {
