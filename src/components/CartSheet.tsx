@@ -59,18 +59,25 @@ export function CartSheet({
   const balance = Number(user?.balance ?? 0);
   const canPayWithBalance = balance >= total && total > 0;
 
+  const [busy, setBusy] = useState(false);
+
   async function doCheckout(payFromBalance: boolean) {
     const u = getUser();
-    if (!u || items.length === 0) return;
+    if (!u || items.length === 0 || busy) return;
+    setBusy(true);
+    const token = crypto.randomUUID();
     try {
-      const result = await checkoutCart(u.id, items, payFromBalance);
+      const result = await checkoutCart(u.id, items, payFromBalance, token);
       setReceipt({ items: [...items], total, code: result.receipt_code, paid: payFromBalance });
       await clearCart(u.id);
       if (payFromBalance) await refreshUser();
     } catch (e: any) {
       toast.error(e.message ?? "เกิดข้อผิดพลาด");
+    } finally {
+      setBusy(false);
     }
   }
+
 
   function contactAdmin() {
     window.open(ADMIN_CHAT_URL, "_blank", "noopener,noreferrer");
