@@ -18,6 +18,7 @@ export const Route = createFileRoute("/api/public/checkout")({
         try {
           const body = (await request.json()) as {
             user_id: string;
+            client_token?: string | null;
             items: {
               product_id: string | null;
               product_name: string;
@@ -39,6 +40,20 @@ export const Route = createFileRoute("/api/public/checkout")({
             process.env.SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
           );
+
+          // Idempotency: same client_token must never create a second receipt
+          const clientToken = body.client_token ? String(body.client_token) : null;
+          if (clientToken) {
+            const { data: dup } = await admin
+              .from("orders")
+              .select("id, receipt_code")
+              .eq("client_token", clientToken)
+              .maybeSingle();
+            if (dup) {
+              return Response.json({ id: dup.id, receipt_code: dup.receipt_code, ip, duplicate: true });
+            }
+          }
+
 
           // Preflight: check account (ไก่ตัน) stock availability
           const productIds = Array.from(
