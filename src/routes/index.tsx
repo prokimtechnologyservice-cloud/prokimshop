@@ -330,14 +330,14 @@ function Index() {
     () => products.filter((p) => p.is_new).slice(0, 6),
     [products],
   );
-  const bestSellers = useMemo(
+  const auctions = useMemo(
     () =>
-      products
-        .filter((p) => (sales[p.id] ?? 0) > 0)
-        .sort((a, b) => (sales[b.id] ?? 0) - (sales[a.id] ?? 0))
-        .slice(0, 6),
-    [products, sales],
+      products.filter(
+        (p) => p.product_type === "auction" && (p.auction_status ?? "open") === "open",
+      ),
+    [products],
   );
+
   const newestCats = useMemo(() => [...parents].slice(-3).reverse(), [parents]);
 
   return (
