@@ -20,6 +20,9 @@ import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 import { RobloxIdDialog } from "@/components/RobloxIdDialog";
 import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
 import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
+import { AuctionDialog } from "@/components/AuctionDialog";
+import { auctionCountdown, settleAuctions } from "@/lib/auction";
+
 
 const searchSchema = z.object({
   cat: fallback(z.string(), "").default(""),
