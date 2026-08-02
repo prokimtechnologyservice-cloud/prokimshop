@@ -664,6 +664,30 @@ function Index() {
         onOpenChange={(v) => !v && setBoxDetail(null)}
       />
 
+      <AuctionDialog
+        open={!!auctionDetail}
+        product={
+          auctionDetail
+            ? {
+                id: auctionDetail.id,
+                name: auctionDetail.name,
+                description: auctionDetail.description,
+                image_url: auctionDetail.image_url,
+                auction_start_price: Number(auctionDetail.auction_start_price ?? 0),
+                auction_step: Number(auctionDetail.auction_step ?? 1),
+                auction_ends_at: auctionDetail.auction_ends_at ?? null,
+                auction_status: auctionDetail.auction_status ?? "open",
+                auction_final_price: auctionDetail.auction_final_price ?? null,
+                auction_winner_id: auctionDetail.auction_winner_id ?? null,
+              }
+            : null
+        }
+        onOpenChange={(v) => !v && setAuctionDetail(null)}
+        onSettled={() => load()}
+      />
+
+
+
       <footer
         data-site-key="footer_text"
         className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap"
