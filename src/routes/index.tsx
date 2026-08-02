@@ -14,12 +14,15 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2 } from "lucide-react";
+import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2, Gavel } from "lucide-react";
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 import { RobloxIdDialog } from "@/components/RobloxIdDialog";
 import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
 import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
+import { AuctionDialog } from "@/components/AuctionDialog";
+import { auctionCountdown, settleAuctions } from "@/lib/auction";
+
 
 const searchSchema = z.object({
   cat: fallback(z.string(), "").default(""),
@@ -68,7 +71,14 @@ type Product = {
   box_spin_price?: number;
   box_border_color?: string | null;
   box_bg_color?: string | null;
+  auction_start_price?: number;
+  auction_step?: number;
+  auction_ends_at?: string | null;
+  auction_status?: string;
+  auction_final_price?: number | null;
+  auction_winner_id?: string | null;
 };
+
 
 function Index() {
   const { cat: deepCat, p: deepProd } = Route.useSearch();
@@ -82,6 +92,8 @@ function Index() {
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
   const [boxDetail, setBoxDetail] = useState<Product | null>(null);
+  const [auctionDetail, setAuctionDetail] = useState<Product | null>(null);
+
   const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
   const { content } = useSiteContent();
@@ -154,7 +166,9 @@ function Index() {
 
   useEffect(() => {
     (async () => {
+      await settleAuctions();
       const { catList, prodList } = await load();
+
 
       // deep-link handling
       if (deepProd) {
@@ -219,14 +233,21 @@ function Index() {
 
   function openDetail(p: Product) {
     if (p.product_type === "mystery_box") setBoxDetail(p);
+    else if (p.product_type === "auction") setAuctionDetail(p);
     else setDetail(p);
   }
+
 
   async function requestAdd(p: Product) {
     if (p.product_type === "mystery_box") {
       setBoxDetail(p);
       return;
     }
+    if (p.product_type === "auction") {
+      setAuctionDetail(p);
+      return;
+    }
+
     if ((p.stock ?? null) === 0 && !p.is_preorder) return toast.error("สินค้าหมด");
     if (p.is_preorder) {
       toast.info(p.preorder_note || "สินค้าพรีออเดอร์ — ต้องรอรอบจัดส่งจากแอดมิน");
@@ -311,14 +332,14 @@ function Index() {
     () => products.filter((p) => p.is_new).slice(0, 6),
     [products],
   );
-  const bestSellers = useMemo(
+  const auctions = useMemo(
     () =>
-      products
-        .filter((p) => (sales[p.id] ?? 0) > 0)
-        .sort((a, b) => (sales[b.id] ?? 0) - (sales[a.id] ?? 0))
-        .slice(0, 6),
-    [products, sales],
+      products.filter(
+        (p) => p.product_type === "auction" && (p.auction_status ?? "open") === "open",
+      ),
+    [products],
   );
+
   const newestCats = useMemo(() => [...parents].slice(-3).reverse(), [parents]);
 
   return (
@@ -410,17 +431,16 @@ function Index() {
             </div>
           )}
 
-          {bestSellers.length > 0 && (
+          {auctions.length > 0 && (
             <div>
               <h3 className="font-display text-lg mb-3 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-gold" /> สินค้าขายดีที่สุด
+                <Gavel className="w-5 h-5 text-gold" /> ประมูลสินค้า
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {bestSellers.map((p) => (
+                {auctions.map((p) => (
                   <ProductCard
                     key={p.id}
                     p={p}
-                    soldCount={sales[p.id] ?? 0}
                     onOpen={() => openDetail(p)}
                     onAdd={() => requestAdd(p)}
                     compact
@@ -429,6 +449,7 @@ function Index() {
               </div>
             </div>
           )}
+
 
           {featured.length > 0 && (
             <div>
@@ -645,6 +666,30 @@ function Index() {
         onOpenChange={(v) => !v && setBoxDetail(null)}
       />
 
+      <AuctionDialog
+        open={!!auctionDetail}
+        product={
+          auctionDetail
+            ? {
+                id: auctionDetail.id,
+                name: auctionDetail.name,
+                description: auctionDetail.description,
+                image_url: auctionDetail.image_url,
+                auction_start_price: Number(auctionDetail.auction_start_price ?? 0),
+                auction_step: Number(auctionDetail.auction_step ?? 1),
+                auction_ends_at: auctionDetail.auction_ends_at ?? null,
+                auction_status: auctionDetail.auction_status ?? "open",
+                auction_final_price: auctionDetail.auction_final_price ?? null,
+                auction_winner_id: auctionDetail.auction_winner_id ?? null,
+              }
+            : null
+        }
+        onOpenChange={(v) => !v && setAuctionDetail(null)}
+        onSettled={() => load()}
+      />
+
+
+
       <footer
         data-site-key="footer_text"
         className="border-t border-border mt-10 py-8 text-center text-xs text-muted-foreground whitespace-pre-wrap"
@@ -697,11 +742,17 @@ function ProductCard({
             ไก่ตัน
           </span>
         )}
+        {p.product_type === "auction" && (
+          <span className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-gold text-onyx font-bold">
+            ประมูล
+          </span>
+        )}
         {preorder && (
           <span className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/90 text-white font-bold">
             พรีออเดอร์
           </span>
         )}
+
         {sold && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-2xl sm:text-3xl font-bold text-destructive tracking-widest drop-shadow-lg">
@@ -719,10 +770,23 @@ function ProductCard({
             {p.description}
           </div>
         )}
-        <div className="text-gold font-bold">
-          {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
-        </div>
-        {p.stock != null && p.stock > 0 && (
+        {p.product_type === "auction" ? (
+          <>
+            <div className="text-gold font-bold">
+              เริ่ม ฿{Number(p.auction_start_price ?? 0).toFixed(2)}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {(p.auction_status ?? "open") === "closed"
+                ? "ปิดประมูลแล้ว"
+                : `เหลือเวลา ${auctionCountdown(p.auction_ends_at)}`}
+            </div>
+          </>
+        ) : (
+          <div className="text-gold font-bold">
+            {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
+          </div>
+        )}
+        {p.stock != null && p.stock > 0 && p.product_type !== "auction" && (
           <div className="text-[11px] text-muted-foreground">คงเหลือ {p.stock} ชิ้น</div>
         )}
         {sold && <div className="text-[11px] font-bold text-destructive">สินค้าหมด</div>}
@@ -742,10 +806,19 @@ function ProductCard({
           disabled={sold}
           className="w-full"
         >
-          <ShoppingCart className="w-3.5 h-3.5" />{" "}
-          {preorder ? "สั่งจอง" : sold ? "หมด" : "เพิ่มลงตะกร้า"}
+          {p.product_type === "auction" ? (
+            <>
+              <Gavel className="w-3.5 h-3.5" /> ร่วมประมูล
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="w-3.5 h-3.5" />{" "}
+              {preorder ? "สั่งจอง" : sold ? "หมด" : "เพิ่มลงตะกร้า"}
+            </>
+          )}
         </Button>
       </div>
     </button>
   );
+
 }

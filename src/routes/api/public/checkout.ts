@@ -18,6 +18,7 @@ export const Route = createFileRoute("/api/public/checkout")({
         try {
           const body = (await request.json()) as {
             user_id: string;
+            client_token?: string | null;
             items: {
               product_id: string | null;
               product_name: string;
@@ -39,6 +40,20 @@ export const Route = createFileRoute("/api/public/checkout")({
             process.env.SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
           );
+
+          // Idempotency: same client_token must never create a second receipt
+          const clientToken = body.client_token ? String(body.client_token) : null;
+          if (clientToken) {
+            const { data: dup } = await admin
+              .from("orders")
+              .select("id, receipt_code")
+              .eq("client_token", clientToken)
+              .maybeSingle();
+            if (dup) {
+              return Response.json({ id: dup.id, receipt_code: dup.receipt_code, ip, duplicate: true });
+            }
+          }
+
 
           // Preflight: check account (ไก่ตัน) stock availability
           const productIds = Array.from(
@@ -127,10 +142,25 @@ export const Route = createFileRoute("/api/public/checkout")({
               ip_address: ip,
               paid_from_balance: body.pay_from_balance,
               payment_status: body.pay_from_balance ? "paid" : "unpaid",
+              client_token: clientToken,
             })
             .select("id, receipt_code")
             .single();
-          if (error) throw error;
+          if (error) {
+            // Unique violation on client_token = a concurrent duplicate submit
+            if (clientToken && (error as any).code === "23505") {
+              const { data: dup } = await admin
+                .from("orders")
+                .select("id, receipt_code")
+                .eq("client_token", clientToken)
+                .maybeSingle();
+              if (dup) {
+                return Response.json({ id: dup.id, receipt_code: dup.receipt_code, ip, duplicate: true });
+              }
+            }
+            throw error;
+          }
+
 
           // Build order_items — expand account-type into individual rows so each row
           // carries its own delivered_payload

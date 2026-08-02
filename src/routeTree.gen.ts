@@ -20,6 +20,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
+import { Route as ApiPublicAuctionRouteImport } from './routes/api/public/auction'
 
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
@@ -76,6 +77,11 @@ const ApiPublicCheckoutRoute = ApiPublicCheckoutRouteImport.update({
   path: '/api/public/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAuctionRoute = ApiPublicAuctionRouteImport.update({
+  id: '/api/public/auction',
+  path: '/api/public/auction',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/product/$id'
     | '/admin/'
+    | '/api/public/auction'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/product/$id'
     | '/admin'
+    | '/api/public/auction'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/product/$id'
     | '/admin/'
+    | '/api/public/auction'
     | '/api/public/checkout'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   CategorySlugRoute: typeof CategorySlugRoute
   ProductIdRoute: typeof ProductIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiPublicAuctionRoute: typeof ApiPublicAuctionRoute
   ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
   ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auction': {
+      id: '/api/public/auction'
+      path: '/api/public/auction'
+      fullPath: '/api/public/auction'
+      preLoaderRoute: typeof ApiPublicAuctionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategorySlugRoute: CategorySlugRoute,
   ProductIdRoute: ProductIdRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ApiPublicAuctionRoute: ApiPublicAuctionRoute,
   ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
   ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,

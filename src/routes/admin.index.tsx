@@ -607,6 +607,15 @@ function ProductForm({
   const [prizePick, setPrizePick] = useState("");
   const [prizeWeight, setPrizeWeight] = useState("1");
   const [prizeStock, setPrizeStock] = useState("1");
+  const [aucStart, setAucStart] = useState<string>(String((product as any)?.auction_start_price ?? 100));
+  const [aucStep, setAucStep] = useState<string>(String((product as any)?.auction_step ?? 5));
+  const [aucEnds, setAucEnds] = useState<string>(
+    (product as any)?.auction_ends_at
+      ? new Date((product as any).auction_ends_at).toISOString().slice(0, 16)
+      : "",
+  );
+  const [aucStatus, setAucStatus] = useState<string>((product as any)?.auction_status ?? "open");
+
 
   useEffect(() => {
     if (!product) return;
@@ -712,7 +721,12 @@ function ProductForm({
       box_spin_price: productType === "mystery_box" ? Number(boxSpinPrice) || 0 : 0,
       box_border_color: productType === "mystery_box" ? boxBorder : null,
       box_bg_color: productType === "mystery_box" ? boxBg : null,
+      auction_start_price: productType === "auction" ? Number(aucStart) || 0 : 0,
+      auction_step: productType === "auction" ? Math.max(1, Number(aucStep) || 1) : 5,
+      auction_ends_at: productType === "auction" && aucEnds ? new Date(aucEnds).toISOString() : null,
+      auction_status: productType === "auction" ? aucStatus : "open",
     };
+
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
     } else {
@@ -834,6 +848,8 @@ function ProductForm({
             <option value="normal">สินค้าปกติ</option>
             <option value="account">ไก่ตัน (บัญชี)</option>
             <option value="mystery_box">กล่องสุ่ม</option>
+            <option value="auction">ประมูลสินค้า</option>
+
           </select>
         </div>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
@@ -885,7 +901,43 @@ function ProductForm({
         </div>
       )}
 
+      {productType === "auction" && (
+        <div className="space-y-2 border border-gold/40 rounded p-3 bg-onyx/30">
+          <Label className="text-xs text-gold">ตั้งค่าการประมูล</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px]">ราคาเริ่มต้น (บาท)</Label>
+              <Input type="number" min={0} value={aucStart} onChange={(e) => setAucStart(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">เพิ่มขั้นละ (บาท)</Label>
+              <Input type="number" min={1} value={aucStep} onChange={(e) => setAucStep(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">เวลาปิดประมูล</Label>
+              <Input type="datetime-local" value={aucEnds} onChange={(e) => setAucEnds(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">สถานะ</Label>
+              <select
+                className="w-full bg-input border border-border rounded px-2 h-9 text-xs"
+                value={aucStatus}
+                onChange={(e) => setAucStatus(e.target.value)}
+              >
+                <option value="open">เปิดประมูล</option>
+                <option value="closed">ปิดประมูล</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            ผู้ใช้ต้องมียอดเงินในเว็บพอกับราคาที่เสนอ แต่เงินจะถูกหักเมื่อประมูลจบและเป็นผู้เสนอราคาสูงสุด
+            แล้วรายการจะไปโผล่ในติดตามคำสั่งซื้ออัตโนมัติ
+          </p>
+        </div>
+      )}
+
       {productType === "mystery_box" && (
+
         <div className="space-y-2 border border-primary/40 rounded p-3 bg-onyx/30">
           <Label className="text-xs text-primary">ตั้งค่ากล่องสุ่ม</Label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1636,7 +1688,47 @@ function TrackingManager() {
     load();
   }
 
+  async function deleteItem(it: any) {
+    if (!confirm(`ลบรายการ "${it.product_name}" ออกจากระบบติดตาม?`)) return;
+    const { error } = await supabase.from("order_items").delete().eq("id", it.id);
+    if (error) return toast.error(error.message);
+    // remove the parent order too when it has no items left
+    const { count } = await supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", it.order_id);
+    if (!count) await supabase.from("orders").delete().eq("id", it.order_id);
+    toast.success("ลบรายการแล้ว");
+    load();
+  }
+
+  async function refundItem(it: any) {
+    const amount = Number(it.unit_price) * Number(it.quantity);
+    const uid = it.orders?.user_id;
+    if (!uid) return toast.error("ไม่พบผู้ใช้ของรายการนี้");
+    if (!confirm(`คืนเงิน ฿${amount.toFixed(2)} เข้ายอดในเว็บของลูกค้า?`)) return;
+    const { error } = await (supabase as any).rpc("refund_to_user", {
+      _user_id: uid,
+      _amount: amount,
+      _note: `refund:${it.order_id}`,
+    });
+    if (error) return toast.error(error.message);
+    await supabase
+      .from("order_items")
+      .update({ return_status: "approved", returned_at: new Date().toISOString() })
+      .eq("id", it.id);
+    if (it.product_id) {
+      await (supabase as any).rpc("adjust_product_stock", {
+        _product_id: it.product_id,
+        _delta: Number(it.quantity),
+      });
+    }
+    toast.success("คืนเงินเข้ายอดในเว็บแล้ว");
+    load();
+  }
+
   async function handleReturn(it: any, approve: boolean) {
+
     try {
       await resolveReturn({ id: it.id, product_id: it.product_id, quantity: Number(it.quantity) }, approve);
       toast.success(approve ? "อนุมัติคืนสินค้าแล้ว (คืนสต็อก)" : "ปฏิเสธคำขอคืนแล้ว");
@@ -1758,6 +1850,18 @@ function TrackingManager() {
                       </Button>
                     </>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => refundItem(it)}>
+                    คืนเงินเข้ายอดลูกค้า
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => deleteItem(it)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> ลบรายการ
+                  </Button>
+
                 </div>
                 {it.return_status && it.return_status !== "none" && (
                   <div className="mt-2 text-[11px] rounded border border-border bg-secondary/30 px-2 py-1">

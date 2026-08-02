@@ -59,18 +59,25 @@ export function CartSheet({
   const balance = Number(user?.balance ?? 0);
   const canPayWithBalance = balance >= total && total > 0;
 
+  const [busy, setBusy] = useState(false);
+
   async function doCheckout(payFromBalance: boolean) {
     const u = getUser();
-    if (!u || items.length === 0) return;
+    if (!u || items.length === 0 || busy) return;
+    setBusy(true);
+    const token = crypto.randomUUID();
     try {
-      const result = await checkoutCart(u.id, items, payFromBalance);
+      const result = await checkoutCart(u.id, items, payFromBalance, token);
       setReceipt({ items: [...items], total, code: result.receipt_code, paid: payFromBalance });
       await clearCart(u.id);
       if (payFromBalance) await refreshUser();
     } catch (e: any) {
       toast.error(e.message ?? "เกิดข้อผิดพลาด");
+    } finally {
+      setBusy(false);
     }
   }
+
 
   function contactAdmin() {
     window.open(ADMIN_CHAT_URL, "_blank", "noopener,noreferrer");
@@ -194,19 +201,20 @@ export function CartSheet({
                 </div>
 
                 {canPayWithBalance ? (
-                  <Button onClick={() => doCheckout(true)} variant="luxe" className="w-full">
-                    ชำระด้วยยอดในเว็บ (฿{total.toFixed(2)})
+                  <Button onClick={() => doCheckout(true)} disabled={busy} variant="luxe" className="w-full">
+                    {busy ? "กำลังดำเนินการ..." : `ชำระด้วยยอดในเว็บ (฿${total.toFixed(2)})`}
                   </Button>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={() => doCheckout(false)} variant="luxe">
-                      ชำระกับแอดมิน
+                    <Button onClick={() => doCheckout(false)} disabled={busy} variant="luxe">
+                      {busy ? "กำลังดำเนินการ..." : "ชำระกับแอดมิน"}
                     </Button>
                     <Button onClick={() => setTopUpOpen(true)} variant="outline">
                       <Wallet className="w-4 h-4 mr-1" /> เติมเงิน
                     </Button>
                   </div>
                 )}
+
                 {!canPayWithBalance && total > 0 && (
                   <p className="text-[11px] text-muted-foreground text-center">
                     ยอดในเว็บไม่พอ (ขาด ฿{(total - balance).toFixed(2)}) — เติมซอง TrueMoney เพื่อชำระอัตโนมัติ
