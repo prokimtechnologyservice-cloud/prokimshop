@@ -901,7 +901,43 @@ function ProductForm({
         </div>
       )}
 
+      {productType === "auction" && (
+        <div className="space-y-2 border border-gold/40 rounded p-3 bg-onyx/30">
+          <Label className="text-xs text-gold">ตั้งค่าการประมูล</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px]">ราคาเริ่มต้น (บาท)</Label>
+              <Input type="number" min={0} value={aucStart} onChange={(e) => setAucStart(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">เพิ่มขั้นละ (บาท)</Label>
+              <Input type="number" min={1} value={aucStep} onChange={(e) => setAucStep(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">เวลาปิดประมูล</Label>
+              <Input type="datetime-local" value={aucEnds} onChange={(e) => setAucEnds(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">สถานะ</Label>
+              <select
+                className="w-full bg-input border border-border rounded px-2 h-9 text-xs"
+                value={aucStatus}
+                onChange={(e) => setAucStatus(e.target.value)}
+              >
+                <option value="open">เปิดประมูล</option>
+                <option value="closed">ปิดประมูล</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            ผู้ใช้ต้องมียอดเงินในเว็บพอกับราคาที่เสนอ แต่เงินจะถูกหักเมื่อประมูลจบและเป็นผู้เสนอราคาสูงสุด
+            แล้วรายการจะไปโผล่ในติดตามคำสั่งซื้ออัตโนมัติ
+          </p>
+        </div>
+      )}
+
       {productType === "mystery_box" && (
+
         <div className="space-y-2 border border-primary/40 rounded p-3 bg-onyx/30">
           <Label className="text-xs text-primary">ตั้งค่ากล่องสุ่ม</Label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
