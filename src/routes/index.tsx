@@ -429,17 +429,16 @@ function Index() {
             </div>
           )}
 
-          {bestSellers.length > 0 && (
+          {auctions.length > 0 && (
             <div>
               <h3 className="font-display text-lg mb-3 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-gold" /> สินค้าขายดีที่สุด
+                <Gavel className="w-5 h-5 text-gold" /> ประมูลสินค้า
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {bestSellers.map((p) => (
+                {auctions.map((p) => (
                   <ProductCard
                     key={p.id}
                     p={p}
-                    soldCount={sales[p.id] ?? 0}
                     onOpen={() => openDetail(p)}
                     onAdd={() => requestAdd(p)}
                     compact
@@ -448,6 +447,7 @@ function Index() {
               </div>
             </div>
           )}
+
 
           {featured.length > 0 && (
             <div>
