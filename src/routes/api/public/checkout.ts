@@ -142,10 +142,25 @@ export const Route = createFileRoute("/api/public/checkout")({
               ip_address: ip,
               paid_from_balance: body.pay_from_balance,
               payment_status: body.pay_from_balance ? "paid" : "unpaid",
+              client_token: clientToken,
             })
             .select("id, receipt_code")
             .single();
-          if (error) throw error;
+          if (error) {
+            // Unique violation on client_token = a concurrent duplicate submit
+            if (clientToken && (error as any).code === "23505") {
+              const { data: dup } = await admin
+                .from("orders")
+                .select("id, receipt_code")
+                .eq("client_token", clientToken)
+                .maybeSingle();
+              if (dup) {
+                return Response.json({ id: dup.id, receipt_code: dup.receipt_code, ip, duplicate: true });
+              }
+            }
+            throw error;
+          }
+
 
           // Build order_items — expand account-type into individual rows so each row
           // carries its own delivered_payload
