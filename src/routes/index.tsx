@@ -68,7 +68,14 @@ type Product = {
   box_spin_price?: number;
   box_border_color?: string | null;
   box_bg_color?: string | null;
+  auction_start_price?: number;
+  auction_step?: number;
+  auction_ends_at?: string | null;
+  auction_status?: string;
+  auction_final_price?: number | null;
+  auction_winner_id?: string | null;
 };
+
 
 function Index() {
   const { cat: deepCat, p: deepProd } = Route.useSearch();
