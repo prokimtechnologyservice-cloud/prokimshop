@@ -35,6 +35,48 @@ export type Database = {
         }
         Relationships: []
       }
+      auction_bids: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          product_id: string
+          roblox_name: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          product_id: string
+          roblox_name?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          product_id?: string
+          roblox_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_bids_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -410,6 +452,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          client_token: string | null
           created_at: string
           id: string
           ip_address: string | null
@@ -421,6 +464,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_token?: string | null
           created_at?: string
           id?: string
           ip_address?: string | null
@@ -432,6 +476,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_token?: string | null
           created_at?: string
           id?: string
           ip_address?: string | null
@@ -495,6 +540,12 @@ export type Database = {
       }
       products: {
         Row: {
+          auction_ends_at: string | null
+          auction_final_price: number | null
+          auction_start_price: number
+          auction_status: string
+          auction_step: number
+          auction_winner_id: string | null
           box_bg_color: string | null
           box_border_color: string | null
           box_spin_price: number
@@ -517,6 +568,12 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          auction_ends_at?: string | null
+          auction_final_price?: number | null
+          auction_start_price?: number
+          auction_status?: string
+          auction_step?: number
+          auction_winner_id?: string | null
           box_bg_color?: string | null
           box_border_color?: string | null
           box_spin_price?: number
@@ -539,6 +596,12 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          auction_ends_at?: string | null
+          auction_final_price?: number | null
+          auction_start_price?: number
+          auction_status?: string
+          auction_step?: number
+          auction_winner_id?: string | null
           box_bg_color?: string | null
           box_border_color?: string | null
           box_spin_price?: number
@@ -808,6 +871,10 @@ export type Database = {
         Returns: number
       }
       generate_receipt_code: { Args: never; Returns: string }
+      refund_to_user: {
+        Args: { _amount: number; _note: string; _user_id: string }
+        Returns: number
+      }
       topup_balance: {
         Args: {
           _amount: number
