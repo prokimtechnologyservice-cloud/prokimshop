@@ -607,6 +607,15 @@ function ProductForm({
   const [prizePick, setPrizePick] = useState("");
   const [prizeWeight, setPrizeWeight] = useState("1");
   const [prizeStock, setPrizeStock] = useState("1");
+  const [aucStart, setAucStart] = useState<string>(String((product as any)?.auction_start_price ?? 100));
+  const [aucStep, setAucStep] = useState<string>(String((product as any)?.auction_step ?? 5));
+  const [aucEnds, setAucEnds] = useState<string>(
+    (product as any)?.auction_ends_at
+      ? new Date((product as any).auction_ends_at).toISOString().slice(0, 16)
+      : "",
+  );
+  const [aucStatus, setAucStatus] = useState<string>((product as any)?.auction_status ?? "open");
+
 
   useEffect(() => {
     if (!product) return;
