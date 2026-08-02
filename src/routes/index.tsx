@@ -238,6 +238,11 @@ function Index() {
       setBoxDetail(p);
       return;
     }
+    if (p.product_type === "auction") {
+      setAuctionDetail(p);
+      return;
+    }
+
     if ((p.stock ?? null) === 0 && !p.is_preorder) return toast.error("สินค้าหมด");
     if (p.is_preorder) {
       toast.info(p.preorder_note || "สินค้าพรีออเดอร์ — ต้องรอรอบจัดส่งจากแอดมิน");
