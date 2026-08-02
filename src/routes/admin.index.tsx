@@ -721,7 +721,12 @@ function ProductForm({
       box_spin_price: productType === "mystery_box" ? Number(boxSpinPrice) || 0 : 0,
       box_border_color: productType === "mystery_box" ? boxBorder : null,
       box_bg_color: productType === "mystery_box" ? boxBg : null,
+      auction_start_price: productType === "auction" ? Number(aucStart) || 0 : 0,
+      auction_step: productType === "auction" ? Math.max(1, Number(aucStep) || 1) : 5,
+      auction_ends_at: productType === "auction" && aucEnds ? new Date(aucEnds).toISOString() : null,
+      auction_status: productType === "auction" ? aucStatus : "open",
     };
+
     if (product) {
       await supabase.from("products").update(payload).eq("id", product.id);
     } else {
