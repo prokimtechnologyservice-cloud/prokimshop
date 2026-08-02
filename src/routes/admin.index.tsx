@@ -1850,6 +1850,18 @@ function TrackingManager() {
                       </Button>
                     </>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => refundItem(it)}>
+                    คืนเงินเข้ายอดลูกค้า
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => deleteItem(it)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> ลบรายการ
+                  </Button>
+
                 </div>
                 {it.return_status && it.return_status !== "none" && (
                   <div className="mt-2 text-[11px] rounded border border-border bg-secondary/30 px-2 py-1">
