@@ -848,6 +848,8 @@ function ProductForm({
             <option value="normal">สินค้าปกติ</option>
             <option value="account">ไก่ตัน (บัญชี)</option>
             <option value="mystery_box">กล่องสุ่ม</option>
+            <option value="auction">ประมูลสินค้า</option>
+
           </select>
         </div>
         <label className="flex items-center gap-1 text-xs cursor-pointer">
