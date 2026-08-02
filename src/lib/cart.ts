@@ -72,6 +72,7 @@ export async function checkoutCart(
   userId: string,
   items: CartItem[],
   pay_from_balance = false,
+  clientToken?: string,
 ) {
   const res = await fetch("/api/public/checkout", {
     method: "POST",
@@ -79,6 +80,7 @@ export async function checkoutCart(
     body: JSON.stringify({
       user_id: userId,
       pay_from_balance,
+      client_token: clientToken ?? crypto.randomUUID(),
       items: items.map((i) => ({
         product_id: i.product_id,
         product_name: i.product_name,
@@ -92,5 +94,6 @@ export async function checkoutCart(
   if (!res.ok) throw new Error(j?.error ?? "checkout failed");
   return { id: j.id as string, receipt_code: j.receipt_code as string };
 }
+
 
 export const ADMIN_CHAT_URL = "https://m.me/61580581317954";
