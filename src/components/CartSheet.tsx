@@ -201,19 +201,20 @@ export function CartSheet({
                 </div>
 
                 {canPayWithBalance ? (
-                  <Button onClick={() => doCheckout(true)} variant="luxe" className="w-full">
-                    ชำระด้วยยอดในเว็บ (฿{total.toFixed(2)})
+                  <Button onClick={() => doCheckout(true)} disabled={busy} variant="luxe" className="w-full">
+                    {busy ? "กำลังดำเนินการ..." : `ชำระด้วยยอดในเว็บ (฿${total.toFixed(2)})`}
                   </Button>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={() => doCheckout(false)} variant="luxe">
-                      ชำระกับแอดมิน
+                    <Button onClick={() => doCheckout(false)} disabled={busy} variant="luxe">
+                      {busy ? "กำลังดำเนินการ..." : "ชำระกับแอดมิน"}
                     </Button>
                     <Button onClick={() => setTopUpOpen(true)} variant="outline">
                       <Wallet className="w-4 h-4 mr-1" /> เติมเงิน
                     </Button>
                   </div>
                 )}
+
                 {!canPayWithBalance && total > 0 && (
                   <p className="text-[11px] text-muted-foreground text-center">
                     ยอดในเว็บไม่พอ (ขาด ฿{(total - balance).toFixed(2)}) — เติมซอง TrueMoney เพื่อชำระอัตโนมัติ
