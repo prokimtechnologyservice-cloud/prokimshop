@@ -770,10 +770,23 @@ function ProductCard({
             {p.description}
           </div>
         )}
-        <div className="text-gold font-bold">
-          {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
-        </div>
-        {p.stock != null && p.stock > 0 && (
+        {p.product_type === "auction" ? (
+          <>
+            <div className="text-gold font-bold">
+              เริ่ม ฿{Number(p.auction_start_price ?? 0).toFixed(2)}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {(p.auction_status ?? "open") === "closed"
+                ? "ปิดประมูลแล้ว"
+                : `เหลือเวลา ${auctionCountdown(p.auction_ends_at)}`}
+            </div>
+          </>
+        ) : (
+          <div className="text-gold font-bold">
+            {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
+          </div>
+        )}
+        {p.stock != null && p.stock > 0 && p.product_type !== "auction" && (
           <div className="text-[11px] text-muted-foreground">คงเหลือ {p.stock} ชิ้น</div>
         )}
         {sold && <div className="text-[11px] font-bold text-destructive">สินค้าหมด</div>}
@@ -793,10 +806,19 @@ function ProductCard({
           disabled={sold}
           className="w-full"
         >
-          <ShoppingCart className="w-3.5 h-3.5" />{" "}
-          {preorder ? "สั่งจอง" : sold ? "หมด" : "เพิ่มลงตะกร้า"}
+          {p.product_type === "auction" ? (
+            <>
+              <Gavel className="w-3.5 h-3.5" /> ร่วมประมูล
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="w-3.5 h-3.5" />{" "}
+              {preorder ? "สั่งจอง" : sold ? "หมด" : "เพิ่มลงตะกร้า"}
+            </>
+          )}
         </Button>
       </div>
     </button>
   );
+
 }
