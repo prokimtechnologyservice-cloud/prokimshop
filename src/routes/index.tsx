@@ -89,6 +89,8 @@ function Index() {
   const [closedMsg, setClosedMsg] = useState("");
   const [detail, setDetail] = useState<Product | null>(null);
   const [boxDetail, setBoxDetail] = useState<Product | null>(null);
+  const [auctionDetail, setAuctionDetail] = useState<Product | null>(null);
+
   const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
   const { content } = useSiteContent();
