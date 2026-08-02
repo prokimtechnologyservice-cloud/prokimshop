@@ -226,8 +226,10 @@ function Index() {
 
   function openDetail(p: Product) {
     if (p.product_type === "mystery_box") setBoxDetail(p);
+    else if (p.product_type === "auction") setAuctionDetail(p);
     else setDetail(p);
   }
+
 
   async function requestAdd(p: Product) {
     if (p.product_type === "mystery_box") {
