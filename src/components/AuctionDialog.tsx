@@ -114,18 +114,18 @@ export function AuctionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-gradient-card border-gold/40">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[85vh] overflow-y-auto bg-gradient-card border-gold/40">
         {product && (
           <>
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl text-gradient-gold pr-6 flex items-center gap-2">
-                <Gavel className="w-5 h-5 text-gold" /> {product.name}
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40 font-normal">
+            <DialogHeader className="min-w-0">
+              <DialogTitle className="font-display text-xl sm:text-2xl text-gradient-gold pr-6 flex items-center gap-2 min-w-0">
+                <Gavel className="w-5 h-5 text-gold shrink-0" /> <span className="truncate">{product.name}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40 font-normal shrink-0">
                   ประมูล
                 </span>
               </DialogTitle>
-              <DialogDescription className="flex items-center gap-2 text-gold">
-                <Timer className="w-4 h-4" />
+              <DialogDescription className="flex items-center gap-2 text-gold text-xs sm:text-sm">
+                <Timer className="w-4 h-4 shrink-0" />
                 {closed ? "ปิดประมูลแล้ว" : `เหลือเวลา ${countdown}`}
               </DialogDescription>
             </DialogHeader>
@@ -146,7 +146,7 @@ export function AuctionDialog({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               <div className="rounded-lg border border-border p-2">
                 <div className="text-[11px] text-muted-foreground">ราคาปัจจุบัน</div>
                 <div className="font-bold text-gold text-lg">
@@ -160,7 +160,7 @@ export function AuctionDialog({
             </div>
 
             {leading && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground min-w-0 truncate">
                 ผู้นำขณะนี้: <span className="text-foreground font-medium">{leading.username ?? "ผู้ใช้"}</span>
                 {myTop && leading.user_id === user?.id && (
                   <span className="text-emerald-400"> (คุณกำลังนำ)</span>

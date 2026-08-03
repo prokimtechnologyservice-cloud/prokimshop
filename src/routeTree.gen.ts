@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as GivecardRouteImport } from './routes/givecard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -35,6 +36,11 @@ const OrdersRoute = OrdersRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GivecardRoute = GivecardRouteImport.update({
+  id: '/givecard',
+  path: '/givecard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -85,6 +91,7 @@ const ApiPublicAuctionRoute = ApiPublicAuctionRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/givecard': typeof GivecardRoute
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/givecard': typeof GivecardRoute
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/givecard': typeof GivecardRoute
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/givecard'
     | '/history'
     | '/orders'
     | '/search'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/givecard'
     | '/history'
     | '/orders'
     | '/search'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/givecard'
     | '/history'
     | '/orders'
     | '/search'
@@ -173,6 +185,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GivecardRoute: typeof GivecardRoute
   HistoryRoute: typeof HistoryRoute
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/givecard': {
+      id: '/givecard'
+      path: '/givecard'
+      fullPath: '/givecard'
+      preLoaderRoute: typeof GivecardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -277,6 +297,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GivecardRoute: GivecardRoute,
   HistoryRoute: HistoryRoute,
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
