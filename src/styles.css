@@ -182,3 +182,64 @@
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+/* ========================================
+   Theme system overrides (light mode, palettes, sizes)
+======================================== */
+
+[data-theme-mode="light"] {
+  --background: oklch(0.98 0.005 90);
+  --foreground: oklch(0.16 0.01 25);
+
+  --card: oklch(0.995 0.003 90);
+  --card-foreground: oklch(0.16 0.01 25);
+
+  --popover: oklch(0.995 0.003 90);
+  --popover-foreground: oklch(0.16 0.01 25);
+
+  /* accent becomes green in light mode */
+  --primary: oklch(0.55 0.15 150);
+  --primary-foreground: oklch(0.98 0.005 90);
+
+  --secondary: oklch(0.93 0.007 90);
+  --secondary-foreground: oklch(0.16 0.01 25);
+
+  --muted: oklch(0.94 0.006 90);
+  --muted-foreground: oklch(0.42 0.01 60);
+
+  --accent: oklch(0.90 0.03 140);
+  --accent-foreground: oklch(0.16 0.01 25);
+
+  --border: oklch(0.85 0.01 90);
+  --input: oklch(0.90 0.01 90);
+  --ring: oklch(0.55 0.15 150);
+
+  --crimson: oklch(0.55 0.15 150);
+
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.55 0.15 150 / 0.15), transparent 60%),
+                   linear-gradient(180deg, oklch(0.98 0.005 90), oklch(0.95 0.005 90));
+  --gradient-crimson: linear-gradient(135deg, oklch(0.55 0.15 150), oklch(0.45 0.15 150));
+  --gradient-card: linear-gradient(180deg, oklch(0.995 0.003 90), oklch(0.96 0.005 90));
+}
+
+[data-palette="green"] {
+  --background: oklch(0.30 0.08 145);
+  --border: oklch(0.05 0 0);
+  --input: oklch(0.05 0 0);
+}
+
+[data-palette="blue"] {
+  --background: oklch(0.35 0.09 250);
+  --border: oklch(0.98 0 0);
+  --input: oklch(0.98 0 0);
+}
+
+[data-palette="yellow"] {
+  --background: oklch(0.85 0.12 95);
+  --border: oklch(0.05 0 0);
+  --input: oklch(0.05 0 0);
+}
+
+:root[data-size="1"] { font-size: 100%; }
+:root[data-size="2"] { font-size: 130%; }
+:root[data-size="3"] { font-size: 150%; }

@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { OverlayLayer } from "@/components/OverlayLayer";
 import { LiveOverlayEditor } from "@/components/LiveOverlayEditor";
 import { ChatWidget } from "@/components/ChatWidget";
+import { useEffect } from "react";
+import { applyTheme, getTheme } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -72,9 +74,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ThemeInit() {
+  useEffect(() => {
+    applyTheme(getTheme());
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   return (
     <div className="relative min-h-screen">
+      <ThemeInit />
       <Outlet />
       <OverlayLayer />
       <LiveOverlayEditor />
