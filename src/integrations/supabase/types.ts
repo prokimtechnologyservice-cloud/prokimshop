@@ -19,18 +19,24 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
+          pinned: boolean
           title: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          pinned?: boolean
           title: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          pinned?: boolean
           title?: string
         }
         Relationships: []
@@ -127,7 +133,11 @@ export type Database = {
       }
       categories: {
         Row: {
+          banner_url: string | null
+          block_color: string | null
+          button_color: string | null
           created_at: string
+          description: string | null
           display_mode: string
           id: string
           image_url: string | null
@@ -139,7 +149,11 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          banner_url?: string | null
+          block_color?: string | null
+          button_color?: string | null
           created_at?: string
+          description?: string | null
           display_mode?: string
           id?: string
           image_url?: string | null
@@ -151,7 +165,11 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          banner_url?: string | null
+          block_color?: string | null
+          button_color?: string | null
           created_at?: string
+          description?: string | null
           display_mode?: string
           id?: string
           image_url?: string | null
@@ -203,23 +221,38 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          attachment_type: string | null
+          attachment_url: string | null
           body: string
           created_at: string
+          deleted: boolean
+          edited_at: string | null
           id: string
+          is_broadcast: boolean
           sender: string
           thread_id: string
         }
         Insert: {
+          attachment_type?: string | null
+          attachment_url?: string | null
           body: string
           created_at?: string
+          deleted?: boolean
+          edited_at?: string | null
           id?: string
+          is_broadcast?: boolean
           sender: string
           thread_id: string
         }
         Update: {
+          attachment_type?: string | null
+          attachment_url?: string | null
           body?: string
           created_at?: string
+          deleted?: boolean
+          edited_at?: string | null
           id?: string
+          is_broadcast?: boolean
           sender?: string
           thread_id?: string
         }
@@ -268,28 +301,100 @@ export type Database = {
           },
         ]
       }
+      gift_cards: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          label: string | null
+          reward_balance: number
+          reward_product_ids: string[]
+          reward_promotion_id: string | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          label?: string | null
+          reward_balance?: number
+          reward_product_ids?: string[]
+          reward_promotion_id?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          label?: string | null
+          reward_balance?: number
+          reward_product_ids?: string[]
+          reward_promotion_id?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_cards_reward_promotion_id_fkey"
+            columns: ["reward_promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_cards_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mystery_box_items: {
         Row: {
           box_product_id: string
+          chance: number | null
           created_at: string
           id: string
-          prize_product_id: string
+          image_url: string | null
+          is_nothing: boolean
+          label: string | null
+          prize_product_id: string | null
           stock: number
           weight: number
         }
         Insert: {
           box_product_id: string
+          chance?: number | null
           created_at?: string
           id?: string
-          prize_product_id: string
+          image_url?: string | null
+          is_nothing?: boolean
+          label?: string | null
+          prize_product_id?: string | null
           stock?: number
           weight?: number
         }
         Update: {
           box_product_id?: string
+          chance?: number | null
           created_at?: string
           id?: string
-          prize_product_id?: string
+          image_url?: string | null
+          is_nothing?: boolean
+          label?: string | null
+          prize_product_id?: string | null
           stock?: number
           weight?: number
         }
@@ -547,8 +652,12 @@ export type Database = {
           auction_step: number
           auction_winner_id: string | null
           box_bg_color: string | null
+          box_bg_image: string | null
           box_border_color: string | null
+          box_mode: string
           box_spin_price: number
+          box_stock: number | null
+          box_template: string
           category_id: string | null
           claim_instructions: string | null
           created_at: string
@@ -558,11 +667,13 @@ export type Database = {
           is_featured: boolean
           is_new: boolean
           is_preorder: boolean
+          mystery_only: boolean
           name: string
           preorder_note: string | null
           price: number
           product_type: string
           search_keywords: string[]
+          sold_count: number
           sort_order: number
           stock: number | null
           view_count: number
@@ -575,8 +686,12 @@ export type Database = {
           auction_step?: number
           auction_winner_id?: string | null
           box_bg_color?: string | null
+          box_bg_image?: string | null
           box_border_color?: string | null
+          box_mode?: string
           box_spin_price?: number
+          box_stock?: number | null
+          box_template?: string
           category_id?: string | null
           claim_instructions?: string | null
           created_at?: string
@@ -586,11 +701,13 @@ export type Database = {
           is_featured?: boolean
           is_new?: boolean
           is_preorder?: boolean
+          mystery_only?: boolean
           name: string
           preorder_note?: string | null
           price?: number
           product_type?: string
           search_keywords?: string[]
+          sold_count?: number
           sort_order?: number
           stock?: number | null
           view_count?: number
@@ -603,8 +720,12 @@ export type Database = {
           auction_step?: number
           auction_winner_id?: string | null
           box_bg_color?: string | null
+          box_bg_image?: string | null
           box_border_color?: string | null
+          box_mode?: string
           box_spin_price?: number
+          box_stock?: number | null
+          box_template?: string
           category_id?: string | null
           claim_instructions?: string | null
           created_at?: string
@@ -614,11 +735,13 @@ export type Database = {
           is_featured?: boolean
           is_new?: boolean
           is_preorder?: boolean
+          mystery_only?: boolean
           name?: string
           preorder_note?: string | null
           price?: number
           product_type?: string
           search_keywords?: string[]
+          sold_count?: number
           sort_order?: number
           stock?: number | null
           view_count?: number
@@ -660,6 +783,87 @@ export type Database = {
           roblox_name?: string | null
           updated_at?: string
           username?: string
+        }
+        Relationships: []
+      }
+      promotions: {
+        Row: {
+          active: boolean
+          applies_to: string
+          apply_on: string
+          buy_qty: number
+          category_ids: string[]
+          code: string | null
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
+          get_qty: number
+          grant_rule: string
+          grant_value: number
+          id: string
+          image_url: string | null
+          kind: string
+          max_subtotal: number | null
+          min_subtotal: number
+          name: string
+          product_ids: string[]
+          starts_at: string
+          updated_at: string
+          valid_days: number
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: string
+          apply_on?: string
+          buy_qty?: number
+          category_ids?: string[]
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          get_qty?: number
+          grant_rule?: string
+          grant_value?: number
+          id?: string
+          image_url?: string | null
+          kind?: string
+          max_subtotal?: number | null
+          min_subtotal?: number
+          name: string
+          product_ids?: string[]
+          starts_at?: string
+          updated_at?: string
+          valid_days?: number
+        }
+        Update: {
+          active?: boolean
+          applies_to?: string
+          apply_on?: string
+          buy_qty?: number
+          category_ids?: string[]
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          get_qty?: number
+          grant_rule?: string
+          grant_value?: number
+          id?: string
+          image_url?: string | null
+          kind?: string
+          max_subtotal?: number | null
+          min_subtotal?: number
+          name?: string
+          product_ids?: string[]
+          starts_at?: string
+          updated_at?: string
+          valid_days?: number
         }
         Relationships: []
       }
@@ -753,21 +957,83 @@ export type Database = {
         }
         Relationships: []
       }
+      site_popups: {
+        Row: {
+          active: boolean
+          body: string | null
+          created_at: string
+          href: string | null
+          id: string
+          image_url: string | null
+          promotion_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          href?: string | null
+          id?: string
+          image_url?: string | null
+          promotion_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          href?: string | null
+          id?: string
+          image_url?: string | null
+          promotion_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_popups_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           closed_message: string | null
           id: number
           is_open: boolean
+          stat_online: number | null
+          stat_sold: number | null
+          stat_topup: number | null
+          stat_users: number | null
+          stats_manual: boolean
+          stats_reset_at: string | null
         }
         Insert: {
           closed_message?: string | null
           id?: number
           is_open?: boolean
+          stat_online?: number | null
+          stat_sold?: number | null
+          stat_topup?: number | null
+          stat_users?: number | null
+          stats_manual?: boolean
+          stats_reset_at?: string | null
         }
         Update: {
           closed_message?: string | null
           id?: number
           is_open?: boolean
+          stat_online?: number | null
+          stat_sold?: number | null
+          stat_topup?: number | null
+          stat_users?: number | null
+          stats_manual?: boolean
+          stats_reset_at?: string | null
         }
         Relationships: []
       }
@@ -797,6 +1063,51 @@ export type Database = {
           staff_code?: string
         }
         Relationships: []
+      }
+      user_promotions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          order_id: string | null
+          promotion_id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          promotion_id: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          promotion_id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_promotions_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_promotions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visits: {
         Row: {
@@ -866,11 +1177,19 @@ export type Database = {
         Args: { _delta: number; _product_id: string }
         Returns: number
       }
+      bump_sold_count: {
+        Args: { _delta: number; _product_id: string }
+        Returns: undefined
+      }
       deduct_balance: {
         Args: { _amount: number; _order_id: string; _user_id: string }
         Returns: number
       }
       generate_receipt_code: { Args: never; Returns: string }
+      redeem_gift_card: {
+        Args: { _code: string; _user_id: string }
+        Returns: Json
+      }
       refund_to_user: {
         Args: { _amount: number; _note: string; _user_id: string }
         Returns: number
