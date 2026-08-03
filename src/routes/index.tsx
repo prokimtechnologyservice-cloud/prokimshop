@@ -109,6 +109,7 @@ function Index() {
   const [detail, setDetail] = useState<Product | null>(null);
   const [boxDetail, setBoxDetail] = useState<Product | null>(null);
   const [auctionDetail, setAuctionDetail] = useState<Product | null>(null);
+  const [pinnedAnns, setPinnedAnns] = useState<Announcement[]>([]);
 
   const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
@@ -177,6 +178,13 @@ function Index() {
     const topEntry = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
     if (topEntry) setTopCatId(topEntry[0]);
 
+    const { data: pinned } = await supabase
+      .from("announcements")
+      .select("*")
+      .eq("pinned", true)
+      .order("created_at", { ascending: false });
+    setPinnedAnns((pinned as Announcement[]) ?? []);
+
     return { catList, prodList };
   }
 
@@ -230,21 +238,35 @@ function Index() {
     supabase.from("category_views").insert({ category_id: id, session_key: sk });
   }, [activeSub, activeParent]);
 
+  function scrollToProducts() {
+    setTimeout(
+      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
+  }
+
   function handleSelectCategory(id: string) {
+    if (id === "__all__") {
+      setActiveParent(null);
+      setActiveSub(null);
+      scrollToProducts();
+      return;
+    }
     const c = cats.find((x) => x.id === id);
     if (!c) return;
     if (c.parent_id) {
       setActiveParent(c.parent_id);
       setActiveSub(c.id);
     } else {
+      const hasChildren = cats.some((x) => x.parent_id === c.id);
       setActiveParent(c.id);
-      const firstChild = cats.find((x) => x.parent_id === c.id);
-      setActiveSub(firstChild?.id ?? null);
+      setActiveSub(hasChildren ? null : c.id);
     }
-    setTimeout(
-      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      50,
-    );
+    scrollToProducts();
+  }
+
+  function selectBlockCategory(c: BlockCategory) {
+    handleSelectCategory(c.id);
   }
 
   function openDetail(p: Product) {

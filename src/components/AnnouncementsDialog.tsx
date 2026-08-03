@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronRight, Megaphone } from "lucide-react";
+import { ChevronRight, Megaphone, Pin } from "lucide-react";
 
-type Ann = { id: string; title: string; content: string; created_at: string };
+type Ann = {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  pinned?: boolean | null;
+  image_url?: string | null;
+};
 
 export function AnnouncementsDialog({
   open,
