@@ -765,12 +765,14 @@ function ProductCard({
     <button
       onClick={onOpen}
       className={`group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card transition ${
-        sold
-          ? "opacity-55 grayscale hover:opacity-70"
-          : "hover:shadow-luxe hover:border-primary/50"
+        sold ? "" : "hover:shadow-luxe hover:border-primary/50"
       }`}
     >
-      <div className="aspect-square bg-onyx relative overflow-hidden">
+      <div
+        className={`aspect-square bg-onyx relative overflow-hidden ${
+          sold ? "opacity-50 grayscale pointer-events-none" : ""
+        }`}
+      >
         {p.image_url ? (
           <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
         ) : (
@@ -803,7 +805,11 @@ function ProductCard({
           </div>
         )}
       </div>
-      <div className={`p-3 space-y-2 ${compact ? "text-xs" : ""}`}>
+      <div
+        className={`p-3 space-y-2 ${compact ? "text-xs" : ""} ${
+          sold ? "opacity-50 grayscale pointer-events-none" : ""
+        }`}
+      >
         <div className={`font-medium ${compact ? "text-xs" : "text-sm"} line-clamp-2 min-h-[2.5rem]`}>
           {p.name}
         </div>
