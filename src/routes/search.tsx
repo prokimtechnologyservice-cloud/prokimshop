@@ -101,6 +101,16 @@ function SearchPage() {
     navigate({ search: { q: term.trim() } });
   }
 
+  function goToProduct(id: string) {
+    navigate({ to: "/", search: { p: id } as any });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToCategory(c: Cat) {
+    navigate({ to: "/", search: { cat: c.id, q: undefined } as any });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -132,13 +142,13 @@ function SearchPage() {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {foundCats.map((c) => (
-                    <Link
+                    <button
                       key={c.id}
-                      to="/"
+                      onClick={() => goToCategory(c)}
                       className="px-3 py-2 rounded-full border border-primary/40 bg-card hover:bg-primary/10 text-sm"
                     >
                       {c.name}
-                    </Link>
+                    </button>
                   ))}
                 </div>
               )}
@@ -151,9 +161,9 @@ function SearchPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {foundProds.map((p) => (
-                    <Link
+                    <button
                       key={p.id}
-                      to="/"
+                      onClick={() => goToProduct(p.id)}
                       className="group text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-luxe hover:border-primary/50 transition"
                     >
                       <div className="aspect-square bg-onyx relative overflow-hidden">
@@ -176,7 +186,7 @@ function SearchPage() {
                           {p.price > 0 ? `฿${p.price.toFixed(2)}` : "ติดต่อแอดมิน"}
                         </div>
                       </div>
-                    </Link>
+                    </button>
                   ))}
                 </div>
               )}

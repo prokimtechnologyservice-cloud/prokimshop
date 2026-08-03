@@ -61,13 +61,13 @@ export function MysteryBoxDialog({
 
   const totalStock = prizes.reduce((s, p) => s + p.stock, 0);
   const anyNormalPrize = useMemo(
-    () => prizes.some((p) => p.product.product_type === "normal"),
+    () => prizes.some((p) => p.product?.product_type === "normal"),
     [prizes],
   );
 
   // Marquee reel: duplicate images for infinite scroll
   const reelImages = useMemo(() => {
-    const withImg = prizes.filter((p) => p.product.image_url);
+    const withImg = prizes.filter((p) => p.product?.image_url);
     if (withImg.length === 0) return [] as BoxPrize[];
     const reps = Math.max(1, Math.ceil(20 / withImg.length));
     return Array.from({ length: reps }, () => withImg).flat();
@@ -168,8 +168,8 @@ export function MysteryBoxDialog({
                           className="w-28 h-28 sm:w-32 sm:h-32 rounded-md overflow-hidden border border-border bg-onyx shrink-0"
                         >
                           <img
-                            src={p.product.image_url!}
-                            alt={p.product.name}
+                            src={p.product?.image_url!}
+                            alt={p.product?.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -259,12 +259,12 @@ export function MysteryBoxDialog({
                         }`}
                       >
                         <div className="w-10 h-10 rounded overflow-hidden bg-onyx shrink-0">
-                          {p.product.image_url && (
-                            <img src={p.product.image_url} className="w-full h-full object-cover" />
+                          {p.product?.image_url && (
+                            <img src={p.product?.image_url} className="w-full h-full object-cover" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate">{p.product.name}</div>
+                          <div className="truncate">{p.product?.name}</div>
                           <div className="text-[10px] text-muted-foreground">
                             เหลือ {p.stock} · น้ำหนัก {p.weight}
                           </div>
