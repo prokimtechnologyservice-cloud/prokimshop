@@ -742,6 +742,8 @@ function Index() {
           `© ${new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion`,
         )}
       </footer>
+
+      <SitePopup />
     </div>
   );
 }
