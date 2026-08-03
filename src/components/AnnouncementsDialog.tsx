@@ -29,11 +29,6 @@ export function AnnouncementsDialog({
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-    supabase
-      .from("announcements")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
         const arr = ((data as Ann[]) ?? []).slice().sort((a, b) => {
           const pa = a.pinned ? 1 : 0;
           const pb = b.pinned ? 1 : 0;
