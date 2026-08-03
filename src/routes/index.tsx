@@ -430,6 +430,32 @@ function Index() {
         </section>
       )}
 
+      <HomeStats />
+
+      {pinnedAnns.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-2 space-y-3">
+          {pinnedAnns.map((a) => (
+            <div
+              key={a.id}
+              className="flex gap-3 items-start rounded-xl border border-gold/40 bg-gold/10 p-3"
+            >
+              <Megaphone className="w-5 h-5 text-gold shrink-0 mt-0.5" />
+              {a.image_url && (
+                <img
+                  src={a.image_url}
+                  alt={a.title}
+                  className="w-16 h-16 rounded-lg object-cover shrink-0"
+                />
+              )}
+              <div className="min-w-0">
+                <div className="font-medium text-sm text-gold">{a.title}</div>
+                <div className="text-xs text-muted-foreground whitespace-pre-wrap">{a.content}</div>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
       {/* Highlights */}
       {(topCat || featured.length > 0 || newestCats.length > 0) && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">

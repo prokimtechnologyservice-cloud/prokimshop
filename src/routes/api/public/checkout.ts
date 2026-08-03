@@ -27,12 +27,13 @@ export const Route = createFileRoute("/api/public/checkout")({
               roblox_name?: string | null;
             }[];
             pay_from_balance: boolean;
+            promotion_id?: string | null;
           };
           if (!body?.user_id || !Array.isArray(body.items) || body.items.length === 0) {
             return Response.json({ error: "invalid" }, { status: 400 });
           }
           const ip = getIp(request);
-          const total = body.items.reduce(
+          const subtotal = body.items.reduce(
             (s, i) => s + Number(i.unit_price) * Number(i.quantity),
             0,
           );
@@ -40,6 +41,130 @@ export const Route = createFileRoute("/api/public/checkout")({
             process.env.SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
           );
+
+          // ---- Promotion / discount re-validation (server-side) ----
+          let discountAmount = 0;
+          let grantedRow: { id: string } | null = null;
+          let appliedPromotion: any = null;
+          if (body.promotion_id) {
+            const { data: promo } = await admin
+              .from("promotions")
+              .select("*")
+              .eq("id", body.promotion_id)
+              .eq("active", true)
+              .maybeSingle();
+            if (promo) {
+              const now = new Date();
+              const inDateRange =
+                (!promo.starts_at || new Date(promo.starts_at) <= now) &&
+                (!promo.ends_at || new Date(promo.ends_at) >= now);
+              let grantOk = promo.grant_rule === "all";
+              let grantRow: any = null;
+              if (!grantOk) {
+                const { data: g } = await admin
+                  .from("user_promotions")
+                  .select("*")
+                  .eq("promotion_id", promo.id)
+                  .eq("user_id", body.user_id)
+                  .is("used_at", null)
+                  .maybeSingle();
+                if (g && (!g.expires_at || new Date(g.expires_at) >= now)) {
+                  grantOk = true;
+                  grantRow = g;
+                }
+              } else {
+                const { data: g } = await admin
+                  .from("user_promotions")
+                  .select("*")
+                  .eq("promotion_id", promo.id)
+                  .eq("user_id", body.user_id)
+                  .is("used_at", null)
+                  .maybeSingle();
+                if (g && (!g.expires_at || new Date(g.expires_at) >= now)) grantRow = g;
+              }
+              if (inDateRange && grantOk) {
+                // fetch categories for eligible items
+                const itemProductIds = Array.from(
+                  new Set(body.items.map((i) => i.product_id).filter(Boolean) as string[]),
+                );
+                const catMap = new Map<string, string | null>();
+                if (itemProductIds.length) {
+                  const { data: prodRows } = await admin
+                    .from("products")
+                    .select("id, category_id")
+                    .in("id", itemProductIds);
+                  (prodRows ?? []).forEach((p: any) => catMap.set(p.id, p.category_id ?? null));
+                }
+                const isAncestorMatch = async (catId: string | null, targets: string[]): Promise<boolean> => {
+                  if (!catId) return false;
+                  if (targets.includes(catId)) return true;
+                  let current = catId;
+                  for (let i = 0; i < 10; i++) {
+                    const { data: c } = await admin
+                      .from("categories")
+                      .select("parent_id")
+                      .eq("id", current)
+                      .maybeSingle();
+                    const parentId = c?.parent_id;
+                    if (!parentId) break;
+                    if (targets.includes(parentId)) return true;
+                    current = parentId;
+                  }
+                  return false;
+                };
+
+                const eligibleItems: typeof body.items = [];
+                for (const it of body.items) {
+                  if (promo.applies_to === "all") {
+                    eligibleItems.push(it);
+                  } else if (promo.applies_to === "products") {
+                    if (it.product_id && (promo.product_ids ?? []).includes(it.product_id)) eligibleItems.push(it);
+                  } else if (promo.applies_to === "categories") {
+                    const catId = it.product_id ? catMap.get(it.product_id) ?? null : null;
+                    if (await isAncestorMatch(catId, promo.category_ids ?? [])) eligibleItems.push(it);
+                  }
+                }
+                const eligibleSubtotal = eligibleItems.reduce(
+                  (s, i) => s + Number(i.unit_price) * Number(i.quantity),
+                  0,
+                );
+                const relevantSubtotal = promo.apply_on === "receipt" ? subtotal : eligibleSubtotal;
+                const minOk = promo.min_subtotal == null || relevantSubtotal >= Number(promo.min_subtotal);
+                const maxOk = promo.max_subtotal == null || relevantSubtotal <= Number(promo.max_subtotal);
+                const hasEligible = eligibleItems.length > 0 || promo.applies_to === "all";
+
+                if (minOk && maxOk && hasEligible) {
+                  if (promo.discount_type === "amount") {
+                    discountAmount = Math.min(Number(promo.discount_value ?? 0), eligibleSubtotal);
+                  } else if (promo.discount_type === "percent") {
+                    discountAmount = Math.min(
+                      (eligibleSubtotal * Number(promo.discount_value ?? 0)) / 100,
+                      eligibleSubtotal,
+                    );
+                  } else if (promo.discount_type === "bogo") {
+                    const buyQty = Math.max(1, Number(promo.buy_qty ?? 1));
+                    const getQty = Math.max(1, Number(promo.get_qty ?? 1));
+                    const units: number[] = [];
+                    eligibleItems.forEach((it) => {
+                      for (let k = 0; k < it.quantity; k++) units.push(Number(it.unit_price));
+                    });
+                    const groups = Math.floor(units.length / (buyQty + getQty));
+                    const freeCount = groups * getQty;
+                    if (freeCount > 0) {
+                      const sorted = [...units].sort((a, b) => a - b);
+                      discountAmount = sorted.slice(0, freeCount).reduce((s, p) => s + p, 0);
+                    }
+                  }
+                  if (discountAmount > 0) {
+                    appliedPromotion = promo;
+                    grantedRow = grantRow;
+                  }
+                }
+              }
+            }
+          }
+          discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
+          const total = Math.max(0, subtotal - discountAmount);
 
           // Idempotency: same client_token must never create a second receipt
           const clientToken = body.client_token ? String(body.client_token) : null;
@@ -246,10 +371,19 @@ export const Route = createFileRoute("/api/public/checkout")({
             }
           }
 
+          if (appliedPromotion && grantedRow) {
+            await admin
+              .from("user_promotions")
+              .update({ used_at: new Date().toISOString(), order_id: order.id })
+              .eq("id", grantedRow.id);
+          }
+
           return Response.json({
             id: order.id,
             receipt_code: order.receipt_code,
             ip,
+            discount: discountAmount,
+            total,
           });
         } catch (e: any) {
           return Response.json({ error: e?.message ?? "server error" }, { status: 500 });

@@ -29,7 +29,17 @@ export function AnnouncementsDialog({
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        const arr = (data as Ann[]) ?? [];
+    supabase
+      .from("announcements")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        const arr = ((data as Ann[]) ?? []).slice().sort((a, b) => {
+          const pa = a.pinned ? 1 : 0;
+          const pb = b.pinned ? 1 : 0;
+          if (pa !== pb) return pb - pa;
+          return +new Date(b.created_at) - +new Date(a.created_at);
+        });
         setList(arr);
         setActive(arr[0] ?? null);
       });
@@ -37,10 +47,11 @@ export function AnnouncementsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl p-0 overflow-hidden max-h-[85vh]">
         <DialogHeader className="px-6 pt-6 pb-3 border-b border-border bg-gradient-card">
           <DialogTitle className="font-display text-2xl flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-gold" />
+
             ประกาศ
           </DialogTitle>
         </DialogHeader>
