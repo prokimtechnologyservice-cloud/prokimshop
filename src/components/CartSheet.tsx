@@ -274,11 +274,73 @@ export function CartSheet({
                 )}
               </div>
 
-              <div className="border-t border-border pt-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>ยอดรวม</span>
-                  <span className="font-bold text-gold text-lg">฿{total.toFixed(2)}</span>
+              <div className="space-y-2 border-t border-border pt-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="กรอกโค้ดส่วนลด"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                  />
+                  <Button variant="outline" onClick={applyPromoCode} disabled={promoBusy}>
+                    ใช้โค้ด
+                  </Button>
                 </div>
+
+                {myPromos.length > 0 && (
+                  <div className="space-y-1 max-h-32 overflow-auto">
+                    {myPromos.map((up) => (
+                      <button
+                        key={up.id}
+                        onClick={() =>
+                          setSelectedPromo(selectedPromo?.id === up.promotion.id ? null : up.promotion)
+                        }
+                        className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left ${
+                          selectedPromo?.id === up.promotion.id
+                            ? "border-gold bg-gold/10"
+                            : "border-border bg-card"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
+                          {up.promotion.image_url ? (
+                            <img src={up.promotion.image_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <Tag className="w-4 h-4 m-auto text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm truncate">{up.promotion.name}</div>
+                          {up.promotion.description && (
+                            <div className="text-xs text-muted-foreground truncate">{up.promotion.description}</div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-border pt-3 space-y-2">
+                {selectedPromo && discount > 0 ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>ยอดรวม</span>
+                      <span className="line-through text-muted-foreground">฿{subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-emerald-400">
+                      <span>ส่วนลด ({selectedPromo.name})</span>
+                      <span>-฿{discount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>ยอดสุทธิ</span>
+                      <span className="font-bold text-gold text-lg">฿{total.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-sm">
+                    <span>ยอดรวม</span>
+                    <span className="font-bold text-gold text-lg">฿{total.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Wallet className="w-3 h-3" /> ยอดในเว็บ</span>
                   <span className={canPayWithBalance ? "text-emerald-400" : ""}>฿{balance.toFixed(2)}</span>

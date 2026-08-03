@@ -84,6 +84,15 @@ export function AnnouncementsDialog({
                 <div className="text-xs text-muted-foreground mb-4">
                   {new Date(active.created_at).toLocaleString("th-TH")}
                 </div>
+                {active.image_url && (
+                  <img
+                    src={active.image_url}
+                    alt={active.title}
+                    className="w-full rounded-xl border border-border mb-4 object-cover"
+                    loading="lazy"
+                  />
+                )}
+
                 <p className="text-sm leading-7 whitespace-pre-wrap">{active.content}</p>
               </>
             ) : (
