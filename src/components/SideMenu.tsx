@@ -1,10 +1,26 @@
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Megaphone, Package, MessageCircle, UserPlus, LogOut, History, Crown, ChevronRight, Truck } from "lucide-react";
+import {
+  Megaphone,
+  Package,
+  MessageCircle,
+  UserPlus,
+  LogOut,
+  History,
+  Crown,
+  ChevronRight,
+  Truck,
+  Home,
+  Wallet,
+  Settings,
+  Gift,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUser, setUser, type UserSession } from "@/lib/auth";
 import { ADMIN_CHAT_URL } from "@/lib/cart";
 import { useNavigate } from "@tanstack/react-router";
+import { useSiteContent, sc } from "@/lib/siteContent";
+import { ThemeSettingsDialog } from "@/components/ThemeSettingsDialog";
 
 type Announcement = { id: string; title: string; content: string; created_at: string };
 
@@ -20,9 +36,12 @@ export function SideMenu({
   onSelectCategory?: (id: string) => void;
 }) {
   const [user, setUserState] = useState<UserSession | null>(null);
-  const [section, setSection] = useState<"home" | "ann">("home");
+  const [section, setSection] = useState<"home" | "ann" | "topup">("home");
   const [anns, setAnns] = useState<Announcement[]>([]);
+  const [themeOpen, setThemeOpen] = useState(false);
   const navigate = useNavigate();
+  const { content } = useSiteContent();
+  const truemoneyLogo = sc(content, "topup_truemoney_logo", "");
 
   useEffect(() => {
     setUserState(getUser());
@@ -56,67 +75,114 @@ export function SideMenu({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[85vw] sm:w-96 p-0 bg-gradient-card border-r border-border">
-        <SheetHeader className="px-5 py-4 border-b border-border">
-          <SheetTitle className="font-display text-2xl text-gradient-gold flex items-center gap-2">
-            <Crown className="w-5 h-5 text-gold" /> เมนู PROKIM
-          </SheetTitle>
-        </SheetHeader>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="left" className="w-[85vw] sm:w-96 p-0 bg-gradient-card border-r border-border">
+          <SheetHeader className="px-5 py-4 border-b border-border">
+            <SheetTitle className="font-display text-2xl text-gradient-gold flex items-center gap-2">
+              <Crown className="w-5 h-5 text-gold" /> เมนู PROKIM
+            </SheetTitle>
+          </SheetHeader>
 
-        <div className="overflow-y-auto h-[calc(100vh-72px)]">
-          {section === "home" && (
-            <div className="p-3 space-y-1">
-              <MenuRow icon={<Megaphone className="w-5 h-5 text-gold" />} label="หน้าร้าน / ประกาศ" onClick={() => setSection("ann")} />
-              <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => { close(); onSelectCategory?.("__all__"); }} />
-              <MenuRow
-                icon={<MessageCircle className="w-5 h-5 text-gold" />}
-                label="ติดต่อแอดมิน"
-                onClick={() => { window.open(ADMIN_CHAT_URL, "_blank"); close(); }}
-              />
-              {user && (
+          <div className="overflow-y-auto h-[calc(100vh-72px)]">
+            {section === "home" && (
+              <div className="p-3 space-y-1">
                 <MenuRow
-                  icon={<Truck className="w-5 h-5 text-gold" />}
-                  label="ติดตามคำสั่งซื้อ"
-                  onClick={() => { close(); navigate({ to: "/orders" }); }}
+                  icon={<Home className="w-5 h-5 text-gold" />}
+                  label="หน้าแรก"
+                  onClick={() => { close(); navigate({ to: "/" }); }}
                 />
-              )}
-              {user && (
+                <MenuRow icon={<Megaphone className="w-5 h-5 text-gold" />} label="ประกาศ" onClick={() => setSection("ann")} />
+                <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => { close(); onSelectCategory?.("__all__"); }} />
                 <MenuRow
-                  icon={<History className="w-5 h-5 text-gold" />}
-                  label="ประวัติการซื้อ"
-                  onClick={() => { close(); navigate({ to: "/history" }); }}
+                  icon={
+                    truemoneyLogo ? (
+                      <img src={truemoneyLogo} alt="เติมเงิน" className="w-5 h-5 object-contain" />
+                    ) : (
+                      <Wallet className="w-5 h-5 text-gold" />
+                    )
+                  }
+                  label="เติมเงิน"
+                  onClick={() => setSection("topup")}
                 />
-              )}
+                <MenuRow
+                  icon={<MessageCircle className="w-5 h-5 text-gold" />}
+                  label="ติดต่อแอดมิน"
+                  onClick={() => { window.open(ADMIN_CHAT_URL, "_blank"); close(); }}
+                />
+                {user && (
+                  <MenuRow
+                    icon={<Truck className="w-5 h-5 text-gold" />}
+                    label="ติดตามคำสั่งซื้อ"
+                    onClick={() => { close(); navigate({ to: "/orders" }); }}
+                  />
+                )}
+                {user && (
+                  <MenuRow
+                    icon={<History className="w-5 h-5 text-gold" />}
+                    label="ประวัติการซื้อ"
+                    onClick={() => { close(); navigate({ to: "/history" }); }}
+                  />
+                )}
+                <MenuRow
+                  icon={<Settings className="w-5 h-5 text-gold" />}
+                  label="ตั้งค่า"
+                  onClick={() => setThemeOpen(true)}
+                />
 
-              <MenuRow
-                icon={user ? <LogOut className="w-5 h-5 text-gold" /> : <UserPlus className="w-5 h-5 text-gold" />}
-                label={user ? `ออกจากระบบ (${user.username})` : "สมัคร / เข้าสู่ระบบ"}
-                onClick={handleAuthBtn}
-              />
-            </div>
-          )}
+                <MenuRow
+                  icon={user ? <LogOut className="w-5 h-5 text-gold" /> : <UserPlus className="w-5 h-5 text-gold" />}
+                  label={user ? `ออกจากระบบ (${user.username})` : "สมัคร / เข้าสู่ระบบ"}
+                  onClick={handleAuthBtn}
+                />
+              </div>
+            )}
 
-          {section === "ann" && (
-            <div className="p-3 space-y-2">
-              <BackRow onClick={() => setSection("home")} />
-              {anns.length === 0 && (
-                <div className="text-center text-muted-foreground py-10 text-sm">ยังไม่มีประกาศ</div>
-              )}
-              {anns.map((a) => (
-                <div key={a.id} className="rounded-lg border border-border bg-card/60 p-3">
-                  <div className="font-medium text-gold text-sm mb-1">{a.title}</div>
-                  <div className="text-xs text-muted-foreground whitespace-pre-wrap">{a.content}</div>
-                  <div className="text-[10px] text-muted-foreground/60 mt-2">
-                    {new Date(a.created_at).toLocaleString("th-TH")}
+            {section === "topup" && (
+              <div className="p-3 space-y-1">
+                <BackRow onClick={() => setSection("home")} />
+                <MenuRow
+                  icon={
+                    truemoneyLogo ? (
+                      <img src={truemoneyLogo} alt="TrueMoney" className="w-5 h-5 object-contain" />
+                    ) : (
+                      <Wallet className="w-5 h-5 text-gold" />
+                    )
+                  }
+                  label="TrueMoney (ซองอั่งเปา)"
+                  onClick={() => { window.dispatchEvent(new Event("open-topup")); close(); }}
+                />
+                <MenuRow
+                  icon={<Gift className="w-5 h-5 text-gold" />}
+                  label="บัตรของขวัญ (Gift Card)"
+                  onClick={() => { close(); navigate({ to: "/givecard" as any }); }}
+                />
+              </div>
+            )}
+
+            {section === "ann" && (
+              <div className="p-3 space-y-2">
+                <BackRow onClick={() => setSection("home")} />
+                {anns.length === 0 && (
+                  <div className="text-center text-muted-foreground py-10 text-sm">ยังไม่มีประกาศ</div>
+                )}
+                {anns.map((a) => (
+                  <div key={a.id} className="rounded-lg border border-border bg-card/60 p-3">
+                    <div className="font-medium text-gold text-sm mb-1">{a.title}</div>
+                    <div className="text-xs text-muted-foreground whitespace-pre-wrap">{a.content}</div>
+                    <div className="text-[10px] text-muted-foreground/60 mt-2">
+                      {new Date(a.created_at).toLocaleString("th-TH")}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+                ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <ThemeSettingsDialog open={themeOpen} onOpenChange={setThemeOpen} />
+    </>
   );
 }
 

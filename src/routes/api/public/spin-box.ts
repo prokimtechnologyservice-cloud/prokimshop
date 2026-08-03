@@ -11,6 +11,31 @@ function getIp(req: Request): string {
   );
 }
 
+// Same maths as effectiveChances() in src/lib/mysteryBox.ts
+function drawPrize(pool: any[]): any {
+  const explicitTotal = pool.reduce(
+    (s, p) => (p.chance != null ? s + Number(p.chance) : s),
+    0,
+  );
+  const remainder = Math.max(0, 100 - explicitTotal);
+  const weightPool = pool.filter((p) => p.chance == null);
+  const totalWeight = weightPool.reduce((s, p) => s + Math.max(1, p.weight || 1), 0);
+
+  const percents = pool.map((p) => {
+    if (p.chance != null) return Number(p.chance);
+    if (totalWeight <= 0) return 0;
+    return (Math.max(1, p.weight || 1) / totalWeight) * remainder;
+  });
+  const totalPercent = percents.reduce((s, v) => s + v, 0) || 1;
+
+  let r = Math.random() * totalPercent;
+  for (let i = 0; i < pool.length; i++) {
+    r -= percents[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+}
+
 export const Route = createFileRoute("/api/public/spin-box")({
   server: {
     handlers: {
@@ -32,12 +57,15 @@ export const Route = createFileRoute("/api/public/spin-box")({
           // 1) Load box product
           const { data: box, error: boxErr } = await admin
             .from("products")
-            .select("id, name, box_spin_price, product_type, image_url")
+            .select("id, name, box_spin_price, product_type, image_url, box_stock")
             .eq("id", body.box_product_id)
             .maybeSingle();
           if (boxErr) throw boxErr;
           if (!box || box.product_type !== "mystery_box") {
             return Response.json({ error: "ไม่ใช่กล่องสุ่ม" }, { status: 400 });
+          }
+          if (box.box_stock != null && Number(box.box_stock) <= 0) {
+            return Response.json({ error: "กล่องสุ่มนี้หมดแล้ว" }, { status: 400 });
           }
           const price = Number(box.box_spin_price) || 0;
           if (price <= 0) return Response.json({ error: "กล่องนี้ยังไม่ได้ตั้งราคา" }, { status: 400 });
@@ -54,32 +82,69 @@ export const Route = createFileRoute("/api/public/spin-box")({
             return Response.json({ error: "ยอดเงินไม่พอ" }, { status: 400 });
           }
 
-          // 3) Get prizes with stock
-          const { data: prizes, error: prizeErr } = await admin
+          // 3) Get all prizes (incl. is_nothing slots), then filter out-of-stock non-nothing ones
+          const { data: allPrizes, error: prizeErr } = await admin
             .from("mystery_box_items")
             .select(
-              "id, prize_product_id, weight, stock, products:prize_product_id(id, name, image_url, product_type)",
+              "id, prize_product_id, weight, stock, chance, is_nothing, label, image_url, products:prize_product_id(id, name, image_url, product_type, stock)",
             )
-            .eq("box_product_id", body.box_product_id)
-            .gt("stock", 0);
+            .eq("box_product_id", body.box_product_id);
           if (prizeErr) throw prizeErr;
-          const pool = (prizes ?? []) as any[];
+          const pool = ((allPrizes ?? []) as any[]).filter(
+            (p) => p.is_nothing || Number(p.stock) > 0,
+          );
           if (pool.length === 0) {
             return Response.json({ error: "กล่องนี้ของหมดแล้ว" }, { status: 400 });
           }
 
-          // 4) Weighted random
-          const totalW = pool.reduce((s, p) => s + Math.max(1, p.weight), 0);
-          let r = Math.random() * totalW;
-          let chosen = pool[0];
-          for (const p of pool) {
-            r -= Math.max(1, p.weight);
-            if (r <= 0) {
-              chosen = p;
-              break;
+          // 4) Weighted / explicit-chance random draw
+          const chosen = drawPrize(pool);
+          const chosenIndex = (allPrizes as any[]).findIndex((p) => p.id === chosen.id);
+          const isNothing = !!chosen.is_nothing;
+          const prizeProduct = chosen.products ?? null;
+
+          // "ไม่ได้ของ" — charge the spin, log it, no order item
+          if (isNothing || !prizeProduct) {
+            const { error: dErr } = await admin.rpc("deduct_balance", {
+              _user_id: body.user_id,
+              _amount: price,
+              _order_id: null,
+            } as any);
+            if (dErr) {
+              return Response.json({ error: dErr.message || "หักเงินไม่สำเร็จ" }, { status: 400 });
             }
+            await admin
+              .from("mystery_box_items")
+              .update({ stock: Math.max(0, Number(chosen.stock) - 1) })
+              .eq("id", chosen.id);
+            if (box.box_stock != null) {
+              await admin
+                .from("products")
+                .update({ box_stock: Math.max(0, Number(box.box_stock) - 1) })
+                .eq("id", box.id);
+            }
+            await admin.from("mystery_box_spins").insert({
+              user_id: body.user_id,
+              box_product_id: box.id,
+              prize_product_id: null,
+              order_id: null,
+              spin_price: price,
+            });
+            const { data: freshProf } = await admin
+              .from("profiles")
+              .select("balance")
+              .eq("id", body.user_id)
+              .maybeSingle();
+            return Response.json({
+              nothing: true,
+              prize_index: chosenIndex,
+              prize: { id: null, name: chosen.label ?? "ไม่ได้ของ", image_url: chosen.image_url ?? null, product_type: null },
+              order_id: null,
+              receipt_code: null,
+              new_balance: Number(freshProf?.balance ?? 0),
+              delivered_payload: null,
+            });
           }
-          const prizeProduct = chosen.products;
 
           // 5) If prize is account type — reserve an account payload
           let deliveredPayload: string | null = null;
@@ -161,11 +226,30 @@ export const Route = createFileRoute("/api/public/spin-box")({
               .eq("id", reservedAcctId);
           }
 
-          // 8) Decrement prize stock
+          // 8) Decrement prize stock (mystery_box_items) and underlying product stock/sold
           await admin
             .from("mystery_box_items")
-            .update({ stock: chosen.stock - 1 })
+            .update({ stock: Math.max(0, Number(chosen.stock) - 1) })
             .eq("id", chosen.id);
+
+          if (prizeProduct.stock != null) {
+            await admin.rpc("adjust_product_stock", {
+              _product_id: chosen.prize_product_id,
+              _delta: -1,
+            } as any);
+          }
+          await admin.rpc("bump_sold_count", {
+            _product_id: chosen.prize_product_id,
+            _delta: 1,
+          } as any);
+
+          // 8b) Decrement box's own stock
+          if (box.box_stock != null) {
+            await admin
+              .from("products")
+              .update({ box_stock: Math.max(0, Number(box.box_stock) - 1) })
+              .eq("id", box.id);
+          }
 
           // 9) Log spin
           await admin.from("mystery_box_spins").insert({
@@ -183,6 +267,7 @@ export const Route = createFileRoute("/api/public/spin-box")({
             .maybeSingle();
 
           return Response.json({
+            prize_index: chosenIndex,
             prize: {
               id: prizeProduct.id,
               name: prizeProduct.name,

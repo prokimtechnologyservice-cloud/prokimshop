@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as GivecardRouteImport } from './routes/givecard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -19,6 +20,7 @@ import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
+import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
 import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
 import { Route as ApiPublicAuctionRouteImport } from './routes/api/public/auction'
 
@@ -35,6 +37,11 @@ const OrdersRoute = OrdersRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GivecardRoute = GivecardRouteImport.update({
+  id: '/givecard',
+  path: '/givecard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -72,6 +79,12 @@ const ApiPublicRedeemVoucherRoute = ApiPublicRedeemVoucherRouteImport.update({
   path: '/api/public/redeem-voucher',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOrderMaintenanceRoute =
+  ApiPublicOrderMaintenanceRouteImport.update({
+    id: '/api/public/order-maintenance',
+    path: '/api/public/order-maintenance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCheckoutRoute = ApiPublicCheckoutRouteImport.update({
   id: '/api/public/checkout',
   path: '/api/public/checkout',
@@ -85,6 +98,7 @@ const ApiPublicAuctionRoute = ApiPublicAuctionRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/givecard': typeof GivecardRoute
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
@@ -94,11 +108,13 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/givecard': typeof GivecardRoute
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
@@ -108,12 +124,14 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/givecard': typeof GivecardRoute
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
@@ -123,6 +141,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
 }
@@ -130,6 +149,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/givecard'
     | '/history'
     | '/orders'
     | '/search'
@@ -139,11 +159,13 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/auction'
     | '/api/public/checkout'
+    | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/givecard'
     | '/history'
     | '/orders'
     | '/search'
@@ -153,11 +175,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/public/auction'
     | '/api/public/checkout'
+    | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
   id:
     | '__root__'
     | '/'
+    | '/givecard'
     | '/history'
     | '/orders'
     | '/search'
@@ -167,12 +191,14 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/auction'
     | '/api/public/checkout'
+    | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GivecardRoute: typeof GivecardRoute
   HistoryRoute: typeof HistoryRoute
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
@@ -182,6 +208,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicAuctionRoute: typeof ApiPublicAuctionRoute
   ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
+  ApiPublicOrderMaintenanceRoute: typeof ApiPublicOrderMaintenanceRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
   ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
 }
@@ -207,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/givecard': {
+      id: '/givecard'
+      path: '/givecard'
+      fullPath: '/givecard'
+      preLoaderRoute: typeof GivecardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -258,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRedeemVoucherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/order-maintenance': {
+      id: '/api/public/order-maintenance'
+      path: '/api/public/order-maintenance'
+      fullPath: '/api/public/order-maintenance'
+      preLoaderRoute: typeof ApiPublicOrderMaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/checkout': {
       id: '/api/public/checkout'
       path: '/api/public/checkout'
@@ -277,6 +318,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GivecardRoute: GivecardRoute,
   HistoryRoute: HistoryRoute,
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
@@ -286,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicAuctionRoute: ApiPublicAuctionRoute,
   ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,
+  ApiPublicOrderMaintenanceRoute: ApiPublicOrderMaintenanceRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
   ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,
 }

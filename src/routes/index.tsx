@@ -22,6 +22,10 @@ import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
 import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
 import { AuctionDialog } from "@/components/AuctionDialog";
 import { auctionCountdown, settleAuctions } from "@/lib/auction";
+import { CategoryBlocks, SubCategoryBlocks, type BlockCategory } from "@/components/CategoryBlocks";
+import { HomeStats } from "@/components/HomeStats";
+import { SitePopup } from "@/components/SitePopup";
+import { Megaphone } from "lucide-react";
 
 
 const searchSchema = z.object({
@@ -52,6 +56,18 @@ type Category = {
   display_mode: string | null;
   image_url: string | null;
   product_sort_mode: string;
+  description?: string | null;
+  block_color?: string | null;
+  button_color?: string | null;
+  banner_url?: string | null;
+};
+type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  pinned?: boolean;
+  image_url?: string | null;
 };
 type Product = {
   id: string;
@@ -93,6 +109,7 @@ function Index() {
   const [detail, setDetail] = useState<Product | null>(null);
   const [boxDetail, setBoxDetail] = useState<Product | null>(null);
   const [auctionDetail, setAuctionDetail] = useState<Product | null>(null);
+  const [pinnedAnns, setPinnedAnns] = useState<Announcement[]>([]);
 
   const [pending, setPending] = useState<Product | null>(null);
   const productsRef = useRef<HTMLElement | null>(null);
@@ -161,6 +178,13 @@ function Index() {
     const topEntry = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
     if (topEntry) setTopCatId(topEntry[0]);
 
+    const { data: pinned } = await supabase
+      .from("announcements")
+      .select("*")
+      .eq("pinned", true)
+      .order("created_at", { ascending: false });
+    setPinnedAnns((pinned as Announcement[]) ?? []);
+
     return { catList, prodList };
   }
 
@@ -214,21 +238,35 @@ function Index() {
     supabase.from("category_views").insert({ category_id: id, session_key: sk });
   }, [activeSub, activeParent]);
 
+  function scrollToProducts() {
+    setTimeout(
+      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
+  }
+
   function handleSelectCategory(id: string) {
+    if (id === "__all__") {
+      setActiveParent(null);
+      setActiveSub(null);
+      scrollToProducts();
+      return;
+    }
     const c = cats.find((x) => x.id === id);
     if (!c) return;
     if (c.parent_id) {
       setActiveParent(c.parent_id);
       setActiveSub(c.id);
     } else {
+      const hasChildren = cats.some((x) => x.parent_id === c.id);
       setActiveParent(c.id);
-      const firstChild = cats.find((x) => x.parent_id === c.id);
-      setActiveSub(firstChild?.id ?? null);
+      setActiveSub(hasChildren ? null : c.id);
     }
-    setTimeout(
-      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      50,
-    );
+    scrollToProducts();
+  }
+
+  function selectBlockCategory(c: BlockCategory) {
+    handleSelectCategory(c.id);
   }
 
   function openDetail(p: Product) {
@@ -392,6 +430,32 @@ function Index() {
         </section>
       )}
 
+      <HomeStats />
+
+      {pinnedAnns.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-2 space-y-3">
+          {pinnedAnns.map((a) => (
+            <div
+              key={a.id}
+              className="flex gap-3 items-start rounded-xl border border-gold/40 bg-gold/10 p-3"
+            >
+              <Megaphone className="w-5 h-5 text-gold shrink-0 mt-0.5" />
+              {a.image_url && (
+                <img
+                  src={a.image_url}
+                  alt={a.title}
+                  className="w-16 h-16 rounded-lg object-cover shrink-0"
+                />
+              )}
+              <div className="min-w-0">
+                <div className="font-medium text-sm text-gold">{a.title}</div>
+                <div className="text-xs text-muted-foreground whitespace-pre-wrap">{a.content}</div>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
       {/* Highlights */}
       {(topCat || featured.length > 0 || newestCats.length > 0) && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
@@ -479,88 +543,66 @@ function Index() {
         </section>
       )}
 
-      {/* Category tabs */}
-      <section className="sticky top-16 z-30 glass border-b border-border/60">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex gap-2 overflow-x-auto">
-          {parents.map((c) => {
-            const isImg = c.display_mode === "image" && c.image_url;
-            const active = activeParent === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => handleSelectCategory(c.id)}
-                className={`shrink-0 rounded-xl overflow-hidden border transition ${
-                  isImg ? "w-40 aspect-video" : "px-4 py-2 text-sm whitespace-nowrap"
-                } ${
-                  active
-                    ? "border-primary shadow-luxe ring-2 ring-primary/40"
-                    : "border-border bg-card hover:border-primary/50"
-                }`}
-              >
-                {isImg ? (
-                  <img src={c.image_url!} alt={c.name} className="w-full h-full object-cover" />
-                ) : (
-                  c.name
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {subs.length > 0 && (
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-3 flex gap-2 overflow-x-auto">
-            {subs.map((c) => {
-              const isImg = c.display_mode === "image" && c.image_url;
-              const active = activeSub === c.id;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveSub(c.id)}
-                  className={`shrink-0 rounded-lg overflow-hidden border transition ${
-                    isImg ? "w-32 aspect-video" : "px-3 py-1.5 text-xs whitespace-nowrap"
-                  } ${
-                    active
-                      ? "border-gold ring-2 ring-gold/40"
-                      : "border-border bg-card hover:border-gold/50"
-                  }`}
-                >
-                  {isImg ? (
-                    <img src={c.image_url!} alt={c.name} className="w-full h-full object-cover" />
-                  ) : (
-                    c.name
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Product grid */}
+      {/* Category browser / product grid */}
       <main ref={productsRef} className="mx-auto max-w-7xl px-4 sm:px-6 py-10 scroll-mt-32">
-        <div className="flex items-center justify-between mb-6 gap-2">
-          <h2 className="font-display text-3xl">
-            {cats.find((c) => c.id === effectiveCatId)?.name ?? ""}
-          </h2>
-          {effectiveCatId && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const c = cats.find((x) => x.id === effectiveCatId);
-                if (c) shareCategory(c);
-              }}
-            >
-              <Share2 className="w-4 h-4 mr-1" /> แชร์หมวดนี้
-            </Button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {visible.map((p) => (
-            <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} />
-          ))}
-        </div>
-        {visible.length === 0 && (
-          <div className="text-center text-muted-foreground py-20">ยังไม่มีสินค้าในหมวดนี้</div>
+        {!activeParent && (
+          <>
+            <h2 className="font-display text-3xl mb-6">เลือกหมวดหมู่สินค้า</h2>
+            <CategoryBlocks categories={parents} onSelect={selectBlockCategory} />
+          </>
+        )}
+
+        {activeParent && subs.length > 0 && !activeSub && (
+          <>
+            <div className="flex items-center justify-between mb-6 gap-2">
+              <h2 className="font-display text-3xl">
+                {cats.find((c) => c.id === activeParent)?.name ?? ""}
+              </h2>
+              <Button size="sm" variant="outline" onClick={() => handleSelectCategory("__all__")}>
+                กลับไปเลือกหมวดหมู่
+              </Button>
+            </div>
+            <SubCategoryBlocks
+              parent={cats.find((c) => c.id === activeParent) as Category}
+              categories={subs}
+              onSelect={selectBlockCategory}
+            />
+          </>
+        )}
+
+        {effectiveCatId && (
+          <>
+            <div className="flex items-center justify-between mb-6 gap-2">
+              <h2 className="font-display text-3xl">
+                {cats.find((c) => c.id === effectiveCatId)?.name ?? ""}
+              </h2>
+              <div className="flex gap-2">
+                {subs.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setActiveSub(null)}>
+                    กลับไปหมวดย่อย
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const c = cats.find((x) => x.id === effectiveCatId);
+                    if (c) shareCategory(c);
+                  }}
+                >
+                  <Share2 className="w-4 h-4 mr-1" /> แชร์หมวดนี้
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {visible.map((p) => (
+                <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} />
+              ))}
+            </div>
+            {visible.length === 0 && (
+              <div className="text-center text-muted-foreground py-20">ยังไม่มีสินค้าในหมวดนี้</div>
+            )}
+          </>
         )}
       </main>
 
@@ -700,6 +742,8 @@ function Index() {
           `© ${new Date().getFullYear()} PROKIM Luxe Store · Crafted with passion`,
         )}
       </footer>
+
+      <SitePopup />
     </div>
   );
 }
@@ -723,12 +767,14 @@ function ProductCard({
     <button
       onClick={onOpen}
       className={`group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card transition ${
-        sold
-          ? "opacity-55 grayscale hover:opacity-70"
-          : "hover:shadow-luxe hover:border-primary/50"
+        sold ? "" : "hover:shadow-luxe hover:border-primary/50"
       }`}
     >
-      <div className="aspect-square bg-onyx relative overflow-hidden">
+      <div
+        className={`aspect-square bg-onyx relative overflow-hidden ${
+          sold ? "opacity-50 grayscale pointer-events-none" : ""
+        }`}
+      >
         {p.image_url ? (
           <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
         ) : (
@@ -761,7 +807,11 @@ function ProductCard({
           </div>
         )}
       </div>
-      <div className={`p-3 space-y-2 ${compact ? "text-xs" : ""}`}>
+      <div
+        className={`p-3 space-y-2 ${compact ? "text-xs" : ""} ${
+          sold ? "opacity-50 grayscale pointer-events-none" : ""
+        }`}
+      >
         <div className={`font-medium ${compact ? "text-xs" : "text-sm"} line-clamp-2 min-h-[2.5rem]`}>
           {p.name}
         </div>

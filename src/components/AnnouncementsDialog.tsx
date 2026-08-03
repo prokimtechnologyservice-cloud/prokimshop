@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronRight, Megaphone } from "lucide-react";
+import { ChevronRight, Megaphone, Pin } from "lucide-react";
 
-type Ann = { id: string; title: string; content: string; created_at: string };
+type Ann = {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  pinned?: boolean | null;
+  image_url?: string | null;
+};
 
 export function AnnouncementsDialog({
   open,
@@ -22,7 +29,12 @@ export function AnnouncementsDialog({
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        const arr = (data as Ann[]) ?? [];
+        const arr = ((data as Ann[]) ?? []).slice().sort((a, b) => {
+          const pa = a.pinned ? 1 : 0;
+          const pb = b.pinned ? 1 : 0;
+          if (pa !== pb) return pb - pa;
+          return +new Date(b.created_at) - +new Date(a.created_at);
+        });
         setList(arr);
         setActive(arr[0] ?? null);
       });
@@ -30,10 +42,11 @@ export function AnnouncementsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl p-0 overflow-hidden max-h-[85vh]">
         <DialogHeader className="px-6 pt-6 pb-3 border-b border-border bg-gradient-card">
           <DialogTitle className="font-display text-2xl flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-gold" />
+
             ประกาศ
           </DialogTitle>
         </DialogHeader>
@@ -52,7 +65,10 @@ export function AnnouncementsDialog({
                 }`}
               >
                 <span className="line-clamp-2">{a.title}</span>
-                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                <span className="flex items-center gap-1 shrink-0">
+                  {a.pinned && <Pin className="w-3.5 h-3.5 text-gold" />}
+                  <ChevronRight className="w-4 h-4 opacity-60" />
+                </span>
               </button>
             ))}
           </aside>
@@ -61,12 +77,22 @@ export function AnnouncementsDialog({
             {active ? (
               <>
                 <div className="inline-block px-3 py-1 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-3">
-                  ประกาศล่าสุด
+                  {active.pinned ? "ประกาศสำคัญ (ปักหมุด)" : "ประกาศล่าสุด"}
                 </div>
+
                 <h3 className="font-display text-2xl mb-2">{active.title}</h3>
                 <div className="text-xs text-muted-foreground mb-4">
                   {new Date(active.created_at).toLocaleString("th-TH")}
                 </div>
+                {active.image_url && (
+                  <img
+                    src={active.image_url}
+                    alt={active.title}
+                    className="w-full rounded-xl border border-border mb-4 object-cover"
+                    loading="lazy"
+                  />
+                )}
+
                 <p className="text-sm leading-7 whitespace-pre-wrap">{active.content}</p>
               </>
             ) : (
