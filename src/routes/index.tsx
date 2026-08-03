@@ -543,88 +543,66 @@ function Index() {
         </section>
       )}
 
-      {/* Category tabs */}
-      <section className="sticky top-16 z-30 glass border-b border-border/60">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex gap-2 overflow-x-auto">
-          {parents.map((c) => {
-            const isImg = c.display_mode === "image" && c.image_url;
-            const active = activeParent === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => handleSelectCategory(c.id)}
-                className={`shrink-0 rounded-xl overflow-hidden border transition ${
-                  isImg ? "w-40 aspect-video" : "px-4 py-2 text-sm whitespace-nowrap"
-                } ${
-                  active
-                    ? "border-primary shadow-luxe ring-2 ring-primary/40"
-                    : "border-border bg-card hover:border-primary/50"
-                }`}
-              >
-                {isImg ? (
-                  <img src={c.image_url!} alt={c.name} className="w-full h-full object-cover" />
-                ) : (
-                  c.name
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {subs.length > 0 && (
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-3 flex gap-2 overflow-x-auto">
-            {subs.map((c) => {
-              const isImg = c.display_mode === "image" && c.image_url;
-              const active = activeSub === c.id;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveSub(c.id)}
-                  className={`shrink-0 rounded-lg overflow-hidden border transition ${
-                    isImg ? "w-32 aspect-video" : "px-3 py-1.5 text-xs whitespace-nowrap"
-                  } ${
-                    active
-                      ? "border-gold ring-2 ring-gold/40"
-                      : "border-border bg-card hover:border-gold/50"
-                  }`}
-                >
-                  {isImg ? (
-                    <img src={c.image_url!} alt={c.name} className="w-full h-full object-cover" />
-                  ) : (
-                    c.name
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Product grid */}
+      {/* Category browser / product grid */}
       <main ref={productsRef} className="mx-auto max-w-7xl px-4 sm:px-6 py-10 scroll-mt-32">
-        <div className="flex items-center justify-between mb-6 gap-2">
-          <h2 className="font-display text-3xl">
-            {cats.find((c) => c.id === effectiveCatId)?.name ?? ""}
-          </h2>
-          {effectiveCatId && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const c = cats.find((x) => x.id === effectiveCatId);
-                if (c) shareCategory(c);
-              }}
-            >
-              <Share2 className="w-4 h-4 mr-1" /> แชร์หมวดนี้
-            </Button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {visible.map((p) => (
-            <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} />
-          ))}
-        </div>
-        {visible.length === 0 && (
-          <div className="text-center text-muted-foreground py-20">ยังไม่มีสินค้าในหมวดนี้</div>
+        {!activeParent && (
+          <>
+            <h2 className="font-display text-3xl mb-6">เลือกหมวดหมู่สินค้า</h2>
+            <CategoryBlocks categories={parents} onSelect={selectBlockCategory} />
+          </>
+        )}
+
+        {activeParent && subs.length > 0 && !activeSub && (
+          <>
+            <div className="flex items-center justify-between mb-6 gap-2">
+              <h2 className="font-display text-3xl">
+                {cats.find((c) => c.id === activeParent)?.name ?? ""}
+              </h2>
+              <Button size="sm" variant="outline" onClick={() => handleSelectCategory("__all__")}>
+                กลับไปเลือกหมวดหมู่
+              </Button>
+            </div>
+            <SubCategoryBlocks
+              parent={cats.find((c) => c.id === activeParent) as Category}
+              categories={subs}
+              onSelect={selectBlockCategory}
+            />
+          </>
+        )}
+
+        {effectiveCatId && (
+          <>
+            <div className="flex items-center justify-between mb-6 gap-2">
+              <h2 className="font-display text-3xl">
+                {cats.find((c) => c.id === effectiveCatId)?.name ?? ""}
+              </h2>
+              <div className="flex gap-2">
+                {subs.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setActiveSub(null)}>
+                    กลับไปหมวดย่อย
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const c = cats.find((x) => x.id === effectiveCatId);
+                    if (c) shareCategory(c);
+                  }}
+                >
+                  <Share2 className="w-4 h-4 mr-1" /> แชร์หมวดนี้
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {visible.map((p) => (
+                <ProductCard key={p.id} p={p} onOpen={() => openDetail(p)} onAdd={() => requestAdd(p)} />
+              ))}
+            </div>
+            {visible.length === 0 && (
+              <div className="text-center text-muted-foreground py-20">ยังไม่มีสินค้าในหมวดนี้</div>
+            )}
+          </>
         )}
       </main>
 

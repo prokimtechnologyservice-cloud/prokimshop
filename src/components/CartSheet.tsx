@@ -72,12 +72,52 @@ export function CartSheet({
     };
   }, [open]);
 
-  const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const discountInfo = selectedPromo
+    ? computeDiscount(
+        selectedPromo,
+        items.map((i) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          unit_price: i.unit_price,
+          quantity: i.quantity,
+        })),
+      )
+    : { discount: 0, freeQty: 0, reason: "" };
+  const discount = discountInfo.discount;
+  const total = Math.max(0, subtotal - discount);
   const visible = showAll ? items : items.slice(0, 5);
   const balance = Number(user?.balance ?? 0);
   const canPayWithBalance = balance >= total && total > 0;
 
   const [busy, setBusy] = useState(false);
+
+  async function applyPromoCode() {
+    const u = getUser();
+    if (!u || !promoCode.trim()) return;
+    setPromoBusy(true);
+    try {
+      const result = await validatePromoCode(
+        promoCode,
+        u.id,
+        items.map((i) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          unit_price: i.unit_price,
+          quantity: i.quantity,
+        })),
+      );
+      if ("error" in result) {
+        toast.error(result.error);
+      } else {
+        setSelectedPromo(result.promotion);
+        toast.success("ใช้โค้ดสำเร็จ");
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "เกิดข้อผิดพลาด");
+    }
+    setPromoBusy(false);
+  }
 
   async function doCheckout(payFromBalance: boolean) {
     const u = getUser();
@@ -85,9 +125,35 @@ export function CartSheet({
     setBusy(true);
     const token = crypto.randomUUID();
     try {
-      const result = await checkoutCart(u.id, items, payFromBalance, token);
+      let result: { id: string; receipt_code: string };
+      if (selectedPromo) {
+        const res = await fetch("/api/public/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: u.id,
+            pay_from_balance: payFromBalance,
+            client_token: token,
+            promotion_id: selectedPromo.id,
+            items: items.map((i) => ({
+              product_id: i.product_id,
+              product_name: i.product_name,
+              unit_price: i.unit_price,
+              quantity: i.quantity,
+              roblox_name: i.roblox_name ?? null,
+            })),
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j?.error ?? "checkout failed");
+        result = { id: j.id, receipt_code: j.receipt_code };
+      } else {
+        result = await checkoutCart(u.id, items, payFromBalance, token);
+      }
       setReceipt({ items: [...items], total, code: result.receipt_code, paid: payFromBalance });
       await clearCart(u.id);
+      setSelectedPromo(null);
+      setPromoCode("");
       if (payFromBalance) await refreshUser();
     } catch (e: any) {
       toast.error(e.message ?? "เกิดข้อผิดพลาด");

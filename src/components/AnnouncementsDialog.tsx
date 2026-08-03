@@ -65,7 +65,10 @@ export function AnnouncementsDialog({
                 }`}
               >
                 <span className="line-clamp-2">{a.title}</span>
-                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                <span className="flex items-center gap-1 shrink-0">
+                  {a.pinned && <Pin className="w-3.5 h-3.5 text-gold" />}
+                  <ChevronRight className="w-4 h-4 opacity-60" />
+                </span>
               </button>
             ))}
           </aside>
@@ -74,8 +77,9 @@ export function AnnouncementsDialog({
             {active ? (
               <>
                 <div className="inline-block px-3 py-1 rounded-full bg-primary/15 border border-primary/40 text-xs text-gold mb-3">
-                  ประกาศล่าสุด
+                  {active.pinned ? "ประกาศสำคัญ (ปักหมุด)" : "ประกาศล่าสุด"}
                 </div>
+
                 <h3 className="font-display text-2xl mb-2">{active.title}</h3>
                 <div className="text-xs text-muted-foreground mb-4">
                   {new Date(active.created_at).toLocaleString("th-TH")}
