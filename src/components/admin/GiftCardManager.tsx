@@ -371,7 +371,7 @@ function DownloadButtons({ code }: { code: string }) {
     }
   }, [code]);
 
-  function downloadCanvas(ref: React.RefObject<HTMLCanvasElement>, name: string) {
+  function downloadCanvas(ref: React.RefObject<HTMLCanvasElement | null>, name: string) {
     const canvas = ref.current;
     if (!canvas) return;
     const link = document.createElement("a");

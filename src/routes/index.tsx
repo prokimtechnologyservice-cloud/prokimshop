@@ -22,6 +22,10 @@ import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
 import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
 import { AuctionDialog } from "@/components/AuctionDialog";
 import { auctionCountdown, settleAuctions } from "@/lib/auction";
+import { CategoryBlocks, SubCategoryBlocks, type BlockCategory } from "@/components/CategoryBlocks";
+import { HomeStats } from "@/components/HomeStats";
+import { SitePopup } from "@/components/SitePopup";
+import { Megaphone } from "lucide-react";
 
 
 const searchSchema = z.object({
@@ -52,6 +56,18 @@ type Category = {
   display_mode: string | null;
   image_url: string | null;
   product_sort_mode: string;
+  description?: string | null;
+  block_color?: string | null;
+  button_color?: string | null;
+  banner_url?: string | null;
+};
+type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  pinned?: boolean;
+  image_url?: string | null;
 };
 type Product = {
   id: string;
