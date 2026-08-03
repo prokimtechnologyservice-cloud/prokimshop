@@ -14,6 +14,15 @@ import {
 import { getUser, refreshUser } from "@/lib/auth";
 import { toast } from "sonner";
 import { TopUpDialog } from "@/components/TopUpDialog";
+import { Input } from "@/components/ui/input";
+import {
+  fetchMyPromotions,
+  validatePromoCode,
+  computeDiscount,
+  type Promotion,
+  type UserPromotion,
+} from "@/lib/promotions";
+import { Tag } from "lucide-react";
 
 export function CartSheet({
   open,
@@ -32,6 +41,10 @@ export function CartSheet({
   } | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [user, setUser] = useState(getUser());
+  const [myPromos, setMyPromos] = useState<(UserPromotion & { promotion: Promotion })[]>([]);
+  const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoBusy, setPromoBusy] = useState(false);
 
   async function load() {
     const u = getUser();
@@ -40,6 +53,11 @@ export function CartSheet({
     setItems(await fetchCart(u.id));
     await refreshUser();
     setUser(getUser());
+    try {
+      setMyPromos(await fetchMyPromotions(u.id));
+    } catch {
+      setMyPromos([]);
+    }
   }
 
   useEffect(() => {
