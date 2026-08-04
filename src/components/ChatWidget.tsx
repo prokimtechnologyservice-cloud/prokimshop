@@ -228,14 +228,15 @@ export function ChatWidget() {
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col bg-gradient-card">
-          <SheetHeader className="px-4 py-3 border-b border-border flex-row items-center justify-between space-y-0">
-            <SheetTitle className="font-display text-lg text-gradient-gold flex items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-gold" /> ติดต่อแอดมิน
+          <SheetHeader className="px-4 pr-12 py-3 border-b border-border flex-row items-center justify-between space-y-0 gap-2">
+            <SheetTitle className="font-display text-lg text-gradient-gold flex items-center gap-2 min-w-0 truncate">
+              <MessageCircle className="w-4 h-4 text-gold shrink-0" /> <span className="truncate">ติดต่อแอดมิน</span>
             </SheetTitle>
+            <div className="flex items-center gap-2 min-w-0 shrink-0">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground">
-                  <RotateCcw className="w-3 h-3" /> รีเซ็ตแชท
+                <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground px-2 sm:px-3">
+                  <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">รีเซ็ตแชท</span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -251,6 +252,7 @@ export function ChatWidget() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            </div>
           </SheetHeader>
 
           <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-2">

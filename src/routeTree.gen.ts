@@ -18,6 +18,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ProductRouteImport } from './routes/product.'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
@@ -69,6 +70,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductRoute = ProductRouteImport.update({
+  id: '/product/',
+  path: '/product/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSpinBoxRoute = ApiPublicSpinBoxRouteImport.update({
   id: '/api/public/spin-box',
   path: '/api/public/spin-box',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
+  '/product/': typeof ProductRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
+  '/product': typeof ProductRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
+  '/product/': typeof ProductRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/orders'
     | '/search'
+    | '/product/'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/orders'
     | '/search'
+    | '/product'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/orders'
     | '/search'
+    | '/product/'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
+  ProductRoute: typeof ProductRoute
   AdminLoginRoute: typeof AdminLoginRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/product/': {
+      id: '/product/'
+      path: '/product'
+      fullPath: '/product/'
+      preLoaderRoute: typeof ProductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/spin-box': {
       id: '/api/public/spin-box'
       path: '/api/public/spin-box'
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
+  ProductRoute: ProductRoute,
   AdminLoginRoute: AdminLoginRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductIdRoute: ProductIdRoute,
