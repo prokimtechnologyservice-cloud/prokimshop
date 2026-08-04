@@ -301,6 +301,36 @@ export type Database = {
           },
         ]
       }
+      countdowns: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gift_cards: {
         Row: {
           active: boolean
@@ -643,6 +673,54 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          approved: boolean
+          comment: string | null
+          created_at: string
+          id: string
+          product_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          rating?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           auction_ends_at: string | null
@@ -790,6 +868,7 @@ export type Database = {
         Row: {
           active: boolean
           applies_to: string
+          apply_after_discounts: boolean
           apply_on: string
           buy_qty: number
           category_ids: string[]
@@ -805,10 +884,13 @@ export type Database = {
           id: string
           image_url: string | null
           kind: string
+          link_enabled: boolean
+          link_token: string | null
           max_subtotal: number | null
           min_subtotal: number
           name: string
           product_ids: string[]
+          require_distinct_products: number
           starts_at: string
           updated_at: string
           valid_days: number
@@ -816,6 +898,7 @@ export type Database = {
         Insert: {
           active?: boolean
           applies_to?: string
+          apply_after_discounts?: boolean
           apply_on?: string
           buy_qty?: number
           category_ids?: string[]
@@ -831,10 +914,13 @@ export type Database = {
           id?: string
           image_url?: string | null
           kind?: string
+          link_enabled?: boolean
+          link_token?: string | null
           max_subtotal?: number | null
           min_subtotal?: number
           name: string
           product_ids?: string[]
+          require_distinct_products?: number
           starts_at?: string
           updated_at?: string
           valid_days?: number
@@ -842,6 +928,7 @@ export type Database = {
         Update: {
           active?: boolean
           applies_to?: string
+          apply_after_discounts?: boolean
           apply_on?: string
           buy_qty?: number
           category_ids?: string[]
@@ -857,10 +944,13 @@ export type Database = {
           id?: string
           image_url?: string | null
           kind?: string
+          link_enabled?: boolean
+          link_token?: string | null
           max_subtotal?: number | null
           min_subtotal?: number
           name?: string
           product_ids?: string[]
+          require_distinct_products?: number
           starts_at?: string
           updated_at?: string
           valid_days?: number
@@ -1186,6 +1276,7 @@ export type Database = {
         Returns: number
       }
       generate_receipt_code: { Args: never; Returns: string }
+      purge_old_stats: { Args: never; Returns: undefined }
       redeem_gift_card: {
         Args: { _code: string; _user_id: string }
         Returns: Json
