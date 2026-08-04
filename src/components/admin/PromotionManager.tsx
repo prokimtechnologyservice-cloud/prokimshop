@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Promotion,
@@ -7,13 +7,13 @@ import {
   updatePromotion,
   deletePromotion,
   grantPromotion,
+  createPromotionLink,
   audienceAllUsers,
   audienceNewUsers,
   audienceTopupOver,
   audienceSpendOver,
   audienceOrderCountOver,
 } from "@/lib/promotions";
-import { PromoPicker, PromoPickerValue } from "@/components/PromoPicker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Users, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, ImageIcon, Link as LinkIcon } from "lucide-react";
+
+type Category = { id: string; name: string; parent_id: string | null };
+type Product = { id: string; name: string; description: string | null; image_url: string | null; category_id: string | null };
+
+type AppliesToValue = {
+  applies_to: "all" | "products" | "categories";
+  product_ids: string[];
+  category_ids: string[];
+};
 
 const emptyForm = (kind: "discount" | "promotion"): Partial<Promotion> => ({
   kind,
@@ -43,6 +52,8 @@ const emptyForm = (kind: "discount" | "promotion"): Partial<Promotion> => ({
   min_subtotal: null,
   max_subtotal: null,
   apply_on: "receipt",
+  apply_after_discounts: false,
+  require_distinct_products: 0,
   valid_days: 30,
   starts_at: null,
   ends_at: null,
@@ -64,6 +75,13 @@ export default function PromotionManager() {
   );
 }
 
+function typeLabel(p: Promotion) {
+  if (p.discount_type === "percent") return `ลด ${p.discount_value}%`;
+  if (p.discount_type === "amount") return `ลด ฿${p.discount_value}`;
+  if (p.discount_type === "bogo") return `ซื้อ ${p.buy_qty} แถม ${p.get_qty}`;
+  return "-";
+}
+
 function PromoList({ kind }: { kind: "discount" | "promotion" }) {
   const [items, setItems] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +91,7 @@ function PromoList({ kind }: { kind: "discount" | "promotion" }) {
   async function load() {
     setLoading(true);
     try {
+      // never re-sort A-Z: keep server order (created_at desc)
       setItems(await listPromotions(kind));
     } catch (e: any) {
       toast.error(e.message);
@@ -89,6 +108,18 @@ function PromoList({ kind }: { kind: "discount" | "promotion" }) {
     try {
       await deletePromotion(id);
       toast.success("ลบแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function handleCreateLink(p: Promotion) {
+    try {
+      const token = await createPromotionLink(p.id);
+      const url = `${window.location.origin}/promo/${token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("คัดลอกลิงก์โปรโมชั่นแล้ว");
       load();
     } catch (e: any) {
       toast.error(e.message);
@@ -123,14 +154,21 @@ function PromoList({ kind }: { kind: "discount" | "promotion" }) {
                     {p.active ? "เปิดใช้งาน" : "ปิด"}
                   </span>
                 </div>
+                <p className="text-xs text-gold">{typeLabel(p)}</p>
                 {p.code && <p className="text-xs text-gold font-mono">โค้ด: {p.code}</p>}
                 <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>
-                <div className="flex gap-2 pt-2">
+                {p.link_enabled && p.link_token && (
+                  <p className="text-[10px] text-muted-foreground truncate">/promo/{p.link_token}</p>
+                )}
+                <div className="flex flex-wrap gap-2 pt-2">
                   <Button size="sm" variant="outline" onClick={() => setEditing(p)}>
                     <Pencil className="w-3 h-3 mr-1" /> แก้ไข
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setGrantFor(p)}>
                     <Users className="w-3 h-3 mr-1" /> แจก
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleCreateLink(p)}>
+                    <LinkIcon className="w-3 h-3 mr-1" /> สร้างลิงก์โปรโมชั่น
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => handleDelete(p.id)}>
                     <Trash2 className="w-3 h-3 text-destructive" />
@@ -210,7 +248,7 @@ function PromoEditDialog({
     setSaving(false);
   }
 
-  const pickerValue: PromoPickerValue = {
+  const appliesValue: AppliesToValue = {
     applies_to: (form.applies_to as any) ?? "all",
     product_ids: (form.product_ids as any) ?? [],
     category_ids: (form.category_ids as any) ?? [],
@@ -274,11 +312,16 @@ function PromoEditDialog({
               </div>
             )}
           </div>
+          {form.discount_type === "bogo" && (
+            <p className="text-xs text-muted-foreground -mt-2">
+              ตัวอย่าง: 1 แถม 1, 2 แถม 1, 1 แถม 2, 3 แถม 5 — ใส่จำนวนได้อิสระ
+            </p>
+          )}
 
           <div>
             <Label>ใช้ได้กับ</Label>
-            <PromoPicker
-              value={pickerValue}
+            <AppliesToPicker
+              value={appliesValue}
               onChange={(v) => setForm((f) => ({ ...f, applies_to: v.applies_to, product_ids: v.product_ids, category_ids: v.category_ids }))}
             />
           </div>
@@ -306,9 +349,30 @@ function PromoEditDialog({
               </Select>
             </div>
             <div>
-              <Label>อายุการใช้งาน (วัน)</Label>
-              <Input type="number" value={form.valid_days ?? 30} onChange={(e) => set("valid_days", Number(e.target.value) as any)} />
+              <Label>ต้องมีสินค้าต่างชนิดอย่างน้อย (ชิ้น, 0=ไม่บังคับ)</Label>
+              <Input type="number" value={form.require_distinct_products ?? 0} onChange={(e) => set("require_distinct_products", Number(e.target.value) as any)} />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Switch checked={!!form.apply_after_discounts} onCheckedChange={(v) => set("apply_after_discounts", v as any)} />
+            <Label>คำนวณยอดขั้นต่ำ/สูงสุดหลังหักส่วนลดอื่นแล้ว (apply after discounts)</Label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>วันที่เริ่ม</Label>
+              <Input type="datetime-local" value={form.starts_at ? form.starts_at.slice(0, 16) : ""} onChange={(e) => set("starts_at", (e.target.value ? new Date(e.target.value).toISOString() : null) as any)} />
+            </div>
+            <div>
+              <Label>วันที่สิ้นสุด</Label>
+              <Input type="datetime-local" value={form.ends_at ? form.ends_at.slice(0, 16) : ""} onChange={(e) => set("ends_at", (e.target.value ? new Date(e.target.value).toISOString() : null) as any)} />
+            </div>
+          </div>
+
+          <div>
+            <Label>อายุสิทธิ์เมื่อได้รับแจก (วัน)</Label>
+            <Input type="number" value={form.valid_days ?? 30} onChange={(e) => set("valid_days", Number(e.target.value) as any)} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -318,7 +382,7 @@ function PromoEditDialog({
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manual">แจกเอง</SelectItem>
-                  <SelectItem value="all">ทุกคน (ใช้โค้ดได้เลย)</SelectItem>
+                  <SelectItem value="all">ทุกคน (ใช้ได้อัตโนมัติ)</SelectItem>
                   <SelectItem value="new_user">สมาชิกใหม่ (7 วัน)</SelectItem>
                   <SelectItem value="topup_over">เติมเงินสะสมเกิน</SelectItem>
                   <SelectItem value="spend_over">ซื้อสะสมเกิน</SelectItem>
@@ -344,6 +408,174 @@ function PromoEditDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AppliesToPicker({
+  value,
+  onChange,
+}: {
+  value: AppliesToValue;
+  onChange: (v: AppliesToValue) => void;
+}) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: cats }, { data: prods }] = await Promise.all([
+        supabase.from("categories").select("id, name, parent_id").order("sort_order" as any),
+        supabase.from("products").select("id, name, description, image_url, category_id").order("sort_order" as any),
+      ]);
+      setCategories((cats ?? []) as any);
+      setProducts((prods ?? []) as any);
+      setLoading(false);
+    })();
+  }, []);
+
+  const mainCats = categories.filter((c) => !c.parent_id);
+  const subCatsOf = (id: string) => categories.filter((c) => c.parent_id === id);
+  const search_l = search.trim().toLowerCase();
+
+  const productsOf = (catId: string) =>
+    products.filter(
+      (p) =>
+        p.category_id === catId &&
+        (!search_l || p.name.toLowerCase().includes(search_l) || (p.description ?? "").toLowerCase().includes(search_l)),
+    );
+
+  function setMode(mode: "products" | "categories" | "all") {
+    onChange({ applies_to: mode, product_ids: [], category_ids: [] });
+  }
+
+  function toggleProduct(id: string) {
+    const set = new Set(value.product_ids);
+    set.has(id) ? set.delete(id) : set.add(id);
+    onChange({ ...value, product_ids: Array.from(set) });
+  }
+
+  function toggleCategory(id: string) {
+    const set = new Set(value.category_ids);
+    set.has(id) ? set.delete(id) : set.add(id);
+    onChange({ ...value, category_ids: Array.from(set) });
+  }
+
+  function selectAllInGroup(catId: string) {
+    const prods = productsOf(catId).map((p) => p.id);
+    const set = new Set(value.product_ids);
+    const allSelected = prods.every((id) => set.has(id));
+    prods.forEach((id) => (allSelected ? set.delete(id) : set.add(id)));
+    onChange({ ...value, product_ids: Array.from(set) });
+  }
+
+  const groups = useMemo(() => {
+    return mainCats
+      .map((mc) => ({
+        cat: mc,
+        subs: subCatsOf(mc.id).map((sc) => ({ cat: sc, products: productsOf(sc.id) })).filter((s) => s.products.length > 0 || !search_l),
+        directProducts: productsOf(mc.id),
+      }))
+      .filter(
+        (g) =>
+          g.directProducts.length > 0 ||
+          g.subs.some((s) => s.products.length > 0) ||
+          !search_l,
+      );
+  }, [mainCats, categories, products, search_l]);
+
+  return (
+    <div className="space-y-3 border border-border rounded-lg p-3 bg-card/50">
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" variant={value.applies_to === "all" ? "luxe" : "outline"} onClick={() => setMode("all")}>
+          ทุกสินค้า
+        </Button>
+        <Button type="button" size="sm" variant={value.applies_to === "categories" ? "luxe" : "outline"} onClick={() => setMode("categories")}>
+          เลือกทั้งหมวดหมู่
+        </Button>
+        <Button type="button" size="sm" variant={value.applies_to === "products" ? "luxe" : "outline"} onClick={() => setMode("products")}>
+          เลือกรายสินค้า
+        </Button>
+      </div>
+
+      {value.applies_to !== "all" && (
+        <>
+          <Input placeholder="ค้นหาสินค้า..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          {loading ? (
+            <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
+          ) : (
+            <div className="max-h-80 overflow-auto space-y-4 pr-1">
+              {groups.map((g) => (
+                <div key={g.cat.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {value.applies_to === "categories" && (
+                        <Checkbox
+                          checked={value.category_ids.includes(g.cat.id)}
+                          onCheckedChange={() => toggleCategory(g.cat.id)}
+                        />
+                      )}
+                      <span className="font-semibold text-gold">{g.cat.name}</span>
+                    </div>
+                    {value.applies_to === "products" && g.directProducts.length > 0 && (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => selectAllInGroup(g.cat.id)}>
+                        เลือกทั้งหมดในหมวด
+                      </Button>
+                    )}
+                  </div>
+
+                  {value.applies_to === "products" &&
+                    g.directProducts.map((p) => (
+                      <ProductRow key={p.id} p={p} checked={value.product_ids.includes(p.id)} onToggle={() => toggleProduct(p.id)} />
+                    ))}
+
+                  {g.subs.map((s) => (
+                    <div key={s.cat.id} className="pl-4 space-y-1 border-l border-border ml-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {value.applies_to === "categories" && (
+                            <Checkbox
+                              checked={value.category_ids.includes(s.cat.id)}
+                              onCheckedChange={() => toggleCategory(s.cat.id)}
+                            />
+                          )}
+                          <span className="text-sm font-medium text-muted-foreground">{s.cat.name}</span>
+                        </div>
+                        {value.applies_to === "products" && s.products.length > 0 && (
+                          <Button type="button" size="sm" variant="ghost" onClick={() => selectAllInGroup(s.cat.id)}>
+                            เลือกทั้งหมดในหมวด
+                          </Button>
+                        )}
+                      </div>
+                      {value.applies_to === "products" &&
+                        s.products.map((p) => (
+                          <ProductRow key={p.id} p={p} checked={value.product_ids.includes(p.id)} onToggle={() => toggleProduct(p.id)} />
+                        ))}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductRow({ p, checked, onToggle }: { p: Product; checked: boolean; onToggle: () => void }) {
+  return (
+    <Label className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+      <Checkbox checked={checked} onCheckedChange={onToggle} />
+      <div className="w-8 h-8 rounded overflow-hidden bg-muted flex-shrink-0">
+        {p.image_url && <img src={p.image_url} className="w-full h-full object-cover" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm truncate">{p.name}</div>
+        {p.description && <div className="text-xs text-muted-foreground truncate">{p.description}</div>}
+      </div>
+    </Label>
   );
 }
 

@@ -50,6 +50,7 @@ export default function GiftCardManager() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [promotionId, setPromotionId] = useState<string>("");
   const [lastCreated, setLastCreated] = useState<GiftCard | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   async function loadAll() {
     setLoading(true);
@@ -201,7 +202,23 @@ export default function GiftCardManager() {
 
           <div className="space-y-1">
             <Label>รูปปก</Label>
-            <div className="flex items-center gap-2">
+            <div
+              className={`rounded-md border-2 border-dashed p-4 text-center text-sm transition-colors ${
+                dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/30"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) handleUpload(f);
+              }}
+            >
+              <p className="text-muted-foreground mb-2">ลากรูปภาพมาวางที่นี่ หรือ</p>
               <Input
                 type="file"
                 accept="image/*"
@@ -211,8 +228,9 @@ export default function GiftCardManager() {
                 }}
                 disabled={uploading}
               />
+              {uploading && <p className="text-xs text-muted-foreground mt-2">กำลังอัปโหลด...</p>}
+              {imageUrl && <img src={imageUrl} alt="cover" className="h-16 mt-2 mx-auto rounded border" />}
             </div>
-            {imageUrl && <img src={imageUrl} alt="cover" className="h-16 mt-2 rounded border" />}
           </div>
 
           <div className="space-y-1">

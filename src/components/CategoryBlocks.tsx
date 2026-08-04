@@ -71,7 +71,7 @@ export function CategoryBlocks({
   onSelect: (c: BlockCategory) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-full">
       {categories.map((c) => (
         <CategoryBlock key={c.id} cat={c} onSelect={onSelect} />
       ))}
@@ -93,7 +93,7 @@ export function SubCategoryBlocks({
       <div className="mb-8 rounded-xl overflow-hidden border border-border shadow-card">
         <Banner cat={parent} />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-full">
         {categories.map((c) => (
           <CategoryBlock key={c.id} cat={c} onSelect={onSelect} />
         ))}

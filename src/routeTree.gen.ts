@@ -15,6 +15,7 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GivecardRouteImport } from './routes/givecard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PromoTokenRouteImport } from './routes/promo.$token'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PromoTokenRoute = PromoTokenRouteImport.update({
+  id: '/promo/$token',
+  path: '/promo/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductIdRoute = ProductIdRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/promo/$token': typeof PromoTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/promo/$token': typeof PromoTokenRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/promo/$token': typeof PromoTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
+    | '/promo/$token'
     | '/admin/'
     | '/api/public/auction'
     | '/api/public/checkout'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
+    | '/promo/$token'
     | '/admin'
     | '/api/public/auction'
     | '/api/public/checkout'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
+    | '/promo/$token'
     | '/admin/'
     | '/api/public/auction'
     | '/api/public/checkout'
@@ -205,6 +217,7 @@ export interface RootRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductIdRoute: typeof ProductIdRoute
+  PromoTokenRoute: typeof PromoTokenRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicAuctionRoute: typeof ApiPublicAuctionRoute
   ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
@@ -255,6 +268,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/promo/$token': {
+      id: '/promo/$token'
+      path: '/promo/$token'
+      fullPath: '/promo/$token'
+      preLoaderRoute: typeof PromoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/product/$id': {
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductIdRoute: ProductIdRoute,
+  PromoTokenRoute: PromoTokenRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicAuctionRoute: ApiPublicAuctionRoute,
   ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,

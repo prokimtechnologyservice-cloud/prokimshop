@@ -161,6 +161,8 @@ export type BoxPrize = {
     image_url: string | null;
     product_type: string;
     stock: number | null;
+    price: number;
+    mystery_only: boolean;
   } | null;
 };
 
@@ -168,7 +170,7 @@ export async function fetchBoxPrizes(boxId: string): Promise<BoxPrize[]> {
   const { data, error } = await (supabase as any)
     .from("mystery_box_items")
     .select(
-      "id, prize_product_id, weight, stock, chance, is_nothing, label, image_url, products:prize_product_id(id, name, image_url, product_type, stock)",
+      "id, prize_product_id, weight, stock, chance, is_nothing, label, image_url, products:prize_product_id(id, name, image_url, product_type, stock, price, mystery_only)",
     )
     .eq("box_product_id", boxId)
     .order("created_at");
@@ -182,7 +184,10 @@ export async function fetchBoxPrizes(boxId: string): Promise<BoxPrize[]> {
     is_nothing: !!r.is_nothing,
     label: r.label,
     image_url: r.image_url,
-    product: r.products ?? null,
+    product: r.products ? {
+      ...r.products,
+      price: Number(r.products.price || 0)
+    } : null,
   }));
 }
 
@@ -230,4 +235,33 @@ export async function spinBox(
     new_balance: number;
     delivered_payload: string | null;
   };
+}
+
+export async function toggleProductMysteryOnly(productId: string, mysteryOnly: boolean) {
+  const { error } = await supabase
+    .from("products")
+    .update({ mystery_only: mysteryOnly })
+    .eq("id", productId);
+  if (error) throw error;
+}
+
+export async function createExclusiveProduct(data: {
+  name: string;
+  price: number;
+  description: string | null;
+  image_url: string | null;
+  stock: number | null;
+}) {
+  const { data: inserted, error } = await supabase
+    .from("products")
+    .insert({
+      ...data,
+      mystery_only: true,
+      product_type: "normal",
+      is_new: true,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return inserted.id;
 }

@@ -16,6 +16,13 @@ import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
 import { ChatAdmin } from "@/components/admin/ChatAdmin";
 import { RETURN_LABEL, resolveReturn } from "@/lib/tracking";
+import PromotionManager from "@/components/admin/PromotionManager";
+import GiftCardManager from "@/components/admin/GiftCardManager";
+import { ReviewModerator } from "@/components/admin/ReviewModerator";
+import { CountdownManager } from "@/components/admin/CountdownManager";
+import { TemplateCustomizer } from "@/components/admin/TemplateCustomizer";
+import { StatsDashboard } from "@/components/admin/StatsDashboard";
+import { PublicStatsManager } from "@/components/admin/PublicStatsManager";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -66,12 +73,18 @@ function AdminDashboard() {
             <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
             <TabsTrigger value="chat">แชทลูกค้า</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
+            <TabsTrigger value="promos">โปรโมชั่น/ส่วนลด</TabsTrigger>
+            <TabsTrigger value="gift">บัตรของขวัญ</TabsTrigger>
+            <TabsTrigger value="reviews">รีวิว/คอมเมนต์</TabsTrigger>
+            <TabsTrigger value="countdown">นับถอยหลัง</TabsTrigger>
+            <TabsTrigger value="template">ตกแต่งบล็อก</TabsTrigger>
+            <TabsTrigger value="stats">สถิติหลังบ้าน</TabsTrigger>
+            <TabsTrigger value="publicstats">สถิติหน้าแรก</TabsTrigger>
 
             {isManager && <TabsTrigger value="editor">แก้ไขข้อความ/รูป</TabsTrigger>}
             {isManager && <TabsTrigger value="overlay">วางวัตถุ (ลาก/หมุน)</TabsTrigger>}
             {isManager && <TabsTrigger value="staff">สิทธิ์พนักงาน</TabsTrigger>}
             {isManager && <TabsTrigger value="site">เปิด/ปิดเว็บ</TabsTrigger>}
-            {isManager && <TabsTrigger value="stats">สถิติ</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="catalog"><CatalogManager /></TabsContent>
@@ -79,14 +92,18 @@ function AdminDashboard() {
           <TabsContent value="tracking"><TrackingManager /></TabsContent>
           <TabsContent value="orders"><OrdersManager /></TabsContent>
           <TabsContent value="chat"><ChatAdmin /></TabsContent>
-
-
           <TabsContent value="users"><UsersManager /></TabsContent>
+          <TabsContent value="promos"><PromotionManager /></TabsContent>
+          <TabsContent value="gift"><GiftCardManager /></TabsContent>
+          <TabsContent value="reviews"><ReviewModerator /></TabsContent>
+          <TabsContent value="countdown"><CountdownManager /></TabsContent>
+          <TabsContent value="template"><TemplateCustomizer /></TabsContent>
+          <TabsContent value="stats"><StatsDashboard /></TabsContent>
+          <TabsContent value="publicstats"><PublicStatsManager /></TabsContent>
           {isManager && <TabsContent value="editor"><SiteEditor /></TabsContent>}
           {isManager && <TabsContent value="overlay"><OverlayManager /></TabsContent>}
           {isManager && <TabsContent value="staff"><StaffManager /></TabsContent>}
           {isManager && <TabsContent value="site"><SiteToggle /></TabsContent>}
-          {isManager && <TabsContent value="stats"><StatsPanel /></TabsContent>}
         </Tabs>
       </main>
     </div>

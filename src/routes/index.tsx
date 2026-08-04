@@ -25,6 +25,7 @@ import { auctionCountdown, settleAuctions } from "@/lib/auction";
 import { CategoryBlocks, SubCategoryBlocks, type BlockCategory } from "@/components/CategoryBlocks";
 import { HomeStats } from "@/components/HomeStats";
 import { SitePopup } from "@/components/SitePopup";
+import { CountdownWidget } from "@/components/CountdownWidget";
 import { Megaphone } from "lucide-react";
 
 
@@ -217,13 +218,6 @@ function Index() {
           return;
         }
       }
-      const firstParent = catList.find((c) => !c.parent_id);
-      if (firstParent && !activeParent) {
-        setActiveParent(firstParent.id);
-        const firstChild = catList.find((c) => c.parent_id === firstParent.id);
-        setActiveSub(firstChild?.id ?? null);
-      }
-
       const sk = sessionStorage.getItem("vk") || crypto.randomUUID();
       sessionStorage.setItem("vk", sk);
       supabase.from("visits").insert({ session_key: sk });
@@ -542,6 +536,8 @@ function Index() {
           )}
         </section>
       )}
+
+      <CountdownWidget />
 
       {/* Category browser / product grid */}
       <main ref={productsRef} className="mx-auto max-w-7xl px-4 sm:px-6 py-10 scroll-mt-32">
