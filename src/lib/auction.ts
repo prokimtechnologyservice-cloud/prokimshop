@@ -27,7 +27,7 @@ export async function fetchAuction(
     .select("id, user_id, amount, roblox_name, created_at, profiles(username)")
     .eq("product_id", product.id)
     .order("amount", { ascending: false })
-    .limit(20);
+    .limit(100);
   const bids: AuctionBid[] = ((data as any[]) ?? []).map((b) => ({
     id: b.id,
     user_id: b.user_id,
@@ -40,6 +40,21 @@ export async function fetchAuction(
   const step = Number(product.auction_step) || 1;
   const minNext = top == null ? Number(product.auction_start_price) : top + step;
   return { top, minNext, bids };
+}
+
+/**
+ * Deduplicate bids by user_id, keeping the highest amount for each user.
+ * Returns sorted by amount descending.
+ */
+export function topBidsByUser(bids: AuctionBid[]): AuctionBid[] {
+  const map = new Map<string, AuctionBid>();
+  for (const b of bids) {
+    const existing = map.get(b.user_id);
+    if (!existing || b.amount > existing.amount) {
+      map.set(b.user_id, b);
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
 }
 
 export async function placeBid(
