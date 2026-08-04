@@ -21,6 +21,7 @@ import { ADMIN_CHAT_URL } from "@/lib/cart";
 import { useNavigate } from "@tanstack/react-router";
 import { useSiteContent, sc } from "@/lib/siteContent";
 import { ThemeSettingsDialog } from "@/components/ThemeSettingsDialog";
+import { TopUpDialog } from "@/components/TopUpDialog";
 
 type Announcement = { id: string; title: string; content: string; created_at: string };
 
@@ -39,6 +40,7 @@ export function SideMenu({
   const [section, setSection] = useState<"home" | "ann" | "topup">("home");
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [topupOpen, setTopupOpen] = useState(false);
   const navigate = useNavigate();
   const { content } = useSiteContent();
   const truemoneyLogo = sc(content, "topup_truemoney_logo", "");
@@ -153,6 +155,11 @@ export function SideMenu({
                   onClick={() => { window.dispatchEvent(new Event("open-topup")); close(); }}
                 />
                 <MenuRow
+                  icon={<Wallet className="w-5 h-5 text-gold" />}
+                  label="กรอกซอง TrueMoney Wallet"
+                  onClick={() => setTopupOpen(true)}
+                />
+                <MenuRow
                   icon={<Gift className="w-5 h-5 text-gold" />}
                   label="บัตรของขวัญ (Gift Card)"
                   onClick={() => { close(); navigate({ to: "/givecard" as any }); }}
@@ -182,6 +189,7 @@ export function SideMenu({
       </Sheet>
 
       <ThemeSettingsDialog open={themeOpen} onOpenChange={setThemeOpen} />
+      <TopUpDialog open={topupOpen} onOpenChange={setTopupOpen} />
     </>
   );
 }

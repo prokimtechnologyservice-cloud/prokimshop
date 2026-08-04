@@ -71,8 +71,15 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
             <Menu className="w-5 h-5" />
           </button>
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-lg bg-gradient-crimson flex items-center justify-center shadow-luxe">
-              <Crown className="w-5 h-5 text-gold" />
+            <div
+              data-site-key="site_logo"
+              className="w-9 h-9 rounded-lg bg-gradient-crimson flex items-center justify-center shadow-luxe overflow-hidden"
+            >
+              {sc(content, "site_logo") ? (
+                <img src={sc(content, "site_logo")} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                <Crown className="w-5 h-5 text-gold" />
+              )}
             </div>
             <div className="leading-none">
               <div
