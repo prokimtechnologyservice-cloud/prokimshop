@@ -184,7 +184,10 @@ export async function fetchBoxPrizes(boxId: string): Promise<BoxPrize[]> {
     is_nothing: !!r.is_nothing,
     label: r.label,
     image_url: r.image_url,
-    product: r.products ?? null,
+    product: r.products ? {
+      ...r.products,
+      price: Number(r.products.price || 0)
+    } : null,
   }));
 }
 
@@ -254,7 +257,7 @@ export async function createExclusiveProduct(data: {
     .insert({
       ...data,
       mystery_only: true,
-      product_type: "normal", // or whatever default
+      product_type: "normal",
       is_new: true,
     })
     .select("id")

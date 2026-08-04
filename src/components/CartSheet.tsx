@@ -16,13 +16,14 @@ import { toast } from "sonner";
 import { TopUpDialog } from "@/components/TopUpDialog";
 import { Input } from "@/components/ui/input";
 import {
-  fetchMyPromotions,
+  autoApplyPromotions,
   validatePromoCode,
   computeDiscount,
   type Promotion,
-  type UserPromotion,
+  type AutoPromoCandidate,
 } from "@/lib/promotions";
-import { Tag } from "lucide-react";
+import { PromoPicker } from "@/components/PromoPicker";
+import { Tag, Ticket } from "lucide-react";
 
 export function CartSheet({
   open,
@@ -41,23 +42,21 @@ export function CartSheet({
   } | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [user, setUser] = useState(getUser());
-  const [myPromos, setMyPromos] = useState<(UserPromotion & { promotion: Promotion })[]>([]);
+  const [eligiblePromos, setEligiblePromos] = useState<AutoPromoCandidate[]>([]);
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
+  const [autoApplied, setAutoApplied] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoBusy, setPromoBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   async function load() {
     const u = getUser();
     setUser(u);
     if (!u) return setItems([]);
-    setItems(await fetchCart(u.id));
+    const cartItems = await fetchCart(u.id);
+    setItems(cartItems);
     await refreshUser();
     setUser(getUser());
-    try {
-      setMyPromos(await fetchMyPromotions(u.id));
-    } catch {
-      setMyPromos([]);
-    }
   }
 
   useEffect(() => {
@@ -71,6 +70,32 @@ export function CartSheet({
       window.removeEventListener("auth-change", onAuth);
     };
   }, [open]);
+
+  useEffect(() => {
+    const u = getUser();
+    if (!u || items.length === 0) {
+      setEligiblePromos([]);
+      return;
+    }
+    autoApplyPromotions(
+      u.id,
+      items.map((i) => ({
+        product_id: i.product_id,
+        product_name: i.product_name,
+        unit_price: i.unit_price,
+        quantity: i.quantity,
+      })),
+    )
+      .then(({ best, candidates }) => {
+        setEligiblePromos(candidates);
+        if (!selectedPromo && best) {
+          setSelectedPromo(best.promotion);
+          setAutoApplied(true);
+        }
+      })
+      .catch(() => setEligiblePromos([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.map((i) => `${i.id}:${i.quantity}`).join(",")]);
 
   const subtotal = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const discountInfo = selectedPromo
