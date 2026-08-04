@@ -45,7 +45,7 @@ export function ProductInfoDialog({ value, onOpenChange }: ProductInfoDialogProp
       setNotFound(false);
       setProduct(null);
       try {
-        const raw = value.trim();
+        const raw = (value ?? "").trim();
         let found: ProductInfo | null = null;
 
         const byId = await supabase

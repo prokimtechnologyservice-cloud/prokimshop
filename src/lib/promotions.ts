@@ -23,6 +23,10 @@ export type Promotion = {
   grant_rule: "manual" | "all" | "new_user" | "topup_over" | "spend_over" | "order_count";
   grant_value: number | null;
   active: boolean;
+  link_enabled: boolean | null;
+  link_token: string | null;
+  require_distinct_products: number | null;
+  apply_after_discounts: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -175,6 +179,57 @@ export async function fetchMyPromotions(userId: string): Promise<(UserPromotion 
   ) as any;
 }
 
+// ---------------- Share links ----------------
+
+function randomToken(len = 12): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let out = "";
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length];
+  return out;
+}
+
+export async function createPromotionLink(promotionId: string): Promise<string> {
+  const token = randomToken();
+  const { error } = await (supabase as any)
+    .from("promotions")
+    .update({ link_enabled: true, link_token: token })
+    .eq("id", promotionId);
+  if (error) throw error;
+  return token;
+}
+
+export async function getPromotionByToken(token: string): Promise<Promotion | null> {
+  const { data, error } = await (supabase as any)
+    .from("promotions")
+    .select("*")
+    .eq("link_token", token)
+    .eq("link_enabled", true)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Promotion) ?? null;
+}
+
+export async function claimPromotionLink(promotionId: string, userId: string, validDays?: number | null) {
+  const { data: existing } = await (supabase as any)
+    .from("user_promotions")
+    .select("id")
+    .eq("promotion_id", promotionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing) return { alreadyClaimed: true };
+  const expiresAt = validDays
+    ? new Date(Date.now() + validDays * 86400000).toISOString()
+    : null;
+  const { error } = await (supabase as any)
+    .from("user_promotions")
+    .insert({ promotion_id: promotionId, user_id: userId, expires_at: expiresAt });
+  if (error) throw error;
+  return { alreadyClaimed: false };
+}
+
 // category ancestor check: given item's category_id, does it match target (self or ancestor)?
 async function categoryMatchesAny(
   itemCategoryId: string | null | undefined,
@@ -203,7 +258,11 @@ async function categoryMatchesAny(
 
 export type DiscountResult = { discount: number; freeQty: number; reason: string };
 
-export function computeDiscount(promo: Promotion, items: CartComputeItem[]): DiscountResult {
+export function computeDiscount(
+  promo: Promotion,
+  items: CartComputeItem[],
+  ctx?: { netSubtotalAfterOtherDiscounts?: number },
+): DiscountResult {
   const cartSubtotal = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
 
   const eligibleItems = items.filter((it) => {
@@ -220,7 +279,13 @@ export function computeDiscount(promo: Promotion, items: CartComputeItem[]): Dis
   });
 
   const eligibleSubtotal = eligibleItems.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const relevantSubtotal = promo.apply_on === "receipt" ? cartSubtotal : eligibleSubtotal;
+  let relevantSubtotal = promo.apply_on === "receipt" ? cartSubtotal : eligibleSubtotal;
+  if (promo.apply_after_discounts && ctx?.netSubtotalAfterOtherDiscounts != null) {
+    relevantSubtotal =
+      promo.apply_on === "receipt"
+        ? ctx.netSubtotalAfterOtherDiscounts
+        : Math.min(eligibleSubtotal, ctx.netSubtotalAfterOtherDiscounts);
+  }
 
   if (promo.min_subtotal != null && relevantSubtotal < Number(promo.min_subtotal)) {
     return { discount: 0, freeQty: 0, reason: `ยอดขั้นต่ำ ฿${promo.min_subtotal} ยังไม่ถึง` };
@@ -230,6 +295,20 @@ export function computeDiscount(promo: Promotion, items: CartComputeItem[]): Dis
   }
   if (eligibleItems.length === 0 && promo.applies_to !== "all") {
     return { discount: 0, freeQty: 0, reason: "ไม่มีสินค้าที่เข้าเงื่อนไขในตะกร้า" };
+  }
+
+  const requiredDistinct = Number(promo.require_distinct_products ?? 0);
+  if (requiredDistinct > 0) {
+    const distinctIds = new Set(
+      eligibleItems.map((i) => i.product_id).filter(Boolean) as string[],
+    );
+    if (distinctIds.size < requiredDistinct) {
+      return {
+        discount: 0,
+        freeQty: 0,
+        reason: `ต้องมีสินค้าที่เข้าเงื่อนไขอย่างน้อย ${requiredDistinct} รายการที่แตกต่างกัน`,
+      };
+    }
   }
 
   if (promo.discount_type === "amount") {
@@ -299,4 +378,58 @@ export async function validatePromoCode(
   const result = computeDiscount(promo as Promotion, items);
   if (result.discount <= 0 && result.reason) return { error: result.reason };
   return { ...result, promotion: promo as Promotion };
+}
+
+// ---------------- Auto-apply engine ----------------
+
+function isPromoInWindow(promo: Promotion): boolean {
+  const now = new Date();
+  if (promo.starts_at && new Date(promo.starts_at) > now) return false;
+  if (promo.ends_at && new Date(promo.ends_at) < now) return false;
+  if (!isValidDayOfWeek(promo)) return false;
+  return true;
+}
+
+function isValidDayOfWeek(promo: any): boolean {
+  // valid_days here reused historically as "duration in days" for grants, so we
+  // don't restrict by weekday unless a separate field is present.
+  return true;
+}
+
+export type AutoPromoCandidate = DiscountResult & { promotion: Promotion };
+
+export async function autoApplyPromotions(
+  userId: string | null,
+  items: CartComputeItem[],
+): Promise<{ best: AutoPromoCandidate | null; candidates: AutoPromoCandidate[] }> {
+  if (!items.length) return { best: null, candidates: [] };
+
+  const { data: allPromos, error } = await (supabase as any)
+    .from("promotions")
+    .select("*")
+    .eq("active", true)
+    .eq("grant_rule", "all");
+  if (error) throw error;
+
+  let granted: Promotion[] = [];
+  if (userId) {
+    const mine = await fetchMyPromotions(userId);
+    granted = mine.map((m) => m.promotion);
+  }
+
+  const map = new Map<string, Promotion>();
+  (allPromos ?? []).forEach((p: any) => map.set(p.id, p as Promotion));
+  granted.forEach((p) => map.set(p.id, p));
+
+  const candidates: AutoPromoCandidate[] = [];
+  for (const promo of map.values()) {
+    if (!isPromoInWindow(promo)) continue;
+    const result = computeDiscount(promo, items);
+    if (result.discount > 0) {
+      candidates.push({ ...result, promotion: promo });
+    }
+  }
+
+  candidates.sort((a, b) => b.discount - a.discount);
+  return { best: candidates[0] ?? null, candidates };
 }
