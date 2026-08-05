@@ -206,6 +206,10 @@ export function MysteryBoxDialog({
     return Array.from({ length: EXTRA_LOOPS + 2 }, () => prizes).flat();
   }, [prizes]);
 
+  // Idle continuous left scroll (only when not spinning and no result yet)
+  const idleScroll = mode === "slide" && !spinning && !result && stripPrizes.length > 0;
+  const idleLoopPx = prizes.length * (TILE_W + TILE_GAP);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
