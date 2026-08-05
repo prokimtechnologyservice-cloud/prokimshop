@@ -385,6 +385,23 @@ export function CartSheet({
         </SheetContent>
       </Sheet>
       <TopUpDialog open={topUpOpen} onOpenChange={setTopUpOpen} onDone={() => load()} />
+      <PromoPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        eligible={eligiblePromos}
+        ineligible={[]}
+        selectedId={selectedPromo?.id ?? null}
+        onSelect={(c) => {
+          setSelectedPromo(c.promotion);
+          setAutoApplied(false);
+          setPickerOpen(false);
+        }}
+        onClear={() => {
+          setSelectedPromo(null);
+          setAutoApplied(false);
+          setPickerOpen(false);
+        }}
+      />
     </>
   );
 }
