@@ -243,3 +243,13 @@
 :root[data-size="1"] { font-size: 100%; }
 :root[data-size="2"] { font-size: 130%; }
 :root[data-size="3"] { font-size: 150%; }
+
+@keyframes mb-idle-scroll-kf {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--mb-loop, -100%)); }
+}
+.mb-idle-scroll {
+  animation-name: mb-idle-scroll-kf;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
