@@ -206,6 +206,10 @@ export function MysteryBoxDialog({
     return Array.from({ length: EXTRA_LOOPS + 2 }, () => prizes).flat();
   }, [prizes]);
 
+  // Idle continuous left scroll (only when not spinning and no result yet)
+  const idleScroll = mode === "slide" && !spinning && !result && stripPrizes.length > 0;
+  const idleLoopPx = prizes.length * (TILE_W + TILE_GAP);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -308,7 +312,18 @@ export function MysteryBoxDialog({
                 ) : (
                   <div className="h-32 sm:h-36 overflow-hidden relative">
                     {stripPrizes.length > 0 ? (
-                      <div className="flex gap-2 p-2" style={{ width: "max-content", ...reelStyle }}>
+                      <div
+                        className={`flex gap-2 p-2 ${idleScroll ? "mb-idle-scroll" : ""}`}
+                        style={
+                          idleScroll
+                            ? ({
+                                width: "max-content",
+                                ["--mb-loop" as any]: `-${idleLoopPx}px`,
+                                animationDuration: `${Math.max(8, prizes.length * 2.5)}s`,
+                              } as React.CSSProperties)
+                            : { width: "max-content", ...reelStyle }
+                        }
+                      >
                         {stripPrizes.map((p, i) => (
                           <PrizeTile key={i} p={p} />
                         ))}

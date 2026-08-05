@@ -146,8 +146,8 @@ function GiveCardPage() {
             <TabsContent value="enter" className="mt-4 space-y-4">
               <Input
                 value={code}
-                onChange={(e) => setCode(normalizeCode(e.target.value).slice(0, 18))}
-                maxLength={18}
+                onChange={(e) => setCode(normalizeCode(e.target.value).slice(0, 21))}
+                maxLength={21}
                 placeholder="PS-XXXX-XXXX-XXXX-XXXX"
                 className="font-mono text-lg tracking-wider"
               />

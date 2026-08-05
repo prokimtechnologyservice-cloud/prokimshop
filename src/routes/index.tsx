@@ -426,6 +426,8 @@ function Index() {
 
       <HomeStats />
 
+      <CountdownWidget />
+
       {pinnedAnns.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-2 space-y-3">
           {pinnedAnns.map((a) => (
@@ -537,7 +539,6 @@ function Index() {
         </section>
       )}
 
-      <CountdownWidget />
 
       {/* Category browser / product grid */}
       <main ref={productsRef} className="mx-auto max-w-7xl px-4 sm:px-6 py-10 scroll-mt-32">

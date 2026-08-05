@@ -311,37 +311,25 @@ export function CartSheet({
                   </Button>
                 </div>
 
-                {myPromos.length > 0 && (
-                  <div className="space-y-1 max-h-32 overflow-auto">
-                    {myPromos.map((up) => (
-                      <button
-                        key={up.id}
-                        onClick={() =>
-                          setSelectedPromo(selectedPromo?.id === up.promotion.id ? null : up.promotion)
-                        }
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left ${
-                          selectedPromo?.id === up.promotion.id
-                            ? "border-gold bg-gold/10"
-                            : "border-border bg-card"
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
-                          {up.promotion.image_url ? (
-                            <img src={up.promotion.image_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Tag className="w-4 h-4 m-auto text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm truncate">{up.promotion.name}</div>
-                          {up.promotion.description && (
-                            <div className="text-xs text-muted-foreground truncate">{up.promotion.description}</div>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <Ticket className="w-4 h-4 mr-2 text-gold" />
+                  {selectedPromo ? (
+                    <span className="truncate">
+                      ใช้อยู่: {selectedPromo.name}
+                      {autoApplied ? " (แนะนำ)" : ""}
+                    </span>
+                  ) : (
+                    <span>
+                      เลือกส่วนลด / โปรโมชั่น
+                      {eligiblePromos.length > 0 ? ` (${eligiblePromos.length})` : ""}
+                    </span>
+                  )}
+                  <Tag className="w-4 h-4 ml-auto text-muted-foreground" />
+                </Button>
               </div>
 
               <div className="border-t border-border pt-3 space-y-2">
@@ -397,6 +385,23 @@ export function CartSheet({
         </SheetContent>
       </Sheet>
       <TopUpDialog open={topUpOpen} onOpenChange={setTopUpOpen} onDone={() => load()} />
+      <PromoPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        eligible={eligiblePromos}
+        ineligible={[]}
+        selectedId={selectedPromo?.id ?? null}
+        onSelect={(c) => {
+          setSelectedPromo(c.promotion);
+          setAutoApplied(false);
+          setPickerOpen(false);
+        }}
+        onClear={() => {
+          setSelectedPromo(null);
+          setAutoApplied(false);
+          setPickerOpen(false);
+        }}
+      />
     </>
   );
 }

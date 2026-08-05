@@ -151,12 +151,7 @@ export function SideMenu({
                       <Wallet className="w-5 h-5 text-gold" />
                     )
                   }
-                  label="TrueMoney (ซองอั่งเปา)"
-                  onClick={() => { window.dispatchEvent(new Event("open-topup")); close(); }}
-                />
-                <MenuRow
-                  icon={<Wallet className="w-5 h-5 text-gold" />}
-                  label="กรอกซอง TrueMoney Wallet"
+                  label="ส่งซอง TrueMoney Wallet"
                   onClick={() => setTopupOpen(true)}
                 />
                 <MenuRow
