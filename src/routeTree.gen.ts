@@ -20,6 +20,7 @@ import { Route as PromoTokenRouteImport } from './routes/promo.$token'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ApiPublicStoreRouteImport } from './routes/api/public/store'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
@@ -81,6 +82,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStoreRoute = ApiPublicStoreRouteImport.update({
+  id: '/api/public/store',
+  path: '/api/public/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSpinBoxRoute = ApiPublicSpinBoxRouteImport.update({
   id: '/api/public/spin-box',
   path: '/api/public/spin-box',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
+  '/api/public/store': typeof ApiPublicStoreRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
+  '/api/public/store': typeof ApiPublicStoreRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
+  '/api/public/store': typeof ApiPublicStoreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
+    | '/api/public/store'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
+    | '/api/public/store'
   id:
     | '__root__'
     | '/'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
+    | '/api/public/store'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   ApiPublicOrderMaintenanceRoute: typeof ApiPublicOrderMaintenanceRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
   ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
+  ApiPublicStoreRoute: typeof ApiPublicStoreRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -318,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/store': {
+      id: '/api/public/store'
+      path: '/api/public/store'
+      fullPath: '/api/public/store'
+      preLoaderRoute: typeof ApiPublicStoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/spin-box': {
       id: '/api/public/spin-box'
       path: '/api/public/spin-box'
@@ -373,6 +393,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOrderMaintenanceRoute: ApiPublicOrderMaintenanceRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
   ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,
+  ApiPublicStoreRoute: ApiPublicStoreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
