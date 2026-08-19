@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StoreRouteImport } from './routes/store'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as OrdersRouteImport } from './routes/orders'
@@ -20,12 +21,18 @@ import { Route as PromoTokenRouteImport } from './routes/promo.$token'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ApiPublicStoreRouteImport } from './routes/api/public/store'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
 import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
 import { Route as ApiPublicAuctionRouteImport } from './routes/api/public/auction'
 
+const StoreRoute = StoreRouteImport.update({
+  id: '/store',
+  path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -81,6 +88,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStoreRoute = ApiPublicStoreRouteImport.update({
+  id: '/api/public/store',
+  path: '/api/public/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSpinBoxRoute = ApiPublicSpinBoxRouteImport.update({
   id: '/api/public/spin-box',
   path: '/api/public/spin-box',
@@ -115,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/store': typeof StoreRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -125,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
+  '/api/public/store': typeof ApiPublicStoreRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +147,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/store': typeof StoreRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -143,6 +158,7 @@ export interface FileRoutesByTo {
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
+  '/api/public/store': typeof ApiPublicStoreRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +168,7 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/store': typeof StoreRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -162,6 +179,7 @@ export interface FileRoutesById {
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
+  '/api/public/store': typeof ApiPublicStoreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -172,6 +190,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/search'
     | '/sitemap.xml'
+    | '/store'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -182,6 +201,7 @@ export interface FileRouteTypes {
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
+    | '/api/public/store'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -190,6 +210,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/search'
     | '/sitemap.xml'
+    | '/store'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -200,6 +221,7 @@ export interface FileRouteTypes {
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
+    | '/api/public/store'
   id:
     | '__root__'
     | '/'
@@ -208,6 +230,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/search'
     | '/sitemap.xml'
+    | '/store'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -218,6 +241,7 @@ export interface FileRouteTypes {
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
+    | '/api/public/store'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -227,6 +251,7 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StoreRoute: typeof StoreRoute
   AdminLoginRoute: typeof AdminLoginRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -237,10 +262,18 @@ export interface RootRouteChildren {
   ApiPublicOrderMaintenanceRoute: typeof ApiPublicOrderMaintenanceRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
   ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
+  ApiPublicStoreRoute: typeof ApiPublicStoreRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/store': {
+      id: '/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -318,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/store': {
+      id: '/api/public/store'
+      path: '/api/public/store'
+      fullPath: '/api/public/store'
+      preLoaderRoute: typeof ApiPublicStoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/spin-box': {
       id: '/api/public/spin-box'
       path: '/api/public/spin-box'
@@ -363,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StoreRoute: StoreRoute,
   AdminLoginRoute: AdminLoginRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductIdRoute: ProductIdRoute,
@@ -373,6 +414,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOrderMaintenanceRoute: ApiPublicOrderMaintenanceRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
   ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,
+  ApiPublicStoreRoute: ApiPublicStoreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

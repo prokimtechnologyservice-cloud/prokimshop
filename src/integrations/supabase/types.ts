@@ -1154,6 +1154,122 @@ export type Database = {
         }
         Relationships: []
       }
+      store_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "store_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_orders: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          delivered_at: string | null
+          delivered_by: string | null
+          delivery_note: string | null
+          delivery_status: string
+          id: string
+          note: string | null
+          order_no: string
+          paid_at: string | null
+          paid_by: string | null
+          payment_status: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_note?: string | null
+          delivery_status?: string
+          id?: string
+          note?: string | null
+          order_no: string
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_status?: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_note?: string | null
+          delivery_status?: string
+          id?: string
+          note?: string | null
+          order_no?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_status?: string
+          total?: number
+        }
+        Relationships: []
+      }
+      store_settings: {
+        Row: {
+          access_code: string
+          confirm_code: string
+          id: boolean
+          shift_label: string | null
+          store_open: boolean
+          updated_at: string
+        }
+        Insert: {
+          access_code?: string
+          confirm_code?: string
+          id?: boolean
+          shift_label?: string | null
+          store_open?: boolean
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          confirm_code?: string
+          id?: boolean
+          shift_label?: string | null
+          store_open?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_promotions: {
         Row: {
           created_at: string

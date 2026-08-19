@@ -253,3 +253,45 @@
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
+
+/* ===== Walk-in storefront (/store): light theme, red + black, standard font ===== */
+.store-theme {
+  --background: oklch(0.985 0.003 20);
+  --foreground: oklch(0.16 0.01 25);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.01 25);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.01 25);
+
+  --primary: oklch(0.53 0.21 25);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.955 0.006 20);
+  --secondary-foreground: oklch(0.18 0.01 25);
+
+  --muted: oklch(0.96 0.005 20);
+  --muted-foreground: oklch(0.45 0.012 25);
+
+  --accent: oklch(0.93 0.04 25);
+  --accent-foreground: oklch(0.2 0.02 25);
+
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.88 0.01 20);
+  --input: oklch(0.9 0.01 20);
+  --ring: oklch(0.53 0.21 25);
+
+  --radius: 0.9rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'IBM Plex Sans Thai', sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+.store-theme .font-display,
+.store-theme h1,
+.store-theme h2,
+.store-theme h3 {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'IBM Plex Sans Thai', sans-serif;
+}
