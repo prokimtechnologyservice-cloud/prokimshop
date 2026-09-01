@@ -23,6 +23,7 @@ import { CountdownManager } from "@/components/admin/CountdownManager";
 import { TemplateCustomizer } from "@/components/admin/TemplateCustomizer";
 import { StatsDashboard } from "@/components/admin/StatsDashboard";
 import { PublicStatsManager } from "@/components/admin/PublicStatsManager";
+import { StoreManager } from "@/components/admin/StoreManager";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
