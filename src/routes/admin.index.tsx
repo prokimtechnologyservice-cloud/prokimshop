@@ -92,6 +92,7 @@ function AdminDashboard() {
           <TabsContent value="catalog"><CatalogManager /></TabsContent>
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
           <TabsContent value="tracking"><TrackingManager /></TabsContent>
+          <TabsContent value="store"><StoreManager /></TabsContent>
           <TabsContent value="orders"><OrdersManager /></TabsContent>
           <TabsContent value="chat"><ChatAdmin /></TabsContent>
           <TabsContent value="users"><UsersManager /></TabsContent>
