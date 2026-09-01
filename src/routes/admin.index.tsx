@@ -71,6 +71,7 @@ function AdminDashboard() {
             <TabsTrigger value="catalog">หมวด/สินค้า</TabsTrigger>
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
             <TabsTrigger value="tracking">ติดตามคำสั่งซื้อ</TabsTrigger>
+            <TabsTrigger value="store">หน้าร้าน</TabsTrigger>
             <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
             <TabsTrigger value="chat">แชทลูกค้า</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
