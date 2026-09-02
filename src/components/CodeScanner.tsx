@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, ScanLine } from "lucide-react";
+import { Camera, ImageIcon, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
 export type CodeScannerProps = {
@@ -34,6 +34,8 @@ export function CodeScanner({
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const doneRef = useRef(false);
 
