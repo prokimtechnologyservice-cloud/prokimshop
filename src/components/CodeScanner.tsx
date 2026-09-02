@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, ScanLine } from "lucide-react";
+import { Camera, ImageIcon, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 
 export type CodeScannerProps = {
@@ -34,6 +34,8 @@ export function CodeScanner({
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const doneRef = useRef(false);
 
@@ -135,17 +137,64 @@ export function CodeScanner({
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) handleFile(f);
+              e.target.value = "";
             }}
           />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => fileInputRef.current?.click()}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+              e.target.value = "";
+            }}
+          />
+
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) handleFile(f);
+            }}
+            onPaste={(e) => {
+              const f = e.clipboardData.files?.[0];
+              if (f) handleFile(f);
+            }}
+            className={`rounded-lg border border-dashed p-3 text-center text-xs ${
+              dragging ? "border-primary bg-primary/10" : "border-border text-muted-foreground"
+            }`}
           >
-            <ImageIcon className="h-4 w-4 mr-2" />
-            เลือกรูปภาพ
-          </Button>
+            ลากรูปภาพโค้ดมาวางที่นี่ หรือวาง (Ctrl+V) ได้เลย
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              แนบรูปภาพ
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => cameraInputRef.current?.click()}
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              ถ่ายรูป
+            </Button>
+          </div>
+
         </div>
       </DialogContent>
     </Dialog>

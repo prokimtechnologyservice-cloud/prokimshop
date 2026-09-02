@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-/** Normalize/auto-format a gift card code as the user types it. */
+/** Normalize/auto-format a gift card code as the user types it (unlimited length). */
 export function normalizeCode(input: string): string {
   let s = (input || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   // force it to start with PS
@@ -10,15 +10,16 @@ export function normalizeCode(input: string): string {
     // if user typed something not starting with PS, strip leading non-PS then prefix
     s = "PS" + s.replace(/^PS/, "");
   }
-  const rest = s.slice(2).slice(0, 16); // 4 blocks of 4
+  const rest = s.slice(2); // no length limit — codes may be any length
   const blocks: string[] = [];
   for (let i = 0; i < rest.length; i += 4) blocks.push(rest.slice(i, i + 4));
   return ["PS", ...blocks].join("-");
 }
 
 export function isCompleteCode(code: string): boolean {
-  return /^PS-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code);
+  return /^PS(-[A-Z0-9]{1,4})+$/.test(code) && code.replace(/[^A-Z0-9]/g, "").length >= 6;
 }
+
 
 export function randomCode(): string {
   let rest = "";

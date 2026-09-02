@@ -174,9 +174,16 @@ function OrdersPage() {
                     </div>
                   </div>
                   <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                    <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLOR[status]}`}>
-                      {STATUS_LABEL[status]}
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        isUnpaid && status === "pending"
+                          ? "bg-amber-500/15 text-amber-300"
+                          : STATUS_COLOR[status]
+                      }`}
+                    >
+                      {isUnpaid && status === "pending" ? "รอชำระ" : STATUS_LABEL[status]}
                     </span>
+
                     {status === "pending" && pos && (
                       <span className="text-[11px] text-muted-foreground">
                         คิวที่ <span className="text-gold font-bold">#{pos}</span>
