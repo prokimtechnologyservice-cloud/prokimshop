@@ -180,9 +180,8 @@ export default function GiftCardManager() {
             <div className="flex items-center gap-2">
               <Input
                 value={code}
-                onChange={(e) => setCode(normalizeCode(e.target.value).slice(0, 18))}
+                onChange={(e) => setCode(normalizeCode(e.target.value))}
                 className="font-mono"
-                maxLength={18}
               />
               <Button type="button" variant="outline" size="icon" onClick={() => setCode(randomCode())}>
                 <Dices className="h-4 w-4" />
