@@ -25,14 +25,18 @@ export async function addToCart(
   roblox_name?: string | null,
 ) {
   // merge only when same product AND same roblox_name
-  const q = supabase
+  // NOTE: compare roblox_name in JS — names may contain special characters that
+  // break PostgREST filter values (commas, quotes, parentheses) and would
+  // silently mismatch, causing the saved name to look "reset".
+  const wanted = roblox_name?.trim() ? roblox_name.trim() : null;
+  const { data: rows } = await supabase
     .from("cart_items")
-    .select("id, quantity")
+    .select("id, quantity, roblox_name")
     .eq("user_id", userId)
     .eq("product_id", product.id);
-  const { data: existing } = roblox_name
-    ? await q.eq("roblox_name", roblox_name).maybeSingle()
-    : await q.is("roblox_name", null).maybeSingle();
+  const existing =
+    (rows ?? []).find((r: any) => ((r.roblox_name ?? "").trim() || null) === wanted) ?? null;
+
 
   if (existing) {
     await supabase
