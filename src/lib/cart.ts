@@ -50,7 +50,7 @@ export async function addToCart(
       product_name: product.name,
       unit_price: product.price,
       quantity: 1,
-      roblox_name: roblox_name ?? null,
+      roblox_name: wanted,
     });
   }
   window.dispatchEvent(new Event("cart-change"));
