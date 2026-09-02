@@ -17,18 +17,22 @@ function getIp(request: Request): string {
 function extractVoucherCode(input: string): string | null {
   if (!input) return null;
   const trimmed = input.trim();
+  const fromText = trimmed.match(/[?&]v=([A-Za-z0-9]+)/);
+  if (fromText) return fromText[1];
   try {
     const u = new URL(trimmed);
     const v = u.searchParams.get("v");
     if (v) return v;
-    // fallback: last path segment
     const parts = u.pathname.split("/").filter(Boolean);
     if (parts.length) return parts[parts.length - 1];
   } catch {
     // not a URL, treat as raw code
   }
+  const bare = trimmed.match(/[A-Za-z0-9]{15,}/);
+  if (bare) return bare[0];
   return /^[A-Za-z0-9]+$/.test(trimmed) ? trimmed : null;
 }
+
 
 export const Route = createFileRoute("/api/public/redeem-voucher")({
   server: {
