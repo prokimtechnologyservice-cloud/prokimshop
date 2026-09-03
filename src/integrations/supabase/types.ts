@@ -86,6 +86,8 @@ export type Database = {
       cart_items: {
         Row: {
           created_at: string
+          farm_account_name: string | null
+          farm_account_password: string | null
           id: string
           product_id: string | null
           product_name: string
@@ -96,6 +98,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          farm_account_name?: string | null
+          farm_account_password?: string | null
           id?: string
           product_id?: string | null
           product_name: string
@@ -106,6 +110,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          farm_account_name?: string | null
+          farm_account_password?: string | null
           id?: string
           product_id?: string | null
           product_name?: string
@@ -511,6 +517,8 @@ export type Database = {
           acknowledged_by: string | null
           created_at: string
           delivered_payload: string | null
+          farm_account_name: string | null
+          farm_account_password: string | null
           fulfillment_status: string
           id: string
           mystery_box_id: string | null
@@ -532,6 +540,8 @@ export type Database = {
           acknowledged_by?: string | null
           created_at?: string
           delivered_payload?: string | null
+          farm_account_name?: string | null
+          farm_account_password?: string | null
           fulfillment_status?: string
           id?: string
           mystery_box_id?: string | null
@@ -553,6 +563,8 @@ export type Database = {
           acknowledged_by?: string | null
           created_at?: string
           delivered_payload?: string | null
+          farm_account_name?: string | null
+          farm_account_password?: string | null
           fulfillment_status?: string
           id?: string
           mystery_box_id?: string | null
