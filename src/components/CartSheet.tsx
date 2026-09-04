@@ -166,7 +166,10 @@ export function CartSheet({
               unit_price: i.unit_price,
               quantity: i.quantity,
               roblox_name: i.roblox_name ?? null,
+              farm_account_name: i.farm_account_name ?? null,
+              farm_account_password: i.farm_account_password ?? null,
             })),
+
           }),
         });
         const j = await res.json();
