@@ -1826,6 +1826,8 @@ function TrackingManager() {
             const profile = it.orders?.profiles;
             const img = it.product_image ?? it.products?.image_url ?? null;
             const canAdvance = status !== "delivered";
+            const isPaid = it.orders?.payment_status === "paid";
+
             return (
               <div
                 key={it.id}
@@ -1856,7 +1858,11 @@ function TrackingManager() {
                     <div className="text-[11px] mt-0.5">
                       <span className="text-muted-foreground">ลูกค้า:</span>{" "}
                       <span className="font-medium">{profile?.username ?? "—"}</span>
-                      {profile?.roblox_name && <span className="text-muted-foreground"> · {profile.roblox_name}</span>}
+                      {profile?.roblox_name && <span className="text-muted-foreground"> · บัญชี: {profile.roblox_name}</span>}
+                    </div>
+                    <div className="text-[11px]">
+                      <span className="text-muted-foreground">ชื่อที่ลูกค้ากรอก:</span>{" "}
+                      <span className="text-gold font-medium">{it.roblox_name || "—"}</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       IP: <span className="font-mono">{it.orders?.ip_address ?? "—"}</span>
@@ -1866,11 +1872,31 @@ function TrackingManager() {
                     <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[status]}`}>
                       {STATUS_LABEL[status]}
                     </span>
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full ${
+                        isPaid ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {isPaid ? "ชำระแล้ว" : "รอชำระ"}
+                    </span>
                     {queuePos && (
                       <span className="text-[11px] text-muted-foreground">คิว #{queuePos}</span>
                     )}
                   </div>
                 </div>
+
+                {(it.farm_account_name || it.products?.product_type === "farm") && (
+                  <div className="mt-2 rounded border border-destructive/40 bg-destructive/5 px-2 py-1.5 text-[11px] space-y-0.5">
+                    <div className="font-medium text-destructive">ข้อมูลบัญชีสำหรับงานฟาร์ม (ข้อมูลลับ)</div>
+                    <div>
+                      ไอดี: <span className="font-mono text-gold">{it.farm_account_name || "—"}</span>
+                    </div>
+                    <div>
+                      รหัสผ่าน: <span className="font-mono text-gold">{it.farm_account_password || "—"}</span>
+                    </div>
+                  </div>
+                )}
+
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {canAdvance && (
