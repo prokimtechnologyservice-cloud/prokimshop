@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
 import { ChatAdmin } from "@/components/admin/ChatAdmin";
-import { RETURN_LABEL, resolveReturn } from "@/lib/tracking";
+import { RETURN_LABEL, resolveReturn, markOrderPaid, cancelOrderItem } from "@/lib/tracking";
 import PromotionManager from "@/components/admin/PromotionManager";
 import GiftCardManager from "@/components/admin/GiftCardManager";
 import { ReviewModerator } from "@/components/admin/ReviewModerator";
@@ -1725,11 +1725,35 @@ function TrackingManager() {
     load();
   }
 
+  async function markPaid(it: any) {
+    if (!confirm("ยืนยันว่าลูกค้าชำระเงินรายการนี้แล้ว?")) return;
+    try {
+      await markOrderPaid(it.order_id);
+      toast.success("บันทึกการชำระเงินแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "บันทึกไม่สำเร็จ");
+    }
+  }
+
+  async function cancelUnpaid(it: any) {
+    if (!confirm(`ยกเลิกคำสั่งซื้อ "${it.product_name}" (ยังไม่ชำระเงิน — ไม่มีการคืนเงิน)?`)) return;
+    try {
+      await cancelOrderItem({ id: it.id, product_id: it.product_id, quantity: Number(it.quantity) });
+      toast.success("ยกเลิกคำสั่งแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "ยกเลิกไม่สำเร็จ");
+    }
+  }
+
   async function refundItem(it: any) {
     const amount = Number(it.unit_price) * Number(it.quantity);
     const uid = it.orders?.user_id;
     if (!uid) return toast.error("ไม่พบผู้ใช้ของรายการนี้");
+    if (it.orders?.payment_status !== "paid") return toast.error("รายการนี้ยังไม่ชำระเงิน ใช้ปุ่มยกเลิกคำสั่งแทน");
     if (!confirm(`คืนเงิน ฿${amount.toFixed(2)} เข้ายอดในเว็บของลูกค้า?`)) return;
+
     const { error } = await (supabase as any).rpc("refund_to_user", {
       _user_id: uid,
       _amount: amount,
