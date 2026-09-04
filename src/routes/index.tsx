@@ -714,6 +714,14 @@ function Index() {
         onOpenChange={(v) => !v && setPending(null)}
       />
 
+      <FarmDialog
+        open={!!farmPending}
+        productName={farmPending?.name ?? ""}
+        onConfirm={confirmFarmAdd}
+        onOpenChange={(v) => !v && setFarmPending(null)}
+      />
+
+
       <MysteryBoxDialog
         open={!!boxDetail}
         box={boxDetail ? {

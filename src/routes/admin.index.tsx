@@ -869,6 +869,8 @@ function ProductForm({
             <option value="account">ไก่ตัน (บัญชี)</option>
             <option value="mystery_box">กล่องสุ่ม</option>
             <option value="auction">ประมูลสินค้า</option>
+            <option value="farm">บริการฟาร์ม (ต้องกรอกไอดี/รหัส)</option>
+
 
           </select>
         </div>
