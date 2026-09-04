@@ -25,7 +25,10 @@ export const Route = createFileRoute("/api/public/checkout")({
               unit_price: number;
               quantity: number;
               roblox_name?: string | null;
+              farm_account_name?: string | null;
+              farm_account_password?: string | null;
             }[];
+
             pay_from_balance: boolean;
             promotion_id?: string | null;
           };
@@ -317,7 +320,12 @@ export const Route = createFileRoute("/api/public/checkout")({
                 unit_price: it.unit_price,
                 quantity: it.quantity,
                 roblox_name: it.roblox_name ?? null,
+                farm_account_name: it.farm_account_name ? String(it.farm_account_name).slice(0, 100) : null,
+                farm_account_password: it.farm_account_password
+                  ? String(it.farm_account_password).slice(0, 200)
+                  : null,
               });
+
             }
           }
 

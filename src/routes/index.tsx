@@ -18,6 +18,8 @@ import { Crown, ShoppingCart, Sparkles, TrendingUp, Flame, Star, Share2, Gavel }
 import { toast } from "sonner";
 import { useSiteContent, sc, scBool } from "@/lib/siteContent";
 import { RobloxIdDialog } from "@/components/RobloxIdDialog";
+import { FarmDialog, type FarmDetails } from "@/components/FarmDialog";
+
 import { MysteryBoxDialog } from "@/components/MysteryBoxDialog";
 import { boxColor, BORDER_CLASS, RING_CLASS } from "@/lib/mysteryBox";
 import { AuctionDialog } from "@/components/AuctionDialog";
@@ -113,6 +115,8 @@ function Index() {
   const [pinnedAnns, setPinnedAnns] = useState<Announcement[]>([]);
 
   const [pending, setPending] = useState<Product | null>(null);
+  const [farmPending, setFarmPending] = useState<Product | null>(null);
+
   const productsRef = useRef<HTMLElement | null>(null);
   const { content } = useSiteContent();
   const user = getUser();
@@ -292,6 +296,10 @@ function Index() {
       toast.success(`เพิ่ม ${p.name} ลงตะกร้า`);
       return;
     }
+    if (p.product_type === "farm") {
+      setFarmPending(p);
+      return;
+    }
     setPending(p);
   }
 
@@ -303,6 +311,21 @@ function Index() {
     toast.success(`เพิ่ม ${pending.name} ลงตะกร้า (ID: ${robloxName})`);
     setPending(null);
   }
+
+  async function confirmFarmAdd(details: FarmDetails) {
+    if (!farmPending) return;
+    const u = getUser();
+    if (!u) return;
+    await addToCart(
+      u.id,
+      { id: farmPending.id, name: farmPending.name, price: farmPending.price },
+      details.farm_account_name,
+      details,
+    );
+    toast.success(`เพิ่ม ${farmPending.name} ลงตะกร้า (งานฟาร์ม)`);
+    setFarmPending(null);
+  }
+
 
   function shareProduct(p: Product) {
     const url = `${window.location.origin}/product/${p.id}`;
@@ -690,6 +713,14 @@ function Index() {
         onConfirm={confirmAdd}
         onOpenChange={(v) => !v && setPending(null)}
       />
+
+      <FarmDialog
+        open={!!farmPending}
+        productName={farmPending?.name ?? ""}
+        onConfirm={confirmFarmAdd}
+        onOpenChange={(v) => !v && setFarmPending(null)}
+      />
+
 
       <MysteryBoxDialog
         open={!!boxDetail}

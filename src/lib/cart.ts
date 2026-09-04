@@ -7,12 +7,16 @@ export type CartItem = {
   unit_price: number;
   quantity: number;
   roblox_name?: string | null;
+  farm_account_name?: string | null;
+  farm_account_password?: string | null;
 };
 
 export async function fetchCart(userId: string): Promise<CartItem[]> {
   const { data, error } = await supabase
     .from("cart_items")
-    .select("id, product_id, product_name, unit_price, quantity, roblox_name")
+    .select(
+      "id, product_id, product_name, unit_price, quantity, roblox_name, farm_account_name, farm_account_password",
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -23,6 +27,7 @@ export async function addToCart(
   userId: string,
   product: { id: string; name: string; price: number },
   roblox_name?: string | null,
+  farm?: { farm_account_name: string; farm_account_password: string } | null,
 ) {
   // merge only when same product AND same roblox_name
   // NOTE: compare roblox_name in JS — names may contain special characters that
@@ -31,11 +36,16 @@ export async function addToCart(
   const wanted = roblox_name?.trim() ? roblox_name.trim() : null;
   const { data: rows } = await supabase
     .from("cart_items")
-    .select("id, quantity, roblox_name")
+    .select("id, quantity, roblox_name, farm_account_name")
     .eq("user_id", userId)
     .eq("product_id", product.id);
-  const existing =
-    (rows ?? []).find((r: any) => ((r.roblox_name ?? "").trim() || null) === wanted) ?? null;
+  // farm items carry per-order credentials, so they never merge
+  const existing = farm
+    ? null
+    : (rows ?? []).find(
+        (r: any) =>
+          ((r.roblox_name ?? "").trim() || null) === wanted && !r.farm_account_name,
+      ) ?? null;
 
 
   if (existing) {
@@ -51,10 +61,13 @@ export async function addToCart(
       unit_price: product.price,
       quantity: 1,
       roblox_name: wanted,
+      farm_account_name: farm?.farm_account_name ?? null,
+      farm_account_password: farm?.farm_account_password ?? null,
     });
   }
   window.dispatchEvent(new Event("cart-change"));
 }
+
 
 export async function removeCartItem(id: string) {
   await supabase.from("cart_items").delete().eq("id", id);
@@ -91,7 +104,10 @@ export async function checkoutCart(
         unit_price: i.unit_price,
         quantity: i.quantity,
         roblox_name: i.roblox_name ?? null,
+        farm_account_name: i.farm_account_name ?? null,
+        farm_account_password: i.farm_account_password ?? null,
       })),
+
     }),
   });
   const j = await res.json();

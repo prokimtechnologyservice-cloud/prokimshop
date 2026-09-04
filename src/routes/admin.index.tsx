@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { SiteEditor } from "@/components/admin/SiteEditor";
 import { OverlayManager } from "@/components/admin/OverlayManager";
 import { ChatAdmin } from "@/components/admin/ChatAdmin";
-import { RETURN_LABEL, resolveReturn } from "@/lib/tracking";
+import { RETURN_LABEL, resolveReturn, markOrderPaid, cancelOrderItem } from "@/lib/tracking";
 import PromotionManager from "@/components/admin/PromotionManager";
 import GiftCardManager from "@/components/admin/GiftCardManager";
 import { ReviewModerator } from "@/components/admin/ReviewModerator";
@@ -869,6 +869,8 @@ function ProductForm({
             <option value="account">ไก่ตัน (บัญชี)</option>
             <option value="mystery_box">กล่องสุ่ม</option>
             <option value="auction">ประมูลสินค้า</option>
+            <option value="farm">บริการฟาร์ม (ต้องกรอกไอดี/รหัส)</option>
+
 
           </select>
         </div>
@@ -1678,11 +1680,12 @@ function TrackingManager() {
     const { data } = await supabase
       .from("order_items")
       .select(
-        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
+        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, roblox_name, farm_account_name, farm_account_password, products(image_url, product_type), orders!inner(user_id, ip_address, receipt_code, payment_status, profiles(username, roblox_name))",
       )
       .order("created_at", { ascending: true })
       .limit(500);
     setItems((data as any[]) ?? []);
+
     setLoading(false);
   }
 
@@ -1722,11 +1725,35 @@ function TrackingManager() {
     load();
   }
 
+  async function markPaid(it: any) {
+    if (!confirm("ยืนยันว่าลูกค้าชำระเงินรายการนี้แล้ว?")) return;
+    try {
+      await markOrderPaid(it.order_id);
+      toast.success("บันทึกการชำระเงินแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "บันทึกไม่สำเร็จ");
+    }
+  }
+
+  async function cancelUnpaid(it: any) {
+    if (!confirm(`ยกเลิกคำสั่งซื้อ "${it.product_name}" (ยังไม่ชำระเงิน — ไม่มีการคืนเงิน)?`)) return;
+    try {
+      await cancelOrderItem({ id: it.id, product_id: it.product_id, quantity: Number(it.quantity) });
+      toast.success("ยกเลิกคำสั่งแล้ว");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "ยกเลิกไม่สำเร็จ");
+    }
+  }
+
   async function refundItem(it: any) {
     const amount = Number(it.unit_price) * Number(it.quantity);
     const uid = it.orders?.user_id;
     if (!uid) return toast.error("ไม่พบผู้ใช้ของรายการนี้");
+    if (it.orders?.payment_status !== "paid") return toast.error("รายการนี้ยังไม่ชำระเงิน ใช้ปุ่มยกเลิกคำสั่งแทน");
     if (!confirm(`คืนเงิน ฿${amount.toFixed(2)} เข้ายอดในเว็บของลูกค้า?`)) return;
+
     const { error } = await (supabase as any).rpc("refund_to_user", {
       _user_id: uid,
       _amount: amount,
@@ -1799,6 +1826,8 @@ function TrackingManager() {
             const profile = it.orders?.profiles;
             const img = it.product_image ?? it.products?.image_url ?? null;
             const canAdvance = status !== "delivered";
+            const isPaid = it.orders?.payment_status === "paid";
+
             return (
               <div
                 key={it.id}
@@ -1829,7 +1858,11 @@ function TrackingManager() {
                     <div className="text-[11px] mt-0.5">
                       <span className="text-muted-foreground">ลูกค้า:</span>{" "}
                       <span className="font-medium">{profile?.username ?? "—"}</span>
-                      {profile?.roblox_name && <span className="text-muted-foreground"> · {profile.roblox_name}</span>}
+                      {profile?.roblox_name && <span className="text-muted-foreground"> · บัญชี: {profile.roblox_name}</span>}
+                    </div>
+                    <div className="text-[11px]">
+                      <span className="text-muted-foreground">ชื่อที่ลูกค้ากรอก:</span>{" "}
+                      <span className="text-gold font-medium">{it.roblox_name || "—"}</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       IP: <span className="font-mono">{it.orders?.ip_address ?? "—"}</span>
@@ -1839,11 +1872,31 @@ function TrackingManager() {
                     <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[status]}`}>
                       {STATUS_LABEL[status]}
                     </span>
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full ${
+                        isPaid ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {isPaid ? "ชำระแล้ว" : "รอชำระ"}
+                    </span>
                     {queuePos && (
                       <span className="text-[11px] text-muted-foreground">คิว #{queuePos}</span>
                     )}
                   </div>
                 </div>
+
+                {(it.farm_account_name || it.products?.product_type === "farm") && (
+                  <div className="mt-2 rounded border border-destructive/40 bg-destructive/5 px-2 py-1.5 text-[11px] space-y-0.5">
+                    <div className="font-medium text-destructive">ข้อมูลบัญชีสำหรับงานฟาร์ม (ข้อมูลลับ)</div>
+                    <div>
+                      ไอดี: <span className="font-mono text-gold">{it.farm_account_name || "—"}</span>
+                    </div>
+                    <div>
+                      รหัสผ่าน: <span className="font-mono text-gold">{it.farm_account_password || "—"}</span>
+                    </div>
+                  </div>
+                )}
+
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {canAdvance && (
