@@ -1680,11 +1680,12 @@ function TrackingManager() {
     const { data } = await supabase
       .from("order_items")
       .select(
-        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, products(image_url), orders!inner(user_id, ip_address, receipt_code, profiles(username, roblox_name))",
+        "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, roblox_name, farm_account_name, farm_account_password, products(image_url, product_type), orders!inner(user_id, ip_address, receipt_code, payment_status, profiles(username, roblox_name))",
       )
       .order("created_at", { ascending: true })
       .limit(500);
     setItems((data as any[]) ?? []);
+
     setLoading(false);
   }
 
