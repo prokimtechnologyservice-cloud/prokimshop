@@ -1,4 +1,0 @@
-- [ ] Complete unpaid/paid customer and admin tracking actions
-- [ ] Add farming product type and secure farm details flow
-- [ ] Persist farm details in cart/order records and show to admin
-- [ ] Validate top-up, typecheck, and smoke-test requested flows
