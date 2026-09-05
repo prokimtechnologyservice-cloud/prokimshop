@@ -12,6 +12,8 @@ import {
   RETURN_LABEL,
   requestReturn,
   requestRefund,
+  cancelOrderItem,
+
   unpaidDeadline,
   type TrackingItem,
 } from "@/lib/tracking";
@@ -281,6 +283,17 @@ function OrdersPage() {
                         variant="ghost"
                         className="text-[11px] h-7 text-muted-foreground hover:text-destructive"
                         onClick={async () => {
+                          if (isUnpaid) {
+                            if (!confirm("ยกเลิกคำสั่งซื้อรายการนี้?")) return;
+                            try {
+                              await cancelOrderItem({ id: it.id, product_id: it.product_id ?? null, quantity: it.quantity });
+                              toast.success("ยกเลิกคำสั่งแล้ว");
+                              load();
+                            } catch (e: any) {
+                              toast.error(e.message ?? "ยกเลิกไม่สำเร็จ");
+                            }
+                            return;
+                          }
                           try {
                             await requestRefund(it.id);
                             toast.success("ส่งคำขอคืนเงินแล้ว");
@@ -290,9 +303,10 @@ function OrdersPage() {
                           }
                         }}
                       >
-                        <BadgeDollarSign className="w-3 h-3" /> ขอคืนเงิน
+                        <BadgeDollarSign className="w-3 h-3" /> {isUnpaid ? "ยกเลิกคำสั่ง" : "ขอคืนเงิน"}
                       </Button>
                     )}
+
                     {status === "delivered" && (!it.return_status || it.return_status === "none") && (
                       <Button
                         size="sm"
