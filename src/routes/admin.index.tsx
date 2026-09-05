@@ -1923,9 +1923,22 @@ function TrackingManager() {
                       </Button>
                     </>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => refundItem(it)}>
-                    คืนเงินเข้ายอดลูกค้า
-                  </Button>
+                  {!isPaid && (
+                    <>
+                      <Button size="sm" variant="luxe" onClick={() => markPaid(it)}>
+                        ชำระเงินแล้ว
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => cancelUnpaid(it)}>
+                        ยกเลิกคำสั่ง
+                      </Button>
+                    </>
+                  )}
+                  {isPaid && (
+                    <Button size="sm" variant="outline" onClick={() => refundItem(it)}>
+                      คืนเงินเข้ายอดลูกค้า
+                    </Button>
+                  )}
+
                   <Button
                     size="sm"
                     variant="ghost"
