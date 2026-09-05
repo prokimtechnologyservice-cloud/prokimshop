@@ -286,7 +286,7 @@ function OrdersPage() {
                           if (isUnpaid) {
                             if (!confirm("ยกเลิกคำสั่งซื้อรายการนี้?")) return;
                             try {
-                              await cancelOrderItem(it.id);
+                              await cancelOrderItem({ id: it.id, product_id: it.product_id ?? null, quantity: it.quantity });
                               toast.success("ยกเลิกคำสั่งแล้ว");
                               load();
                             } catch (e: any) {
