@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { callAuth } from "@/lib/db";
 import { Users, Wallet, ShoppingBag, Signal } from "lucide-react";
 
 type Stats = {
@@ -10,31 +11,7 @@ type Stats = {
 };
 
 async function computeLiveStats(resetAt: string | null): Promise<Stats> {
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-
-  const onlineQ = (supabase as any)
-    .from("visits")
-    .select("session_key")
-    .gte("created_at", fiveMinAgo);
-
-  let usersQ = (supabase as any).from("profiles").select("id", { count: "exact", head: true });
-  let topupQ = (supabase as any).from("wallet_transactions").select("amount").eq("type", "topup");
-  let soldQ = (supabase as any).from("order_items").select("quantity");
-
-  if (resetAt) {
-    usersQ = usersQ.gte("created_at", resetAt);
-    topupQ = topupQ.gte("created_at", resetAt);
-    soldQ = soldQ.gte("created_at", resetAt);
-  }
-
-  const [{ data: visits }, { count: userCount }, { data: topups }, { data: items }] =
-    await Promise.all([onlineQ, usersQ, topupQ, soldQ]);
-
-  const online = new Set(((visits as any[]) ?? []).map((v) => v.session_key)).size;
-  const topup = ((topups as any[]) ?? []).reduce((a, b) => a + Number(b.amount ?? 0), 0);
-  const sold = ((items as any[]) ?? []).reduce((a, b) => a + Number(b.quantity ?? 0), 0);
-
-  return { online, users: userCount ?? 0, topup, sold };
+  return callAuth<Stats>("public-stats", { reset_at: resetAt });
 }
 
 export function HomeStats() {

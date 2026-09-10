@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ShoppingBag, Wallet, Crown, Menu, Search } from "lucide-react";
 import { getUser, refreshUser, setUser, type UserSession } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { userDb } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "./AuthDialog";
 import { CartSheet } from "./CartSheet";
@@ -43,7 +44,7 @@ export function SiteHeader({ onSelectCategory }: { onSelectCategory?: (id: strin
     async function loadCount() {
       const u = getUser();
       if (!u) return setCartCount(0);
-      const { count } = await supabase
+      const { count } = await userDb
         .from("cart_items")
         .select("*", { count: "exact", head: true })
         .eq("user_id", u.id);

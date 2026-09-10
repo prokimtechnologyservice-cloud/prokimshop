@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { userDb as supabase } from "@/lib/db";
 
 export type CartItem = {
   id: string;

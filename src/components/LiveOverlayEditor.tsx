@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { staffDb as supabase } from "@/lib/db";
 import { getStaff } from "@/lib/auth";
 import { pageKeyFromPath, type Overlay } from "@/lib/overlays";
 import { Button } from "@/components/ui/button";

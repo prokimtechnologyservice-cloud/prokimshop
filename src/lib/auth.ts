@@ -1,5 +1,12 @@
-// Lightweight client-side auth (per spec — own user/staff system, not Supabase Auth)
-import { supabase } from "@/integrations/supabase/client";
+// User / staff auth. Credentials are verified on the server; the browser only
+// keeps an opaque session token that the data gateway validates on every call.
+import {
+  callAuth,
+  getStaffToken,
+  getUserToken,
+  setStaffToken,
+  setUserToken,
+} from "@/lib/db";
 
 export type UserSession = {
   id: string;
@@ -19,94 +26,79 @@ const USER_KEY = "prokim_user";
 const STAFF_KEY = "prokim_staff";
 const STAFF_VERIFIED_KEY = "prokim_staff_verified";
 
-// --- simple hash (not for real security; per spec) ---
-async function hashPwd(pwd: string): Promise<string> {
-  const enc = new TextEncoder().encode(pwd + "_prokim_salt");
-  const buf = await crypto.subtle.digest("SHA-256", enc);
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 // ===== USER =====
 export function getUser(): UserSession | null {
   if (typeof window === "undefined") return null;
+  if (!getUserToken()) return null;
   const raw = localStorage.getItem(USER_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 export function setUser(u: UserSession | null) {
-  if (!u) localStorage.removeItem(USER_KEY);
-  else localStorage.setItem(USER_KEY, JSON.stringify(u));
+  if (typeof window === "undefined") return;
+  if (!u) {
+    localStorage.removeItem(USER_KEY);
+    setUserToken(null);
+  } else {
+    localStorage.setItem(USER_KEY, JSON.stringify(u));
+  }
   window.dispatchEvent(new Event("auth-change"));
 }
 
 export async function signupUser(username: string, password: string, roblox_name: string) {
   setStaff(null);
-  const password_hash = await hashPwd(password);
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .maybeSingle();
-  if (existing) throw new Error("ชื่อผู้ใช้นี้ถูกใช้แล้ว");
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({ username, password_hash, roblox_name })
-    .select("id, username, roblox_name, balance")
-    .single();
-  if (error) throw error;
-  setUser({
-    id: data.id,
-    username: data.username,
-    roblox_name: data.roblox_name,
-    balance: Number(data.balance),
+  const { token, user } = await callAuth<{ token: string; user: UserSession }>("signup", {
+    username,
+    password,
+    roblox_name,
   });
-  return data;
+  setUserToken(token);
+  setUser(user);
+  return user;
 }
 
 export async function loginUser(username: string, password: string) {
   setStaff(null);
-  const password_hash = await hashPwd(password);
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username, roblox_name, balance, password_hash")
-    .eq("username", username)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data || data.password_hash !== password_hash) throw new Error("ชื่อหรือรหัสไม่ถูกต้อง");
-  setUser({
-    id: data.id,
-    username: data.username,
-    roblox_name: data.roblox_name,
-    balance: Number(data.balance),
+  const { token, user } = await callAuth<{ token: string; user: UserSession }>("login", {
+    username,
+    password,
   });
+  setUserToken(token);
+  setUser(user);
 }
 
 export async function refreshUser() {
-  const u = getUser();
-  if (!u) return;
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, username, roblox_name, balance")
-    .eq("id", u.id)
-    .maybeSingle();
-  if (data) setUser({ ...data, balance: Number(data.balance) });
+  const token = getUserToken();
+  if (!token) return;
+  try {
+    const me = await callAuth<UserSession>("me", { token });
+    setUser(me);
+  } catch {
+    setUser(null);
+  }
+}
+
+export async function logoutUser() {
+  const token = getUserToken();
+  if (token) await callAuth("logout", { token }).catch(() => null);
+  setUser(null);
 }
 
 // ===== STAFF =====
 export function getStaff(): StaffSession | null {
   if (typeof window === "undefined") return null;
   localStorage.removeItem(STAFF_KEY);
+  if (!getStaffToken()) return null;
   if (sessionStorage.getItem(STAFF_VERIFIED_KEY) !== "1") return null;
   const raw = sessionStorage.getItem(STAFF_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 export function setStaff(s: StaffSession | null) {
+  if (typeof window === "undefined") return;
   localStorage.removeItem(STAFF_KEY);
   if (!s) {
     sessionStorage.removeItem(STAFF_KEY);
     sessionStorage.removeItem(STAFF_VERIFIED_KEY);
+    setStaffToken(null);
   } else {
     sessionStorage.setItem(STAFF_KEY, JSON.stringify(s));
     sessionStorage.setItem(STAFF_VERIFIED_KEY, "1");
@@ -119,18 +111,17 @@ export const STAFF_GATE_USERNAME = "Prokim";
 export const STAFF_GATE_PASSWORD = "36407";
 
 export async function loginStaff(name: string, staff_code: string, password: string) {
-  const { data, error } = await supabase
-    .from("staff")
-    .select("id, name, staff_code, password, role")
-    .eq("name", name)
-    .eq("staff_code", staff_code)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data || data.password !== password) throw new Error("ข้อมูลพนักงานไม่ถูกต้อง");
-  setStaff({
-    id: data.id,
-    name: data.name,
-    staff_code: data.staff_code,
-    role: data.role as "admin" | "manager",
+  const { token, staff } = await callAuth<{ token: string; staff: StaffSession }>("staff-login", {
+    name,
+    staff_code,
+    password,
   });
+  setStaffToken(token);
+  setStaff(staff);
+}
+
+export async function logoutStaff() {
+  const token = getStaffToken();
+  if (token) await callAuth("logout", { token }).catch(() => null);
+  setStaff(null);
 }

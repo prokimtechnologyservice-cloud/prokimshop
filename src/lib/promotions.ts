@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { staffDb, userDb } from "@/lib/db";
 
 export type Promotion = {
   id: string;
@@ -58,19 +59,19 @@ export async function listPromotions(kind?: "discount" | "promotion"): Promise<P
 }
 
 export async function createPromotion(p: Partial<Promotion>) {
-  const { data, error } = await (supabase as any).from("promotions").insert(p).select("*").single();
+  const { data, error } = await staffDb.from("promotions").insert(p).select("*").single();
   if (error) throw error;
   return data as Promotion;
 }
 
 export async function updatePromotion(id: string, p: Partial<Promotion>) {
-  const { data, error } = await (supabase as any).from("promotions").update(p).eq("id", id).select("*").single();
+  const { data, error } = await staffDb.from("promotions").update(p).eq("id", id).select("*").single();
   if (error) throw error;
   return data as Promotion;
 }
 
 export async function deletePromotion(id: string) {
-  const { error } = await (supabase as any).from("promotions").delete().eq("id", id);
+  const { error } = await staffDb.from("promotions").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -84,14 +85,14 @@ export async function grantPromotion(promotionId: string, userIds: string[], val
     user_id: uid,
     expires_at: expiresAt,
   }));
-  const { error } = await (supabase as any)
+  const { error } = await staffDb
     .from("user_promotions")
     .upsert(rows, { onConflict: "promotion_id,user_id", ignoreDuplicates: true });
   if (error) throw error;
 }
 
 async function getPromotionValidDays(promotionId: string): Promise<number | null> {
-  const { data } = await (supabase as any)
+  const { data } = await staffDb
     .from("promotions")
     .select("valid_days")
     .eq("id", promotionId)
@@ -106,14 +107,14 @@ export async function grantPromotionToAll(promotionId: string) {
 }
 
 export async function audienceAllUsers(): Promise<string[]> {
-  const { data, error } = await (supabase as any).from("profiles").select("id");
+  const { data, error } = await staffDb.from("profiles").select("id");
   if (error) throw error;
   return (data ?? []).map((d: any) => d.id);
 }
 
 export async function audienceNewUsers(): Promise<string[]> {
   const since = new Date(Date.now() - 7 * 86400000).toISOString();
-  const { data, error } = await (supabase as any)
+  const { data, error } = await staffDb
     .from("profiles")
     .select("id, created_at")
     .gte("created_at", since);
@@ -122,7 +123,7 @@ export async function audienceNewUsers(): Promise<string[]> {
 }
 
 export async function audienceTopupOver(minTotal: number): Promise<string[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await staffDb
     .from("wallet_transactions")
     .select("user_id, amount, type")
     .eq("type", "topup");
@@ -137,7 +138,7 @@ export async function audienceTopupOver(minTotal: number): Promise<string[]> {
 }
 
 export async function audienceSpendOver(minTotal: number): Promise<string[]> {
-  const { data, error } = await (supabase as any).from("orders").select("user_id, total");
+  const { data, error } = await staffDb.from("orders").select("user_id, total");
   if (error) throw error;
   const sums: Record<string, number> = {};
   (data ?? []).forEach((r: any) => {
@@ -150,7 +151,7 @@ export async function audienceSpendOver(minTotal: number): Promise<string[]> {
 }
 
 export async function audienceOrderCountOver(minCount: number): Promise<string[]> {
-  const { data, error } = await (supabase as any).from("orders").select("user_id");
+  const { data, error } = await staffDb.from("orders").select("user_id");
   if (error) throw error;
   const counts: Record<string, number> = {};
   (data ?? []).forEach((r: any) => {
@@ -164,7 +165,7 @@ export async function audienceOrderCountOver(minCount: number): Promise<string[]
 
 export async function fetchMyPromotions(userId: string): Promise<(UserPromotion & { promotion: Promotion })[]> {
   const nowIso = new Date().toISOString();
-  const { data, error } = await (supabase as any)
+  const { data, error } = await userDb
     .from("user_promotions")
     .select("*, promotion:promotions(*)")
     .eq("user_id", userId)
@@ -192,7 +193,7 @@ function randomToken(len = 12): string {
 
 export async function createPromotionLink(promotionId: string): Promise<string> {
   const token = randomToken();
-  const { error } = await (supabase as any)
+  const { error } = await staffDb
     .from("promotions")
     .update({ link_enabled: true, link_token: token })
     .eq("id", promotionId);
@@ -213,7 +214,7 @@ export async function getPromotionByToken(token: string): Promise<Promotion | nu
 }
 
 export async function claimPromotionLink(promotionId: string, userId: string, validDays?: number | null) {
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await userDb
     .from("user_promotions")
     .select("id")
     .eq("promotion_id", promotionId)
@@ -223,7 +224,7 @@ export async function claimPromotionLink(promotionId: string, userId: string, va
   const expiresAt = validDays
     ? new Date(Date.now() + validDays * 86400000).toISOString()
     : null;
-  const { error } = await (supabase as any)
+  const { error } = await userDb
     .from("user_promotions")
     .insert({ promotion_id: promotionId, user_id: userId, expires_at: expiresAt });
   if (error) throw error;
@@ -243,7 +244,7 @@ async function categoryMatchesAny(
   for (let i = 0; i < 10; i++) {
     if (seen.has(current)) break;
     seen.add(current);
-    const { data } = await (supabase as any)
+    const { data } = await userDb
       .from("categories")
       .select("parent_id")
       .eq("id", current)
@@ -364,7 +365,7 @@ export async function validatePromoCode(
   if (promo.ends_at && new Date(promo.ends_at) < now) return { error: "โค้ดนี้หมดอายุแล้ว" };
 
   if (promo.grant_rule !== "all") {
-    const { data: grant } = await (supabase as any)
+    const { data: grant } = await userDb
       .from("user_promotions")
       .select("*")
       .eq("promotion_id", promo.id)

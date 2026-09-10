@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -91,13 +90,10 @@ function OrdersPage() {
     } else {
       load();
     }
-    const ch = supabase
-      .channel("orders-tracking")
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => load())
-      .subscribe();
+    const poll = setInterval(() => load(), 8000);
     const tick = setInterval(() => forceTick((n) => n + 1), 1000);
     return () => {
-      supabase.removeChannel(ch);
+      clearInterval(poll);
       clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -20,7 +20,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { MessageCircle, Send, Paperclip, Loader2, MoreVertical, Megaphone, FileText, RotateCcw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { getUser } from "@/lib/auth";
 import {
   ensureUserThread,
@@ -116,44 +115,31 @@ export function ChatWidget() {
     };
   }, [user?.id]);
 
-  // realtime subscribe to this thread's new/updated messages
+  // poll this thread for new/updated messages (private tables are server-gated)
   useEffect(() => {
     if (!thread) return;
-    const ch = supabase
-      .channel(`chat-user-${thread.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `thread_id=eq.${thread.id}` },
-        (payload: any) => {
-          const msg = payload.new as ChatMessage;
-          setMessages((prev) => (prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]));
-          if (msg.sender === "admin") {
-            if (open) {
-              markRead(thread.id, "user");
-            } else {
-              setUnread((u) => u + 1);
-            }
+    let alive = true;
+    const poll = setInterval(async () => {
+      try {
+        const rows = await fetchMessages(thread.id, "user");
+        if (!alive) return;
+        setMessages((prev) => {
+          const incomingAdmin = rows.filter(
+            (m) => m.sender === "admin" && !prev.some((x) => x.id === m.id),
+          ).length;
+          if (incomingAdmin > 0) {
+            if (open) markRead(thread.id, "user");
+            else setUnread((u) => u + incomingAdmin);
           }
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "chat_messages", filter: `thread_id=eq.${thread.id}` },
-        (payload: any) => {
-          const msg = payload.new as ChatMessage;
-          setMessages((prev) => prev.map((x) => (x.id === msg.id ? msg : x)));
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "chat_messages", filter: `thread_id=eq.${thread.id}` },
-        (payload: any) => {
-          setMessages((prev) => prev.filter((x) => x.id !== payload.old.id));
-        },
-      )
-      .subscribe();
+          return rows;
+        });
+      } catch {
+        /* ignore */
+      }
+    }, 5000);
     return () => {
-      supabase.removeChannel(ch);
+      alive = false;
+      clearInterval(poll);
     };
   }, [thread?.id, open]);
 

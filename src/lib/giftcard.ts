@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { staffDb, userDb } from "@/lib/db";
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -38,10 +38,7 @@ export type RedeemResult = {
 };
 
 export async function redeemGiftCard(code: string, userId: string): Promise<RedeemResult> {
-  const { data, error } = await (supabase as any).rpc("redeem_gift_card", {
-    _code: code,
-    _user_id: userId,
-  });
+  const { data, error } = await userDb.rpc("redeem_gift_card", { _code: code });
   if (error) throw new Error(error.message || "ไม่สามารถใช้บัตรของขวัญได้");
   return data as RedeemResult;
 }
@@ -62,7 +59,7 @@ export type GiftCard = {
 };
 
 export async function listGiftCards(): Promise<GiftCard[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await staffDb
     .from("gift_cards")
     .select("*")
     .order("created_at", { ascending: false });
@@ -71,7 +68,7 @@ export async function listGiftCards(): Promise<GiftCard[]> {
 }
 
 export async function createGiftCard(payload: Partial<GiftCard>): Promise<GiftCard> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await staffDb
     .from("gift_cards")
     .insert(payload)
     .select("*")
@@ -81,11 +78,11 @@ export async function createGiftCard(payload: Partial<GiftCard>): Promise<GiftCa
 }
 
 export async function deleteGiftCard(id: string): Promise<void> {
-  const { error } = await (supabase as any).from("gift_cards").delete().eq("id", id);
+  const { error } = await staffDb.from("gift_cards").delete().eq("id", id);
   if (error) throw error;
 }
 
 export async function setGiftCardActive(id: string, active: boolean): Promise<void> {
-  const { error } = await (supabase as any).from("gift_cards").update({ active }).eq("id", id);
+  const { error } = await staffDb.from("gift_cards").update({ active }).eq("id", id);
   if (error) throw error;
 }
