@@ -126,6 +126,7 @@ export const Route = createFileRoute("/api/public/auction")({
                 roblox_name: b.roblox_name ?? null,
                 created_at: b.created_at,
                 username: b.profiles?.username ?? null,
+                mine: !!body.user_id && b.user_id === body.user_id,
               };
             });
             return Response.json({ bids });
