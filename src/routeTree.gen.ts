@@ -9,48 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StoreRouteImport } from './routes/store'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as OrdersRouteImport } from './routes/orders'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as GivecardRouteImport } from './routes/givecard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GivecardRouteImport } from './routes/givecard'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StoreRouteImport } from './routes/store'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as PromoTokenRouteImport } from './routes/promo.$token'
-import { Route as ProductIdRouteImport } from './routes/product.$id'
-import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as ApiPublicStoreRouteImport } from './routes/api/public/store'
-import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
-import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
-import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
-import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
+import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as PromoTokenRouteImport } from './routes/promo.$token'
 import { Route as ApiPublicAuctionRouteImport } from './routes/api/public/auction'
+import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
+import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
+import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
+import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
+import { Route as ApiPublicStoreRouteImport } from './routes/api/public/store'
 
-const StoreRoute = StoreRouteImport.update({
-  id: '/store',
-  path: '/store',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersRoute = OrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GivecardRoute = GivecardRouteImport.update({
@@ -58,9 +38,29 @@ const GivecardRoute = GivecardRouteImport.update({
   path: '/givecard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreRoute = StoreRouteImport.update({
+  id: '/store',
+  path: '/store',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -68,14 +68,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PromoTokenRoute = PromoTokenRouteImport.update({
-  id: '/promo/$token',
-  path: '/promo/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductIdRoute = ProductIdRouteImport.update({
-  id: '/product/$id',
-  path: '/product/$id',
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
@@ -83,24 +78,24 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/admin/login',
-  path: '/admin/login',
+const ProductIdRoute = ProductIdRouteImport.update({
+  id: '/product/$id',
+  path: '/product/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicStoreRoute = ApiPublicStoreRouteImport.update({
-  id: '/api/public/store',
-  path: '/api/public/store',
+const PromoTokenRoute = PromoTokenRouteImport.update({
+  id: '/promo/$token',
+  path: '/promo/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicSpinBoxRoute = ApiPublicSpinBoxRouteImport.update({
-  id: '/api/public/spin-box',
-  path: '/api/public/spin-box',
+const ApiPublicAuctionRoute = ApiPublicAuctionRouteImport.update({
+  id: '/api/public/auction',
+  path: '/api/public/auction',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicRedeemVoucherRoute = ApiPublicRedeemVoucherRouteImport.update({
-  id: '/api/public/redeem-voucher',
-  path: '/api/public/redeem-voucher',
+const ApiPublicCheckoutRoute = ApiPublicCheckoutRouteImport.update({
+  id: '/api/public/checkout',
+  path: '/api/public/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicOrderMaintenanceRoute =
@@ -109,14 +104,19 @@ const ApiPublicOrderMaintenanceRoute =
     path: '/api/public/order-maintenance',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCheckoutRoute = ApiPublicCheckoutRouteImport.update({
-  id: '/api/public/checkout',
-  path: '/api/public/checkout',
+const ApiPublicRedeemVoucherRoute = ApiPublicRedeemVoucherRouteImport.update({
+  id: '/api/public/redeem-voucher',
+  path: '/api/public/redeem-voucher',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAuctionRoute = ApiPublicAuctionRouteImport.update({
-  id: '/api/public/auction',
-  path: '/api/public/auction',
+const ApiPublicSpinBoxRoute = ApiPublicSpinBoxRouteImport.update({
+  id: '/api/public/spin-box',
+  path: '/api/public/spin-box',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicStoreRoute = ApiPublicStoreRouteImport.update({
+  id: '/api/public/store',
+  path: '/api/public/store',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -267,39 +267,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/store': {
-      id: '/store'
-      path: '/store'
-      fullPath: '/store'
-      preLoaderRoute: typeof StoreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orders': {
-      id: '/orders'
-      path: '/orders'
-      fullPath: '/orders'
-      preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/givecard': {
@@ -309,11 +281,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GivecardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store': {
+      id: '/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof StoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -323,18 +323,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/promo/$token': {
-      id: '/promo/$token'
-      path: '/promo/$token'
-      fullPath: '/promo/$token'
-      preLoaderRoute: typeof PromoTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/product/$id': {
-      id: '/product/$id'
-      path: '/product/$id'
-      fullPath: '/product/$id'
-      preLoaderRoute: typeof ProductIdRouteImport
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/$slug': {
@@ -344,39 +337,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/admin/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
+    '/product/$id': {
+      id: '/product/$id'
+      path: '/product/$id'
+      fullPath: '/product/$id'
+      preLoaderRoute: typeof ProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/store': {
-      id: '/api/public/store'
-      path: '/api/public/store'
-      fullPath: '/api/public/store'
-      preLoaderRoute: typeof ApiPublicStoreRouteImport
+    '/promo/$token': {
+      id: '/promo/$token'
+      path: '/promo/$token'
+      fullPath: '/promo/$token'
+      preLoaderRoute: typeof PromoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/spin-box': {
-      id: '/api/public/spin-box'
-      path: '/api/public/spin-box'
-      fullPath: '/api/public/spin-box'
-      preLoaderRoute: typeof ApiPublicSpinBoxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/redeem-voucher': {
-      id: '/api/public/redeem-voucher'
-      path: '/api/public/redeem-voucher'
-      fullPath: '/api/public/redeem-voucher'
-      preLoaderRoute: typeof ApiPublicRedeemVoucherRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/order-maintenance': {
-      id: '/api/public/order-maintenance'
-      path: '/api/public/order-maintenance'
-      fullPath: '/api/public/order-maintenance'
-      preLoaderRoute: typeof ApiPublicOrderMaintenanceRouteImport
+    '/api/public/auction': {
+      id: '/api/public/auction'
+      path: '/api/public/auction'
+      fullPath: '/api/public/auction'
+      preLoaderRoute: typeof ApiPublicAuctionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/checkout': {
@@ -386,11 +365,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/auction': {
-      id: '/api/public/auction'
-      path: '/api/public/auction'
-      fullPath: '/api/public/auction'
-      preLoaderRoute: typeof ApiPublicAuctionRouteImport
+    '/api/public/order-maintenance': {
+      id: '/api/public/order-maintenance'
+      path: '/api/public/order-maintenance'
+      fullPath: '/api/public/order-maintenance'
+      preLoaderRoute: typeof ApiPublicOrderMaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/redeem-voucher': {
+      id: '/api/public/redeem-voucher'
+      path: '/api/public/redeem-voucher'
+      fullPath: '/api/public/redeem-voucher'
+      preLoaderRoute: typeof ApiPublicRedeemVoucherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/spin-box': {
+      id: '/api/public/spin-box'
+      path: '/api/public/spin-box'
+      fullPath: '/api/public/spin-box'
+      preLoaderRoute: typeof ApiPublicSpinBoxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/store': {
+      id: '/api/public/store'
+      path: '/api/public/store'
+      fullPath: '/api/public/store'
+      preLoaderRoute: typeof ApiPublicStoreRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
