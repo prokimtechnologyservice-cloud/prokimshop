@@ -107,6 +107,30 @@ export const Route = createFileRoute("/api/public/auction")({
           const db = admin();
           const ip = getIp(request);
 
+          // ==== public leaderboard (no raw user ids leave the server) ====
+          if (body.action === "bids") {
+            if (!body.product_id) return Response.json({ error: "invalid" }, { status: 400 });
+            const { data } = await db
+              .from("auction_bids")
+              .select("id, user_id, amount, roblox_name, created_at, profiles(username)")
+              .eq("product_id", body.product_id)
+              .order("amount", { ascending: false })
+              .limit(100);
+            const keys = new Map<string, string>();
+            const bids = ((data as any[]) ?? []).map((b) => {
+              if (!keys.has(b.user_id)) keys.set(b.user_id, `b${keys.size + 1}`);
+              return {
+                id: b.id,
+                bidder: keys.get(b.user_id),
+                amount: Number(b.amount),
+                roblox_name: b.roblox_name ?? null,
+                created_at: b.created_at,
+                username: b.profiles?.username ?? null,
+              };
+            });
+            return Response.json({ bids });
+          }
+
           if (body.action === "settle") {
             const { data: due } = await db
               .from("products")
