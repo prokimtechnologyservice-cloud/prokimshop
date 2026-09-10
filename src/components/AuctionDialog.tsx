@@ -58,7 +58,7 @@ export function AuctionDialog({
 
   async function load() {
     if (!product) return;
-    const data = await fetchAuction(product);
+    const data = await fetchAuction(product, user?.id ?? null);
     setInfo(data);
     setBid(String(data.minNext));
   }
@@ -123,7 +123,7 @@ export function AuctionDialog({
   }
 
   const balance = Number(user?.balance ?? 0);
-  const myTop = info?.bids.find((b) => b.user_id === user?.id);
+  const myTop = info?.bids.find((b) => b.mine);
   const leading = info?.bids[0];
 
   return (
@@ -182,7 +182,7 @@ export function AuctionDialog({
             {leading && (
               <div className="text-xs text-muted-foreground min-w-0 truncate px-1">
                 ผู้นำขณะนี้: <span className="text-foreground font-medium">{leading.username ?? "ผู้ใช้"}</span>
-                {myTop && leading.user_id === user?.id && (
+                {myTop && leading.mine && (
                   <span className="text-emerald-400"> (คุณกำลังนำ)</span>
                 )}
               </div>
@@ -247,7 +247,7 @@ export function AuctionDialog({
                       <span className="truncate mr-2">
                         <span className="opacity-50 inline-block w-4">{i + 1}.</span> 
                         <span className="font-medium">{b.username ?? "ผู้ใช้"}</span>
-                        {b.user_id === user?.id && <span className="text-gold ml-1">(คุณ)</span>}
+                        {b.mine && <span className="text-gold ml-1">(คุณ)</span>}
                       </span>
                       <span className="text-gold font-bold shrink-0">฿{b.amount.toFixed(2)}</span>
                     </div>
