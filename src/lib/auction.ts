@@ -42,15 +42,15 @@ export async function fetchAuction(
 }
 
 /**
- * Deduplicate bids by user_id, keeping the highest amount for each user.
+ * Deduplicate bids by bidder, keeping the highest amount for each user.
  * Returns sorted by amount descending.
  */
 export function topBidsByUser(bids: AuctionBid[]): AuctionBid[] {
   const map = new Map<string, AuctionBid>();
   for (const b of bids) {
-    const existing = map.get(b.user_id);
+    const existing = map.get(b.bidder);
     if (!existing || b.amount > existing.amount) {
-      map.set(b.user_id, b);
+      map.set(b.bidder, b);
     }
   }
   return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
