@@ -98,7 +98,7 @@ export const Route = createFileRoute("/api/public/auction")({
       POST: async ({ request }) => {
         try {
           const body = (await request.json()) as {
-            action: "bid" | "settle";
+            action: "bid" | "settle" | "bids";
             product_id?: string;
             user_id?: string;
             amount?: number;
