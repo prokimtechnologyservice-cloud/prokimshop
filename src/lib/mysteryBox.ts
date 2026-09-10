@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { staffDb } from "@/lib/db";
 
 export type BoxColor =
   | "default"
@@ -238,7 +239,7 @@ export async function spinBox(
 }
 
 export async function toggleProductMysteryOnly(productId: string, mysteryOnly: boolean) {
-  const { error } = await supabase
+  const { error } = await staffDb
     .from("products")
     .update({ mystery_only: mysteryOnly })
     .eq("id", productId);
@@ -252,7 +253,7 @@ export async function createExclusiveProduct(data: {
   image_url: string | null;
   stock: number | null;
 }) {
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await staffDb
     .from("products")
     .insert({
       ...data,

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { staffDb, userDb } from "@/lib/db";
 
 export type ProductReview = {
   id: string;
@@ -43,7 +44,7 @@ export async function getReviewStats(productId: string): Promise<{ average: numb
 }
 
 export async function getMyReview(productId: string, userId: string): Promise<ProductReview | null> {
-  const { data, error } = await sb
+  const { data, error } = await userDb
     .from("product_reviews")
     .select("*")
     .eq("product_id", productId)
@@ -60,7 +61,7 @@ export async function upsertMyReview(params: {
   comment: string;
 }): Promise<ProductReview> {
   const { productId, userId, rating, comment } = params;
-  const { data, error } = await sb
+  const { data, error } = await userDb
     .from("product_reviews")
     .upsert(
       {
@@ -79,13 +80,13 @@ export async function upsertMyReview(params: {
 }
 
 export async function deleteMyReview(reviewId: string): Promise<void> {
-  const { error } = await sb.from("product_reviews").delete().eq("id", reviewId);
+  const { error } = await userDb.from("product_reviews").delete().eq("id", reviewId);
   if (error) throw error;
 }
 
 // ===== Admin =====
 export async function listAllReviews(): Promise<ReviewWithProduct[]> {
-  const { data, error } = await sb
+  const { data, error } = await staffDb
     .from("product_reviews")
     .select("*, profiles:user_id(username), products:product_id(name)")
     .order("created_at", { ascending: false });
@@ -98,11 +99,11 @@ export async function listAllReviews(): Promise<ReviewWithProduct[]> {
 }
 
 export async function setReviewApproved(reviewId: string, approved: boolean): Promise<void> {
-  const { error } = await sb.from("product_reviews").update({ approved }).eq("id", reviewId);
+  const { error } = await staffDb.from("product_reviews").update({ approved }).eq("id", reviewId);
   if (error) throw error;
 }
 
 export async function adminDeleteReview(reviewId: string): Promise<void> {
-  const { error } = await sb.from("product_reviews").delete().eq("id", reviewId);
+  const { error } = await staffDb.from("product_reviews").delete().eq("id", reviewId);
   if (error) throw error;
 }

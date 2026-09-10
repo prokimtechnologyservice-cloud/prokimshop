@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { staffDb as supabase } from "@/lib/db";
 import {
   fetchAllThreadsWithProfiles,
   fetchMessages,
@@ -94,48 +94,30 @@ export function ChatAdmin() {
 
   useEffect(() => {
     loadThreads();
-    const ch = supabase
-      .channel("admin-chat-index")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, () => loadThreads())
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_threads" }, () => loadThreads())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+    const poll = setInterval(() => loadThreads(), 8000);
+    return () => clearInterval(poll);
   }, []);
 
   useEffect(() => {
     if (!activeId) return;
+    const id = activeId;
     let alive = true;
-    fetchMessages(activeId).then((m) => {
+    async function refresh(first = false) {
+      const m = await fetchMessages(id, "admin");
       if (!alive) return;
-      setMessages(m);
-      markRead(activeId, "admin");
-      loadThreads();
-    });
-    const ch = supabase
-      .channel(`admin-chat-${activeId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `thread_id=eq.${activeId}` },
-        (payload: any) => {
-          const msg = payload.new as ChatMessage;
-          setMessages((prev) => (prev.some((x) => x.id === msg.id) ? prev : [...prev, msg]));
-          if (msg.sender === "user") markRead(activeId, "admin");
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "chat_messages", filter: `thread_id=eq.${activeId}` },
-        (payload: any) => {
-          const msg = payload.new as ChatMessage;
-          setMessages((prev) => prev.map((x) => (x.id === msg.id ? msg : x)));
-        },
-      )
-      .subscribe();
+      setMessages((prev) => {
+        if (m.some((x) => x.sender === "user" && !prev.some((p) => p.id === x.id)) || first) {
+          markRead(id, "admin");
+          loadThreads();
+        }
+        return m;
+      });
+    }
+    refresh(true);
+    const poll = setInterval(() => refresh(), 5000);
     return () => {
       alive = false;
-      supabase.removeChannel(ch);
+      clearInterval(poll);
     };
   }, [activeId]);
 
@@ -156,7 +138,7 @@ export function ChatAdmin() {
     if (!file || !activeId) return;
     setUploading(true);
     try {
-      const att = await uploadChatFile(file);
+      const att = await uploadChatFile(file, "admin");
       await sendMessage(activeId, "admin", "", att);
     } catch (err: any) {
       toast.error("อัปโหลดไฟล์ไม่สำเร็จ: " + (err?.message ?? "ไม่ทราบสาเหตุ"));
@@ -167,7 +149,7 @@ export function ChatAdmin() {
 
   async function saveEdit() {
     if (!editingId) return;
-    await editMessage(editingId, editBody);
+    await editMessage(editingId, editBody, "admin");
     setEditingId(null);
     setEditBody("");
   }
@@ -185,7 +167,7 @@ export function ChatAdmin() {
     if (!file) return;
     setBroadcastUploading(true);
     try {
-      const att = await uploadChatFile(file);
+      const att = await uploadChatFile(file, "admin");
       setBroadcastAtt(att);
     } catch (err: any) {
       toast.error("อัปโหลดไฟล์ไม่สำเร็จ: " + (err?.message ?? "ไม่ทราบสาเหตุ"));
@@ -394,7 +376,7 @@ export function ChatAdmin() {
                               >
                                 แก้ไข
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={() => deleteMessage(m.id)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => deleteMessage(m.id, "admin")}>
                                 ลบ
                               </DropdownMenuItem>
                             </DropdownMenuContent>

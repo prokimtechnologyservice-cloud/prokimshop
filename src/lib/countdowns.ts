@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { staffDb } from "@/lib/db";
 
 export type Countdown = {
   id: string;
@@ -11,6 +12,7 @@ export type Countdown = {
 };
 
 const table = () => (supabase as any).from("countdowns");
+const adminTable = () => (staffDb as any).from("countdowns");
 
 export async function listCountdowns(): Promise<Countdown[]> {
   const { data, error } = await table().select("*").order("ends_at", { ascending: true });
@@ -24,7 +26,7 @@ export async function createCountdown(input: {
   ends_at: string;
   active: boolean;
 }) {
-  const { error } = await table().insert(input);
+  const { error } = await adminTable().insert(input);
   if (error) throw error;
 }
 
@@ -32,14 +34,14 @@ export async function updateCountdown(
   id: string,
   input: Partial<Pick<Countdown, "title" | "description" | "ends_at" | "active">>
 ) {
-  const { error } = await table()
+  const { error } = await adminTable()
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteCountdown(id: string) {
-  const { error } = await table().delete().eq("id", id);
+  const { error } = await adminTable().delete().eq("id", id);
   if (error) throw error;
 }
 

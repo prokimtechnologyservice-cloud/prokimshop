@@ -1,4 +1,7 @@
-import { supabase } from "@/integrations/supabase/client";
+import { staffDb, userDb } from "@/lib/db";
+
+type Side = "user" | "admin";
+const db = (side: Side) => (side === "admin" ? staffDb : userDb);
 
 export type AttachmentType = "image" | "video" | "audio" | "file";
 
@@ -24,13 +27,14 @@ export type ChatThread = {
 };
 
 export async function ensureUserThread(userId: string): Promise<ChatThread> {
-  const { data: existing } = await (supabase as any)
+  const side: Side = "user";
+  const { data: existing } = await db(side)
     .from("chat_threads")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
   if (existing) return existing as ChatThread;
-  const { data, error } = await (supabase as any)
+  const { data, error } = await db(side)
     .from("chat_threads")
     .insert({ user_id: userId })
     .select("*")
@@ -39,8 +43,8 @@ export async function ensureUserThread(userId: string): Promise<ChatThread> {
   return data as ChatThread;
 }
 
-export async function fetchMessages(threadId: string): Promise<ChatMessage[]> {
-  const { data, error } = await (supabase as any)
+export async function fetchMessages(threadId: string, side: Side = "user"): Promise<ChatMessage[]> {
+  const { data, error } = await db(side)
     .from("chat_messages")
     .select("*")
     .eq("thread_id", threadId)
@@ -59,64 +63,68 @@ function detectAttachmentType(file: File): AttachmentType {
 
 export async function uploadChatFile(
   file: File,
+  side: Side = "user",
 ): Promise<{ url: string; type: AttachmentType }> {
   const ext = file.name.includes(".") ? file.name.split(".").pop() : "";
   const path = `chat/${crypto.randomUUID()}-${file.name}`;
-  const { error } = await supabase.storage.from("product-images").upload(path, file, {
+  const { error } = await db(side).storage.from("product-images").upload(path, file, {
     upsert: false,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+  const { data } = db(side).storage.from("product-images").getPublicUrl(path);
   return { url: data.publicUrl, type: detectAttachmentType(file) };
 }
 
 export async function sendMessage(
   threadId: string,
-  sender: "user" | "admin",
+  sender: Side,
   body: string,
   attachment?: { url: string; type: AttachmentType },
 ) {
+  const side: Side = sender;
   const b = body.trim();
   if (!b && !attachment) return;
-  await (supabase as any).from("chat_messages").insert({
+  await db(side).from("chat_messages").insert({
     thread_id: threadId,
     sender,
     body: b,
     attachment_url: attachment?.url ?? null,
     attachment_type: attachment?.type ?? null,
   });
-  await (supabase as any)
+  await db(side)
     .from("chat_threads")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", threadId);
 }
 
-export async function editMessage(id: string, body: string) {
+export async function editMessage(id: string, body: string, side: Side = "user") {
   const b = body.trim();
-  await (supabase as any)
+  await db(side)
     .from("chat_messages")
     .update({ body: b, edited_at: new Date().toISOString() })
     .eq("id", id);
 }
 
-export async function deleteMessage(id: string) {
-  await (supabase as any)
+export async function deleteMessage(id: string, side: Side = "user") {
+  await db(side)
     .from("chat_messages")
     .update({ deleted: true, body: "" })
     .eq("id", id);
 }
 
 export async function resetThread(threadId: string) {
-  await (supabase as any).from("chat_messages").delete().eq("thread_id", threadId);
+  const side: Side = "admin";
+  await db(side).from("chat_messages").delete().eq("thread_id", threadId);
 }
 
 export async function broadcastMessage(
   body: string,
   attachment?: { url: string; type: AttachmentType },
 ): Promise<number> {
+  const side: Side = "admin";
   const b = body.trim();
   if (!b && !attachment) return 0;
-  const { data: threads, error } = await (supabase as any).from("chat_threads").select("id");
+  const { data: threads, error } = await db(side).from("chat_threads").select("id");
   if (error) throw error;
   const list = (threads as { id: string }[]) ?? [];
   if (list.length === 0) return 0;
@@ -128,10 +136,10 @@ export async function broadcastMessage(
     attachment_type: attachment?.type ?? null,
     is_broadcast: true,
   }));
-  await (supabase as any).from("chat_messages").insert(rows);
+  await db(side).from("chat_messages").insert(rows);
   await Promise.all(
     list.map((t) =>
-      (supabase as any)
+      db(side)
         .from("chat_threads")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", t.id),
@@ -140,9 +148,9 @@ export async function broadcastMessage(
   return list.length;
 }
 
-export async function markRead(threadId: string, side: "user" | "admin") {
+export async function markRead(threadId: string, side: Side) {
   const field = side === "user" ? "last_user_read_at" : "last_admin_read_at";
-  await (supabase as any)
+  await db(side)
     .from("chat_threads")
     .update({ [field]: new Date().toISOString() })
     .eq("id", threadId);
@@ -151,7 +159,8 @@ export async function markRead(threadId: string, side: "user" | "admin") {
 export async function fetchAllThreadsWithProfiles(): Promise<
   (ChatThread & { username: string | null; roblox_name: string | null; unread_admin: number; last_body: string | null })[]
 > {
-  const { data: threads } = await (supabase as any)
+  const side: Side = "admin";
+  const { data: threads } = await db(side)
     .from("chat_threads")
     .select("*, profiles(username, roblox_name)")
     .order("updated_at", { ascending: false })
@@ -166,14 +175,14 @@ export async function fetchAllThreadsWithProfiles(): Promise<
   // fetch unread counts + last message per thread
   await Promise.all(
     list.map(async (t) => {
-      const { count } = await (supabase as any)
+      const { count } = await db(side)
         .from("chat_messages")
         .select("id", { count: "exact", head: true })
         .eq("thread_id", t.id)
         .eq("sender", "user")
         .gt("created_at", t.last_admin_read_at);
       t.unread_admin = count ?? 0;
-      const { data: last } = await (supabase as any)
+      const { data: last } = await db(side)
         .from("chat_messages")
         .select("body")
         .eq("thread_id", t.id)

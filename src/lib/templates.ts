@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { staffDb } from "@/lib/db";
 
 // ===== site_content keys used by the template customizer (prefix tpl_) =====
 export const TPL_KEYS = {
@@ -41,7 +42,7 @@ export async function saveTemplateSettings(values: Record<string, string>) {
     label: key,
     updated_at: new Date().toISOString(),
   }));
-  const { error } = await supabase.from("site_content").upsert(rows, { onConflict: "key" });
+  const { error } = await staffDb.from("site_content").upsert(rows, { onConflict: "key" });
   if (error) throw error;
 }
 

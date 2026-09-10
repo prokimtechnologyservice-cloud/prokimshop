@@ -23,6 +23,7 @@ import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as PromoTokenRouteImport } from './routes/promo.$token'
 import { Route as ApiPublicAuctionRouteImport } from './routes/api/public/auction'
 import { Route as ApiPublicCheckoutRouteImport } from './routes/api/public/checkout'
+import { Route as ApiPublicDataRouteImport } from './routes/api/public/data'
 import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/public/order-maintenance'
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
@@ -98,6 +99,11 @@ const ApiPublicCheckoutRoute = ApiPublicCheckoutRouteImport.update({
   path: '/api/public/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDataRoute = ApiPublicDataRouteImport.update({
+  id: '/api/public/data',
+  path: '/api/public/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOrderMaintenanceRoute =
   ApiPublicOrderMaintenanceRouteImport.update({
     id: '/api/public/order-maintenance',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/data': typeof ApiPublicDataRoute
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/data': typeof ApiPublicDataRoute
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/public/auction': typeof ApiPublicAuctionRoute
   '/api/public/checkout': typeof ApiPublicCheckoutRoute
+  '/api/public/data': typeof ApiPublicDataRoute
   '/api/public/order-maintenance': typeof ApiPublicOrderMaintenanceRoute
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/auction'
     | '/api/public/checkout'
+    | '/api/public/data'
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/public/auction'
     | '/api/public/checkout'
+    | '/api/public/data'
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/public/auction'
     | '/api/public/checkout'
+    | '/api/public/data'
     | '/api/public/order-maintenance'
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
@@ -259,6 +271,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicAuctionRoute: typeof ApiPublicAuctionRoute
   ApiPublicCheckoutRoute: typeof ApiPublicCheckoutRoute
+  ApiPublicDataRoute: typeof ApiPublicDataRoute
   ApiPublicOrderMaintenanceRoute: typeof ApiPublicOrderMaintenanceRoute
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
   ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/data': {
+      id: '/api/public/data'
+      path: '/api/public/data'
+      fullPath: '/api/public/data'
+      preLoaderRoute: typeof ApiPublicDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/order-maintenance': {
       id: '/api/public/order-maintenance'
       path: '/api/public/order-maintenance'
@@ -411,6 +431,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicAuctionRoute: ApiPublicAuctionRoute,
   ApiPublicCheckoutRoute: ApiPublicCheckoutRoute,
+  ApiPublicDataRoute: ApiPublicDataRoute,
   ApiPublicOrderMaintenanceRoute: ApiPublicOrderMaintenanceRoute,
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
   ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { staffDb as supabase } from "@/lib/db";
 import { getStaff, setStaff } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

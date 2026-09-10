@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { userDb as supabase } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";

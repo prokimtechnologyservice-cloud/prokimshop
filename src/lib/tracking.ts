@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { gatewayAction, staffDb, userDb } from "@/lib/db";
 
 export type FulfillmentStatus =
   | "pending"
@@ -92,7 +92,7 @@ function pickImage(r: any): string | null {
 
 /** All items still in the fulfillment pipeline (not yet delivered), oldest first. */
 export async function fetchPendingQueue(): Promise<TrackingItem[]> {
-  const { data, error } = await supabase
+  const { data, error } = await staffDb
     .from("order_items")
     .select(
       "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, returned_at, products(image_url), orders!inner(user_id, profiles(username, roblox_name))",
@@ -123,7 +123,7 @@ export async function fetchPendingQueue(): Promise<TrackingItem[]> {
 
 /** Items for a specific user, newest first. */
 export async function fetchUserTracking(userId: string): Promise<TrackingItem[]> {
-  const { data, error } = await supabase
+  const { data, error } = await userDb
     .from("order_items")
     .select(
       "id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, returned_at, roblox_name, delivered_payload, products(image_url, claim_instructions, product_type), orders!inner(user_id, payment_status, created_at, paid_from_balance)",
@@ -161,7 +161,7 @@ export async function fetchUserTracking(userId: string): Promise<TrackingItem[]>
 export async function fetchByReceiptIp(query: string): Promise<TrackingItem[]> {
   const q = query.trim();
   if (!q) return [];
-  const { data: orders, error } = await (supabase as any)
+  const { data: orders, error } = await (staffDb as any)
     .from("orders")
     .select(
       "id, receipt_code, ip_address, created_at, payment_status, user_id, profiles(username), order_items(id, order_id, product_id, product_name, product_image, unit_price, quantity, created_at, acknowledged, acknowledged_at, fulfillment_status, return_status, return_reason, returned_at, roblox_name, delivered_payload)",
@@ -212,7 +212,7 @@ export async function setFulfillmentStatus(
     acknowledged_by:
       status === "pending" ? null : staffId ?? null,
   };
-  const { error } = await supabase.from("order_items").update(base).eq("id", itemId);
+  const { error } = await staffDb.from("order_items").update(base).eq("id", itemId);
   if (error) throw error;
 }
 
@@ -225,7 +225,7 @@ export const RETURN_LABEL: Record<string, string> = {
 
 /** Customer asks to return a delivered item. */
 export async function requestReturn(itemId: string, reason: string) {
-  const { error } = await supabase
+  const { error } = await userDb
     .from("order_items")
     .update({ return_status: "requested", return_reason: reason || null })
     .eq("id", itemId);
@@ -234,7 +234,7 @@ export async function requestReturn(itemId: string, reason: string) {
 
 /** Customer asks for a refund while the item is still unacknowledged (requirement 9.3). */
 export async function requestRefund(itemId: string) {
-  const { data: item, error: ferr } = await supabase
+  const { data: item, error: ferr } = await userDb
     .from("order_items")
     .select("fulfillment_status")
     .eq("id", itemId)
@@ -243,7 +243,7 @@ export async function requestRefund(itemId: string) {
   if ((item as any)?.fulfillment_status !== "pending") {
     throw new Error("ขอคืนเงินได้เฉพาะรายการที่แอดมินยังไม่รับเท่านั้น");
   }
-  const { error } = await supabase
+  const { error } = await userDb
     .from("order_items")
     .update({
       return_status: "requested",
@@ -254,22 +254,11 @@ export async function requestRefund(itemId: string) {
 }
 
 /** Cancel an order item, restoring stock. */
-export async function cancelOrderItem(item: { id: string; product_id: string | null; quantity: number }) {
-  const { error } = await supabase
-    .from("order_items")
-    .update({ fulfillment_status: "cancelled" })
-    .eq("id", item.id);
-  if (error) throw error;
-  if (item.product_id) {
-    await (supabase as any).rpc("adjust_product_stock", {
-      _product_id: item.product_id,
-      _delta: item.quantity,
-    });
-    await (supabase as any).rpc("bump_sold_count", {
-      _product_id: item.product_id,
-      _delta: -item.quantity,
-    });
-  }
+export async function cancelOrderItem(
+  item: { id: string; product_id: string | null; quantity: number },
+  scope: "user" | "staff" = "user",
+) {
+  await gatewayAction(scope, "cancel-item", { item_id: item.id });
 }
 
 /** Admin approves/rejects a return. Approving restores tracked stock and sold count. */
@@ -277,7 +266,7 @@ export async function resolveReturn(
   item: { id: string; product_id: string | null; quantity: number },
   approve: boolean,
 ) {
-  const { error } = await supabase
+  const { error } = await staffDb
     .from("order_items")
     .update({
       return_status: approve ? "approved" : "rejected",
@@ -286,11 +275,11 @@ export async function resolveReturn(
     .eq("id", item.id);
   if (error) throw error;
   if (approve && item.product_id) {
-    await (supabase as any).rpc("adjust_product_stock", {
+    await (staffDb as any).rpc("adjust_product_stock", {
       _product_id: item.product_id,
       _delta: item.quantity,
     });
-    await (supabase as any).rpc("bump_sold_count", {
+    await (staffDb as any).rpc("bump_sold_count", {
       _product_id: item.product_id,
       _delta: -item.quantity,
     });
@@ -299,12 +288,12 @@ export async function resolveReturn(
 
 /** Mark an order as paid and auto-acknowledge its pending items (กดชำระแล้ว = แอดมินรับแล้ว). */
 export async function markOrderPaid(orderId: string) {
-  const { error: oerr } = await (supabase as any)
+  const { error: oerr } = await (staffDb as any)
     .from("orders")
     .update({ payment_status: "paid" })
     .eq("id", orderId);
   if (oerr) throw oerr;
-  const { error: ierr } = await supabase
+  const { error: ierr } = await staffDb
     .from("order_items")
     .update({
       fulfillment_status: "acknowledged",

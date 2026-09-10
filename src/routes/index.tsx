@@ -4,6 +4,7 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { callAuth } from "@/lib/db";
 import { addToCart } from "@/lib/cart";
 import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -122,15 +123,15 @@ function Index() {
   const user = getUser();
 
   async function load() {
-    const [{ data: c }, { data: p }, { data: s }, { data: vw }, { data: acct }, { data: sold }] =
-      await Promise.all([
-        supabase.from("categories").select("*").order("sort_order").order("created_at"),
-        supabase.from("products").select("*").order("sort_order").order("created_at"),
-        supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
-        supabase.from("category_views").select("category_id"),
-        supabase.from("product_account_stock").select("product_id, status").eq("status", "available"),
-        supabase.from("order_items").select("product_id, quantity"),
-      ]);
+    const [{ data: c }, { data: p }, { data: s }, { data: vw }, agg] = await Promise.all([
+      supabase.from("categories").select("*").order("sort_order").order("created_at"),
+      supabase.from("products").select("*").order("sort_order").order("created_at"),
+      supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("category_views").select("category_id"),
+      callAuth<{ available: Record<string, number>; sales: Record<string, number> }>(
+        "public-aggregates",
+      ).catch(() => ({ available: {}, sales: {} })),
+    ]);
     const catList = ((c as any[]) ?? []).map((x) => ({
       ...x,
       parent_id: x.parent_id ?? null,
@@ -141,19 +142,9 @@ function Index() {
     })) as Category[];
     setCats(catList);
 
-    // count sold quantity per product (best sellers)
-    const saleCount: Record<string, number> = {};
-    ((sold as any[]) ?? []).forEach((r) => {
-      if (!r.product_id) return;
-      saleCount[r.product_id] = (saleCount[r.product_id] ?? 0) + Number(r.quantity ?? 1);
-    });
-    setSales(saleCount);
-
-    // count available accounts per product
-    const acctCount: Record<string, number> = {};
-    ((acct as any[]) ?? []).forEach((r) => {
-      acctCount[r.product_id] = (acctCount[r.product_id] ?? 0) + 1;
-    });
+    // sold quantity per product (best sellers) + available account stock
+    setSales(agg.sales ?? {});
+    const acctCount: Record<string, number> = agg.available ?? {};
 
     const prodList = ((p as any[]) ?? []).map((x) => {
       const type = x.product_type ?? "normal";

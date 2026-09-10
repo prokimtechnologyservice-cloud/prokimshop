@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import JsBarcode from "jsbarcode";
-import { supabase } from "@/integrations/supabase/client";
+import { staffDb as supabase } from "@/lib/db";
 import {
   listGiftCards,
   createGiftCard,
