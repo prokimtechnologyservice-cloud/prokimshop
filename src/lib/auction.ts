@@ -1,8 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export type AuctionBid = {
   id: string;
-  user_id: string;
+  /** opaque per-auction bidder key — real account ids never reach the browser */
+  bidder: string;
+  mine?: boolean;
   amount: number;
   roblox_name: string | null;
   created_at: string;
@@ -21,21 +21,20 @@ export async function fetchAuction(
     auction_start_price: number;
     auction_step: number;
   },
+  userId?: string | null,
 ): Promise<AuctionInfo> {
-  const { data } = await (supabase as any)
-    .from("auction_bids")
-    .select("id, user_id, amount, roblox_name, created_at, profiles(username)")
-    .eq("product_id", product.id)
-    .order("amount", { ascending: false })
-    .limit(100);
-  const bids: AuctionBid[] = ((data as any[]) ?? []).map((b) => ({
-    id: b.id,
-    user_id: b.user_id,
-    amount: Number(b.amount),
-    roblox_name: b.roblox_name ?? null,
-    created_at: b.created_at,
-    username: b.profiles?.username ?? null,
-  }));
+  let bids: AuctionBid[] = [];
+  try {
+    const res = await fetch("/api/public/auction", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "bids", product_id: product.id, user_id: userId ?? null }),
+    });
+    const j = await res.json();
+    bids = (j?.bids as AuctionBid[]) ?? [];
+  } catch {
+    bids = [];
+  }
   const top = bids.length ? bids[0].amount : null;
   const step = Number(product.auction_step) || 1;
   const minNext = top == null ? Number(product.auction_start_price) : top + step;
