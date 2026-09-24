@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getUser } from "@/lib/auth";
+import { gatewayAction } from "@/lib/db";
 import {
   fetchUserTracking,
-  fetchPendingQueue,
   STATUS_FLOW,
   SPECIAL_STATUSES,
   STATUS_LABEL,
