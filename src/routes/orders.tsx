@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getUser } from "@/lib/auth";
+import { gatewayAction } from "@/lib/db";
 import {
   fetchUserTracking,
-  fetchPendingQueue,
   STATUS_FLOW,
   SPECIAL_STATUSES,
   STATUS_LABEL,
@@ -63,18 +63,20 @@ function OrdersPage() {
     const u = getUser();
     setUser(u);
     if (!u) return setLoading(false);
-    setLoading(true);
-    const [mine, queue] = await Promise.all([
-      fetchUserTracking(u.id),
-      fetchPendingQueue(),
-    ]);
-    setItems(mine);
-    const qm = new Map<string, number>();
-    queue
-      .filter((it) => it.fulfillment_status === "pending")
-      .forEach((it, idx) => qm.set(it.id, idx + 1));
-    setQueueMap(qm);
-    setLoading(false);
+    try {
+      const [mine, queue] = await Promise.all([
+        fetchUserTracking(u.id),
+        gatewayAction("user", "queue-ids").catch(() => [] as string[]),
+      ]);
+      setItems(mine);
+      const qm = new Map<string, number>();
+      ((queue as string[]) ?? []).forEach((id, idx) => qm.set(id, idx + 1));
+      setQueueMap(qm);
+    } catch (e) {
+      console.error("tracking load failed", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
