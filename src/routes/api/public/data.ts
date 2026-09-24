@@ -435,6 +435,16 @@ async function handlePost({ request }: { request: Request }) {
   if (body.op === "action") {
     const action = String(body.action ?? "");
 
+    if (action === "queue-ids") {
+      const { data } = await db
+        .from("order_items")
+        .select("id")
+        .eq("fulfillment_status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(1000);
+      return ok({ data: (data ?? []).map((r: any) => r.id) });
+    }
+
     if (action === "cancel-item") {
       const itemId = String(body.item_id ?? "");
       const { data: item } = await db
