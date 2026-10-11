@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { sessionUserId, UNAUTHORIZED } from "@/lib/session-check";
 
 const ADMIN_MOBILE = "0960384928";
 
@@ -41,9 +42,10 @@ export const Route = createFileRoute("/api/public/redeem-voucher")({
         try {
           const body = (await request.json()) as {
             user_id: string;
+            token?: string;
             voucher: string;
           };
-          if (!body?.user_id || !body?.voucher) {
+          if (!body?.voucher) {
             return Response.json({ error: "invalid" }, { status: 400 });
           }
           const code = extractVoucherCode(body.voucher);

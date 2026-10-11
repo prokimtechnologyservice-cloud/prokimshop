@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { sessionUserId, UNAUTHORIZED } from "@/lib/session-check";
 
 function getIp(req: Request): string {
   const h = req.headers;
@@ -43,16 +44,20 @@ export const Route = createFileRoute("/api/public/spin-box")({
         try {
           const body = (await request.json()) as {
             user_id: string;
+            token?: string;
             box_product_id: string;
             roblox_name?: string | null;
           };
-          if (!body?.user_id || !body?.box_product_id) {
+          if (!body?.box_product_id) {
             return Response.json({ error: "invalid" }, { status: 400 });
           }
           const admin = createClient(
             process.env.SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
           );
+          const sessionUid = await sessionUserId(admin, body.token);
+          if (!sessionUid) return UNAUTHORIZED();
+          body.user_id = sessionUid;
 
           // 1) Load box product
           const { data: box, error: boxErr } = await admin

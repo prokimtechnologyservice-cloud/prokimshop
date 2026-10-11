@@ -157,6 +157,7 @@ export function CartSheet({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: u.id,
+            token: getUserToken(),
             pay_from_balance: payFromBalance,
             client_token: token,
             promotion_id: selectedPromo.id,

@@ -28,7 +28,7 @@ export async function fetchAuction(
     const res = await fetch("/api/public/auction", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "bids", product_id: product.id, user_id: userId ?? null }),
+      body: JSON.stringify({ action: "bids", product_id: product.id, token: getUserToken() }),
     });
     const j = await res.json();
     bids = (j?.bids as AuctionBid[]) ?? [];
@@ -68,6 +68,7 @@ export async function placeBid(
     body: JSON.stringify({
       action: "bid",
       product_id: productId,
+      token: getUserToken(),
       user_id: userId,
       amount,
       roblox_name: robloxName,
