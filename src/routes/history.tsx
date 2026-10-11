@@ -29,7 +29,7 @@ type Order = {
 
 function HistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [user, setUser] = useState(getUser());
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
 
   useEffect(() => {
     (async () => {

@@ -52,7 +52,7 @@ function fmtCountdown(ms: number): string {
 }
 
 function OrdersPage() {
-  const [user, setUser] = useState(getUser());
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
   const [items, setItems] = useState<TrackingItem[]>([]);
   const [queueMap, setQueueMap] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
