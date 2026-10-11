@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { staffDb } from "@/lib/db";
+import { staffDb, getUserToken } from "@/lib/db";
 
 export type BoxColor =
   | "default"
@@ -223,7 +223,7 @@ export async function spinBox(
   const res = await fetch("/api/public/spin-box", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, box_product_id: boxProductId, roblox_name: robloxName }),
+    body: JSON.stringify({ user_id: userId, token: getUserToken(), box_product_id: boxProductId, roblox_name: robloxName }),
   });
   const j = await res.json();
   if (!res.ok) throw new Error(j?.error ?? "spin failed");

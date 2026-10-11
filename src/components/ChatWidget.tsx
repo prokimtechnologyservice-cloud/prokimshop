@@ -68,7 +68,7 @@ function AttachmentView({ m, onOpenImage }: { m: ChatMessage; onOpenImage: (url:
 }
 
 export function ChatWidget() {
-  const [user, setUserState] = useState(getUser());
+  const [user, setUserState] = useState<ReturnType<typeof getUser>>(null);
   const [open, setOpen] = useState(false);
   const [thread, setThread] = useState<ChatThread | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -84,6 +84,7 @@ export function ChatWidget() {
 
   useEffect(() => {
     const on = () => setUserState(getUser());
+    on();
     window.addEventListener("auth-change", on);
     return () => window.removeEventListener("auth-change", on);
   }, []);

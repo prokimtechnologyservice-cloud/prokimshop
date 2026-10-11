@@ -1,8 +1,9 @@
+import { getUserToken } from "@/lib/db";
 export async function redeemVoucher(userId: string, voucher: string) {
   const res = await fetch("/api/public/redeem-voucher", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, voucher }),
+    body: JSON.stringify({ user_id: userId, token: getUserToken(), voucher }),
   });
   const j = await res.json();
   if (!res.ok) throw new Error(j?.error ?? "redeem failed");

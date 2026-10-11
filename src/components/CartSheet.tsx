@@ -12,6 +12,7 @@ import {
   type CartItem,
 } from "@/lib/cart";
 import { getUser, refreshUser } from "@/lib/auth";
+import { getUserToken } from "@/lib/db";
 import { toast } from "sonner";
 import { TopUpDialog } from "@/components/TopUpDialog";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ export function CartSheet({
     paid: boolean;
   } | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [user, setUser] = useState(getUser());
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
   const [eligiblePromos, setEligiblePromos] = useState<AutoPromoCandidate[]>([]);
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
   const [autoApplied, setAutoApplied] = useState(false);
@@ -157,6 +158,7 @@ export function CartSheet({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: u.id,
+            token: getUserToken(),
             pay_from_balance: payFromBalance,
             client_token: token,
             promotion_id: selectedPromo.id,

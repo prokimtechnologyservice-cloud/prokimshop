@@ -783,9 +783,17 @@ function ProductCard({
   const preorder = p.is_preorder;
   const sold = p.stock === 0 && !preorder;
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
-      className={`group relative text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card transition ${
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`group relative cursor-pointer text-left bg-gradient-card border border-border rounded-xl overflow-hidden shadow-card transition ${
         sold ? "" : "hover:shadow-luxe hover:border-primary/50"
       }`}
     >
@@ -887,7 +895,7 @@ function ProductCard({
           )}
         </Button>
       </div>
-    </button>
+    </div>
   );
 
 }

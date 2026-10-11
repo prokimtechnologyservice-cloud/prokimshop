@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { sessionUserId, UNAUTHORIZED } from "@/lib/session-check";
 
 function getIp(request: Request): string {
   const h = request.headers;
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/api/public/checkout")({
         try {
           const body = (await request.json()) as {
             user_id: string;
+            token?: string;
             client_token?: string | null;
             items: {
               product_id: string | null;
@@ -32,17 +34,52 @@ export const Route = createFileRoute("/api/public/checkout")({
             pay_from_balance: boolean;
             promotion_id?: string | null;
           };
-          if (!body?.user_id || !Array.isArray(body.items) || body.items.length === 0) {
+          if (!Array.isArray(body?.items) || body.items.length === 0) {
             return Response.json({ error: "invalid" }, { status: 400 });
           }
           const ip = getIp(request);
-          const subtotal = body.items.reduce(
-            (s, i) => s + Number(i.unit_price) * Number(i.quantity),
-            0,
-          );
           const admin = createClient(
             process.env.SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          );
+          // The buyer is whoever owns the session token, never the id sent by the browser.
+          const sessionUid = await sessionUserId(admin, body.token);
+          if (!sessionUid) return UNAUTHORIZED();
+          body.user_id = sessionUid;
+
+          // Re-price every line from the database; client prices are ignored.
+          for (const it of body.items) {
+            const q = Math.floor(Number(it.quantity));
+            if (!it.product_id || !(q >= 1) || q > 999) {
+              return Response.json({ error: "รายการสินค้าไม่ถูกต้อง" }, { status: 400 });
+            }
+            it.quantity = q;
+          }
+          {
+            const ids = Array.from(new Set(body.items.map((i) => i.product_id as string)));
+            const { data: priced } = await admin
+              .from("products")
+              .select("id, name, price, product_type")
+              .in("id", ids);
+            const pm = new Map((priced ?? []).map((r: any) => [r.id, r]));
+            for (const it of body.items) {
+              const r: any = pm.get(it.product_id as string);
+              if (!r) {
+                return Response.json({ error: "ไม่พบสินค้าบางรายการ (อาจถูกลบแล้ว)" }, { status: 400 });
+              }
+              if (r.product_type === "auction" || r.product_type === "mystery_box") {
+                return Response.json(
+                  { error: `สินค้า "${r.name}" ไม่สามารถสั่งซื้อผ่านตะกร้าได้` },
+                  { status: 400 },
+                );
+              }
+              it.unit_price = Number(r.price);
+              it.product_name = r.name;
+            }
+          }
+          const subtotal = body.items.reduce(
+            (s, i) => s + Number(i.unit_price) * Number(i.quantity),
+            0,
           );
 
           // ---- Promotion / discount re-validation (server-side) ----
@@ -253,7 +290,11 @@ export const Route = createFileRoute("/api/public/checkout")({
             if (aerr) throw aerr;
             if (!avail || avail.length < qty) {
               return Response.json(
-                { error: "สินค้าบัญชีบางรายการหมดสต็อก กรุณารีเฟรชและลองใหม่" },
+                {
+                  error: `สินค้า "${
+                    prodMap.get(pid)?.name ?? "บัญชี"
+                  }" คงเหลือไม่พอ (เหลือ ${avail?.length ?? 0} ชิ้น) กรุณาลดจำนวนในตะกร้า`,
+                },
                 { status: 400 },
               );
             }
@@ -360,6 +401,7 @@ export const Route = createFileRoute("/api/public/checkout")({
             });
             if (deductErr) {
               // rollback
+              await admin.from("order_items").delete().eq("order_id", order.id);
               await admin.from("orders").delete().eq("id", order.id);
               if (allReservedIds.length) {
                 await admin

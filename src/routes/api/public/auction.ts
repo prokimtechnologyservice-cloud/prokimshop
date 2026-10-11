@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { sessionUserId, UNAUTHORIZED } from "@/lib/session-check";
 
 function getIp(request: Request): string {
   const h = request.headers;
@@ -101,11 +102,14 @@ export const Route = createFileRoute("/api/public/auction")({
             action: "bid" | "settle" | "bids";
             product_id?: string;
             user_id?: string;
+            token?: string;
             amount?: number;
             roblox_name?: string | null;
           };
           const db = admin();
           const ip = getIp(request);
+          const sessionUid = await sessionUserId(db, body.token);
+          body.user_id = sessionUid ?? undefined;
 
           // ==== public leaderboard (no raw user ids leave the server) ====
           if (body.action === "bids") {
@@ -150,6 +154,7 @@ export const Route = createFileRoute("/api/public/auction")({
           }
 
           // ==== place a bid ====
+          if (!sessionUid) return UNAUTHORIZED();
           if (!body.product_id || !body.user_id || !body.amount) {
             return Response.json({ error: "invalid" }, { status: 400 });
           }

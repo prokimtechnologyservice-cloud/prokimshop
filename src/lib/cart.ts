@@ -1,4 +1,4 @@
-import { userDb as supabase } from "@/lib/db";
+import { userDb as supabase, getUserToken } from "@/lib/db";
 
 export type CartItem = {
   id: string;
@@ -96,6 +96,7 @@ export async function checkoutCart(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_id: userId,
+      token: getUserToken(),
       pay_from_balance,
       client_token: clientToken ?? crypto.randomUUID(),
       items: items.map((i) => ({
