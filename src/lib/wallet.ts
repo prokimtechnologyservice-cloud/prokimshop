@@ -1,3 +1,4 @@
+import { getUserToken } from "@/lib/db";
 export async function redeemVoucher(userId: string, voucher: string) {
   const res = await fetch("/api/public/redeem-voucher", {
     method: "POST",

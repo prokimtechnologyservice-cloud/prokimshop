@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { staffDb } from "@/lib/db";
+import { staffDb, getUserToken } from "@/lib/db";
 
 export type BoxColor =
   | "default"

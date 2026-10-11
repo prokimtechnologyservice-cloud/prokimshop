@@ -12,6 +12,7 @@ import {
   type CartItem,
 } from "@/lib/cart";
 import { getUser, refreshUser } from "@/lib/auth";
+import { getUserToken } from "@/lib/db";
 import { toast } from "sonner";
 import { TopUpDialog } from "@/components/TopUpDialog";
 import { Input } from "@/components/ui/input";

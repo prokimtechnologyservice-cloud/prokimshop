@@ -1,3 +1,4 @@
+import { getUserToken } from "@/lib/db";
 export type AuctionBid = {
   id: string;
   /** opaque per-auction bidder key — real account ids never reach the browser */
