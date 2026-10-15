@@ -72,8 +72,10 @@ export async function refreshUser() {
   try {
     const me = await callAuth<UserSession>("me", { token });
     setUser(me);
-  } catch {
-    setUser(null);
+  } catch (e: any) {
+    // Only sign out when the server says the session is really gone;
+    // a network blip or aborted request must not log the customer out.
+    if (e?.status === 401 || e?.status === 403) setUser(null);
   }
 }
 

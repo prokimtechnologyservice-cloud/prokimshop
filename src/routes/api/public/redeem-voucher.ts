@@ -48,6 +48,14 @@ export const Route = createFileRoute("/api/public/redeem-voucher")({
           if (!body?.voucher) {
             return Response.json({ error: "invalid" }, { status: 400 });
           }
+          // Authenticate before touching the voucher so money is only credited to the session owner.
+          const authDb = createClient(
+            process.env.SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          );
+          const sessionUid = await sessionUserId(authDb, body.token);
+          if (!sessionUid) return UNAUTHORIZED();
+          body.user_id = sessionUid;
           const code = extractVoucherCode(body.voucher);
           if (!code) {
             return Response.json({ error: "ลิงก์ซองไม่ถูกต้อง" }, { status: 400 });
