@@ -57,7 +57,11 @@ export async function callAuth<T = any>(action: string, payload: Record<string, 
     body: JSON.stringify({ action, ...payload }),
   });
   const json = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(json?.error ?? "request failed");
+  if (!res.ok) {
+    const err: any = new Error(json?.error ?? "request failed");
+    err.status = res.status;
+    throw err;
+  }
   return json?.data as T;
 }
 
