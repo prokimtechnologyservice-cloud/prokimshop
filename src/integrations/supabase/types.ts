@@ -1324,6 +1324,101 @@ export type Database = {
         }
         Relationships: []
       }
+      topup_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          game_place: string
+          id: string
+          image_url: string | null
+          item_id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          game_place?: string
+          id?: string
+          image_url?: string | null
+          item_id: string
+          name: string
+          price: number
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          game_place?: string
+          id?: string
+          image_url?: string | null
+          item_id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      topup_orders: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          game_place: string
+          id: string
+          item_id: string
+          item_name: string
+          payment_status: string
+          price: number
+          quantity: number
+          roblox_user_id: number | null
+          roblox_username: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          game_place: string
+          id?: string
+          item_id: string
+          item_name: string
+          payment_status?: string
+          price: number
+          quantity?: number
+          roblox_user_id?: number | null
+          roblox_username: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          game_place?: string
+          id?: string
+          item_id?: string
+          item_name?: string
+          payment_status?: string
+          price?: number
+          quantity?: number
+          roblox_user_id?: number | null
+          roblox_username?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topup_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_promotions: {
         Row: {
           created_at: string
