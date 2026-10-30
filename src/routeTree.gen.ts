@@ -16,6 +16,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as TopupRouteImport } from './routes/topup'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
@@ -28,6 +29,8 @@ import { Route as ApiPublicOrderMaintenanceRouteImport } from './routes/api/publ
 import { Route as ApiPublicRedeemVoucherRouteImport } from './routes/api/public/redeem-voucher'
 import { Route as ApiPublicSpinBoxRouteImport } from './routes/api/public/spin-box'
 import { Route as ApiPublicStoreRouteImport } from './routes/api/public/store'
+import { Route as ApiPublicTopupGetPendingOrdersRouteImport } from './routes/api/public/topup/get-pending-orders'
+import { Route as ApiPublicTopupMarkOrderDeliveredRouteImport } from './routes/api/public/topup/mark-order-delivered'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -62,6 +65,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const StoreRoute = StoreRouteImport.update({
   id: '/store',
   path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopupRoute = TopupRouteImport.update({
+  id: '/topup',
+  path: '/topup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -125,6 +133,18 @@ const ApiPublicStoreRoute = ApiPublicStoreRouteImport.update({
   path: '/api/public/store',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTopupGetPendingOrdersRoute =
+  ApiPublicTopupGetPendingOrdersRouteImport.update({
+    id: '/api/public/topup/get-pending-orders',
+    path: '/api/public/topup/get-pending-orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTopupMarkOrderDeliveredRoute =
+  ApiPublicTopupMarkOrderDeliveredRouteImport.update({
+    id: '/api/public/topup/mark-order-delivered',
+    path: '/api/public/topup/mark-order-delivered',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -134,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/store': typeof StoreRoute
+  '/topup': typeof TopupRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -146,6 +167,8 @@ export interface FileRoutesByFullPath {
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
   '/api/public/store': typeof ApiPublicStoreRoute
+  '/api/public/topup/get-pending-orders': typeof ApiPublicTopupGetPendingOrdersRoute
+  '/api/public/topup/mark-order-delivered': typeof ApiPublicTopupMarkOrderDeliveredRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,6 +178,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/store': typeof StoreRoute
+  '/topup': typeof TopupRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -167,6 +191,8 @@ export interface FileRoutesByTo {
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
   '/api/public/store': typeof ApiPublicStoreRoute
+  '/api/public/topup/get-pending-orders': typeof ApiPublicTopupGetPendingOrdersRoute
+  '/api/public/topup/mark-order-delivered': typeof ApiPublicTopupMarkOrderDeliveredRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,6 +203,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/store': typeof StoreRoute
+  '/topup': typeof TopupRoute
   '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -189,6 +216,8 @@ export interface FileRoutesById {
   '/api/public/redeem-voucher': typeof ApiPublicRedeemVoucherRoute
   '/api/public/spin-box': typeof ApiPublicSpinBoxRoute
   '/api/public/store': typeof ApiPublicStoreRoute
+  '/api/public/topup/get-pending-orders': typeof ApiPublicTopupGetPendingOrdersRoute
+  '/api/public/topup/mark-order-delivered': typeof ApiPublicTopupMarkOrderDeliveredRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -200,6 +229,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sitemap.xml'
     | '/store'
+    | '/topup'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -212,6 +242,8 @@ export interface FileRouteTypes {
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
     | '/api/public/store'
+    | '/api/public/topup/get-pending-orders'
+    | '/api/public/topup/mark-order-delivered'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,6 +253,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sitemap.xml'
     | '/store'
+    | '/topup'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -233,6 +266,8 @@ export interface FileRouteTypes {
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
     | '/api/public/store'
+    | '/api/public/topup/get-pending-orders'
+    | '/api/public/topup/mark-order-delivered'
   id:
     | '__root__'
     | '/'
@@ -242,6 +277,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/sitemap.xml'
     | '/store'
+    | '/topup'
     | '/admin/login'
     | '/category/$slug'
     | '/product/$id'
@@ -254,6 +290,8 @@ export interface FileRouteTypes {
     | '/api/public/redeem-voucher'
     | '/api/public/spin-box'
     | '/api/public/store'
+    | '/api/public/topup/get-pending-orders'
+    | '/api/public/topup/mark-order-delivered'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -264,6 +302,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoreRoute: typeof StoreRoute
+  TopupRoute: typeof TopupRoute
   AdminLoginRoute: typeof AdminLoginRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -276,6 +315,8 @@ export interface RootRouteChildren {
   ApiPublicRedeemVoucherRoute: typeof ApiPublicRedeemVoucherRoute
   ApiPublicSpinBoxRoute: typeof ApiPublicSpinBoxRoute
   ApiPublicStoreRoute: typeof ApiPublicStoreRoute
+  ApiPublicTopupGetPendingOrdersRoute: typeof ApiPublicTopupGetPendingOrdersRoute
+  ApiPublicTopupMarkOrderDeliveredRoute: typeof ApiPublicTopupMarkOrderDeliveredRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -327,6 +368,13 @@ declare module '@tanstack/react-router' {
       path: '/store'
       fullPath: '/store'
       preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/topup': {
+      id: '/topup'
+      path: '/topup'
+      fullPath: '/topup'
+      preLoaderRoute: typeof TopupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -413,6 +461,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/topup/get-pending-orders': {
+      id: '/api/public/topup/get-pending-orders'
+      path: '/api/public/topup/get-pending-orders'
+      fullPath: '/api/public/topup/get-pending-orders'
+      preLoaderRoute: typeof ApiPublicTopupGetPendingOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/topup/mark-order-delivered': {
+      id: '/api/public/topup/mark-order-delivered'
+      path: '/api/public/topup/mark-order-delivered'
+      fullPath: '/api/public/topup/mark-order-delivered'
+      preLoaderRoute: typeof ApiPublicTopupMarkOrderDeliveredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -424,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoreRoute: StoreRoute,
+  TopupRoute: TopupRoute,
   AdminLoginRoute: AdminLoginRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductIdRoute: ProductIdRoute,
@@ -436,6 +499,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicRedeemVoucherRoute: ApiPublicRedeemVoucherRoute,
   ApiPublicSpinBoxRoute: ApiPublicSpinBoxRoute,
   ApiPublicStoreRoute: ApiPublicStoreRoute,
+  ApiPublicTopupGetPendingOrdersRoute: ApiPublicTopupGetPendingOrdersRoute,
+  ApiPublicTopupMarkOrderDeliveredRoute: ApiPublicTopupMarkOrderDeliveredRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
