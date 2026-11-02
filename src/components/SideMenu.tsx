@@ -14,6 +14,7 @@ import {
   Wallet,
   Settings,
   Gift,
+  Gamepad2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUser, setUser, type UserSession } from "@/lib/auth";
@@ -96,6 +97,11 @@ export function SideMenu({
                 />
                 <MenuRow icon={<Megaphone className="w-5 h-5 text-gold" />} label="ประกาศ" onClick={() => setSection("ann")} />
                 <MenuRow icon={<Package className="w-5 h-5 text-gold" />} label="สินค้า" onClick={() => { close(); onSelectCategory?.("__all__"); }} />
+                <MenuRow
+                  icon={<Gamepad2 className="w-5 h-5 text-gold" />}
+                  label="เติมของเกม"
+                  onClick={() => { close(); navigate({ to: "/topup" as any }); }}
+                />
                 <MenuRow
                   icon={
                     truemoneyLogo ? (

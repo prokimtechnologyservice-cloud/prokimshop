@@ -72,6 +72,7 @@ const USER_OWNER: Record<string, string> = {
   mystery_box_spins: "user_id",
   chat_threads: "user_id",
   product_reviews: "user_id",
+  topup_orders: "user_id",
   profiles: "id",
 };
 /** tables owned through a parent row: [child fk, parent table, parent owner col] */
@@ -90,6 +91,7 @@ const USER_OPS: Record<string, string[]> = {
   chat_threads: ["select", "insert", "update"],
   chat_messages: ["select", "insert", "update"],
   product_reviews: ["select", "insert", "update", "upsert", "delete"],
+  topup_orders: ["select"],
   profiles: ["select", "update"],
 };
 /** columns the customer may write, when narrower than the whole row */
@@ -116,7 +118,7 @@ const STAFF_TABLES = new Set([
   "mystery_box_spins", "order_items", "orders", "product_account_stock",
   "product_reviews", "products", "profiles", "promotions", "site_content",
   "site_overlays", "site_popups", "site_settings", "staff", "user_promotions",
-  "visits", "wallet_transactions",
+  "visits", "wallet_transactions", "topup_items", "topup_orders",
 ]);
 
 const USER_RPC = new Set(["redeem_gift_card"]);
@@ -411,6 +413,18 @@ async function handlePost({ request }: { request: Request }) {
       return ok({ data: { online, users: userCount ?? 0, topup, sold } });
     }
 
+    if (action === "topup-items") {
+      // Public catalog for the top-up page (no session needed; only active rows).
+      const { data } = await db
+        .from("topup_items")
+        .select("id, game_place, name, item_id, price, image_url, description")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+        .limit(200);
+      return ok({ data: data ?? [] });
+    }
+
     if (action === "staff-me") {
       const session = await loadSession(db, body.token);
       if (!session?.staff_id) return bad("session expired", 401);
@@ -466,6 +480,91 @@ async function handlePost({ request }: { request: Request }) {
       if (row.product_id) {
         await db.rpc("adjust_product_stock" as any, { _product_id: row.product_id, _delta: row.quantity });
         await db.rpc("bump_sold_count" as any, { _product_id: row.product_id, _delta: -row.quantity });
+      }
+      return ok({ data: true });
+    }
+
+    if (action === "topup-purchase") {
+      // Customer buys a game top-up item with their web balance. The item and
+      // price always come from the database; the client only names what it wants.
+      if (scope !== "user" || !session.user_id) return bad("not signed in", 401);
+      const itemId = String(body.item_id ?? "");
+      const qty = Math.floor(Number(body.quantity ?? 1));
+      const roblox = String(body.roblox_username ?? "").trim();
+      if (!/^[A-Za-z0-9_]{3,20}$/.test(roblox)) {
+        return bad("ชื่อผู้เล่น Roblox ไม่ถูกต้อง (3-20 ตัวอักษร a-z 0-9 _)");
+      }
+      if (!itemId || !(qty >= 1 && qty <= 99)) return bad("จำนวนไม่ถูกต้อง");
+      const { data: item } = await db
+        .from("topup_items")
+        .select("id, name, item_id, price, game_place")
+        .eq("id", itemId)
+        .eq("active", true)
+        .maybeSingle();
+      if (!item) return bad("ไม่พบไอเทมนี้ หรือถูกปิดการขายแล้ว");
+      const row: any = item;
+      const total = Number(row.price) * qty;
+      const { data: order, error: oerr } = await db
+        .from("topup_orders")
+        .insert({
+          user_id: session.user_id,
+          roblox_username: roblox,
+          item_name: row.name,
+          item_id: row.item_id,
+          quantity: qty,
+          price: total,
+          status: "pending",
+          payment_status: "unpaid",
+          game_place: row.game_place,
+        })
+        .select("id")
+        .single();
+      if (oerr) return bad(oerr.message);
+      const orderId = (order as any).id as string;
+      const { error: derr } = await db.rpc("deduct_balance" as any, {
+        _user_id: session.user_id,
+        _amount: total,
+        _order_id: orderId,
+      });
+      if (derr) {
+        await db.from("topup_orders").delete().eq("id", orderId);
+        const msg = String(derr.message || "").includes("insufficient")
+          ? "ยอดเงินในเว็บไม่พอ กรุณาเติมเงินก่อนสั่งซื้อ"
+          : derr.message || "ชำระเงินไม่สำเร็จ";
+        return bad(msg);
+      }
+      await db.from("topup_orders").update({ payment_status: "paid" }).eq("id", orderId);
+      return ok({ data: { id: orderId, total } });
+    }
+
+    if (action === "topup-staff-update") {
+      // Staff closes a top-up order: delivered, or failed/cancelled with refund.
+      if (scope !== "staff" || !session.staff_id) return bad("not staff", 401);
+      const orderId = String(body.order_id ?? "");
+      const status = String(body.status ?? "");
+      if (!["delivered", "failed", "cancelled"].includes(status)) return bad("สถานะไม่ถูกต้อง");
+      const { data: ord } = await db
+        .from("topup_orders")
+        .select("id, user_id, price, status, payment_status")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (!ord) return bad("ไม่พบรายการนี้", 404);
+      const o: any = ord;
+      if (o.status !== "pending") return bad("รายการนี้ปิดสถานะไปแล้ว");
+      if (status === "delivered") {
+        await db
+          .from("topup_orders")
+          .update({ status: "delivered", delivered_at: new Date().toISOString() })
+          .eq("id", orderId);
+      } else {
+        await db.from("topup_orders").update({ status }).eq("id", orderId);
+        if (o.payment_status === "paid" && Number(o.price) > 0) {
+          await db.rpc("refund_to_user" as any, {
+            _user_id: o.user_id,
+            _amount: Number(o.price),
+            _note: `topup refund: ${orderId}`,
+          });
+        }
       }
       return ok({ data: true });
     }
