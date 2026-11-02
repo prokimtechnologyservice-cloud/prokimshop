@@ -24,6 +24,7 @@ import { TemplateCustomizer } from "@/components/admin/TemplateCustomizer";
 import { StatsDashboard } from "@/components/admin/StatsDashboard";
 import { PublicStatsManager } from "@/components/admin/PublicStatsManager";
 import { StoreManager } from "@/components/admin/StoreManager";
+import { TopupManager } from "@/components/admin/TopupManager";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -72,6 +73,7 @@ function AdminDashboard() {
             <TabsTrigger value="ann">ประกาศ</TabsTrigger>
             <TabsTrigger value="tracking">ติดตามคำสั่งซื้อ</TabsTrigger>
             <TabsTrigger value="store">หน้าร้าน</TabsTrigger>
+            <TabsTrigger value="topupgame">เติมเกม Prokim City</TabsTrigger>
             <TabsTrigger value="orders">ใบเสร็จ / IP</TabsTrigger>
             <TabsTrigger value="chat">แชทลูกค้า</TabsTrigger>
             <TabsTrigger value="users">ยอดเงินผู้ใช้</TabsTrigger>
@@ -93,6 +95,7 @@ function AdminDashboard() {
           <TabsContent value="ann"><AnnouncementManager /></TabsContent>
           <TabsContent value="tracking"><TrackingManager /></TabsContent>
           <TabsContent value="store"><StoreManager /></TabsContent>
+          <TabsContent value="topupgame"><TopupManager /></TabsContent>
           <TabsContent value="orders"><OrdersManager /></TabsContent>
           <TabsContent value="chat"><ChatAdmin /></TabsContent>
           <TabsContent value="users"><UsersManager /></TabsContent>
