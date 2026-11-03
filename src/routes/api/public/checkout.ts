@@ -424,6 +424,26 @@ export const Route = createFileRoute("/api/public/checkout")({
           const { error: itemsErr } = await admin.from("order_items").insert(rows);
           if (itemsErr) throw itemsErr;
 
+          // Queue game top-up lines — the Roblox game server polls pending+paid
+          // rows via /api/public/topup/get-pending-orders.
+          if (topupLines.length) {
+            const { error: terr } = await admin.from("topup_orders").insert(
+              topupLines.map((t) => ({
+                user_id: body.user_id,
+                roblox_username: t.roblox_name,
+                item_id: t.product_id,
+                item_name: t.product_name,
+                quantity: t.quantity,
+                price: Number(t.unit_price) * Number(t.quantity),
+                status: "pending",
+                payment_status: body.pay_from_balance ? "paid" : "unpaid",
+                game_place: "prokim_city",
+                order_id: order.id,
+              })),
+            );
+            if (terr) throw terr;
+          }
+
           // Mark reserved account stock as sold
           const allReservedIds = Object.values(reservations).flat().map((r) => r.id);
           if (allReservedIds.length) {
