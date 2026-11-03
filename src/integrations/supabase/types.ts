@@ -1371,6 +1371,7 @@ export type Database = {
           id: string
           item_id: string
           item_name: string
+          order_id: string | null
           payment_status: string
           price: number
           quantity: number
@@ -1386,6 +1387,7 @@ export type Database = {
           id?: string
           item_id: string
           item_name: string
+          order_id?: string | null
           payment_status?: string
           price: number
           quantity?: number
@@ -1401,6 +1403,7 @@ export type Database = {
           id?: string
           item_id?: string
           item_name?: string
+          order_id?: string | null
           payment_status?: string
           price?: number
           quantity?: number
@@ -1410,6 +1413,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "topup_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "topup_orders_user_id_fkey"
             columns: ["user_id"]

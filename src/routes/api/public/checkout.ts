@@ -47,6 +47,15 @@ export const Route = createFileRoute("/api/public/checkout")({
           if (!sessionUid) return UNAUTHORIZED();
           body.user_id = sessionUid;
 
+          // Game top-up lines (Prokim City) queued to the Roblox game server.
+          const topupLines: {
+            product_id: string;
+            product_name: string;
+            unit_price: number;
+            quantity: number;
+            roblox_name: string;
+          }[] = [];
+
           // Re-price every line from the database; client prices are ignored.
           for (const it of body.items) {
             const q = Math.floor(Number(it.quantity));
@@ -59,7 +68,7 @@ export const Route = createFileRoute("/api/public/checkout")({
             const ids = Array.from(new Set(body.items.map((i) => i.product_id as string)));
             const { data: priced } = await admin
               .from("products")
-              .select("id, name, price, product_type")
+              .select("id, name, price, product_type, category_id")
               .in("id", ids);
             const pm = new Map((priced ?? []).map((r: any) => [r.id, r]));
             for (const it of body.items) {
@@ -76,6 +85,48 @@ export const Route = createFileRoute("/api/public/checkout")({
               it.unit_price = Number(r.price);
               it.product_name = r.name;
             }
+            // Products whose category chain reaches the "Prokim City" root are
+            // queued to the Roblox game server after checkout succeeds.
+            for (const it of body.items) {
+              const r: any = pm.get(it.product_id as string);
+              if (!r?.category_id) continue;
+              let cur: string | null = r.category_id;
+              let inTopupRoot = false;
+              for (let hop = 0; hop < 10 && cur; hop++) {
+                const { data: c } = await admin
+                  .from("categories")
+                  .select("id, parent_id, name")
+                  .eq("id", cur)
+                  .maybeSingle();
+                if (!c) break;
+                if (String((c as any).name ?? "").trim().toLowerCase() === "prokim city") {
+                  inTopupRoot = true;
+                  break;
+                }
+                cur = (c as any).parent_id ?? null;
+              }
+              if (inTopupRoot) {
+                topupLines.push({
+                  product_id: it.product_id as string,
+                  product_name: it.product_name,
+                  unit_price: it.unit_price,
+                  quantity: it.quantity,
+                  roblox_name: String(it.roblox_name ?? ""),
+                });
+              }
+            }
+          }
+
+          // Every game top-up line needs a Roblox username.
+          for (const t of topupLines) {
+            const rn = t.roblox_name.trim();
+            if (!rn) {
+              return Response.json(
+                { error: `สินค้า "${t.product_name}" ต้องกรอกชื่อผู้เล่น Roblox ก่อนสั่งซื้อ` },
+                { status: 400 },
+              );
+            }
+            t.roblox_name = rn;
           }
           const subtotal = body.items.reduce(
             (s, i) => s + Number(i.unit_price) * Number(i.quantity),
@@ -372,6 +423,26 @@ export const Route = createFileRoute("/api/public/checkout")({
 
           const { error: itemsErr } = await admin.from("order_items").insert(rows);
           if (itemsErr) throw itemsErr;
+
+          // Queue game top-up lines — the Roblox game server polls pending+paid
+          // rows via /api/public/topup/get-pending-orders.
+          if (topupLines.length) {
+            const { error: terr } = await admin.from("topup_orders").insert(
+              topupLines.map((t) => ({
+                user_id: body.user_id,
+                roblox_username: t.roblox_name,
+                item_id: t.product_id,
+                item_name: t.product_name,
+                quantity: t.quantity,
+                price: Number(t.unit_price) * Number(t.quantity),
+                status: "pending",
+                payment_status: body.pay_from_balance ? "paid" : "unpaid",
+                game_place: "prokim_city",
+                order_id: order.id,
+              })),
+            );
+            if (terr) throw terr;
+          }
 
           // Mark reserved account stock as sold
           const allReservedIds = Object.values(reservations).flat().map((r) => r.id);

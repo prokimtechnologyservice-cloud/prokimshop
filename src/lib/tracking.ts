@@ -303,6 +303,11 @@ export async function markOrderPaid(orderId: string) {
     .eq("order_id", orderId)
     .eq("fulfillment_status", "pending");
   if (ierr) throw ierr;
+  // Unlock any game top-up lines (Prokim City) that shipped with this order.
+  await (staffDb as any)
+    .from("topup_orders")
+    .update({ payment_status: "paid" })
+    .eq("order_id", orderId);
 }
 
 /** Ms remaining out of the 24h unpaid window; 0 if expired or n/a. */
